@@ -1,0 +1,56 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="m_brown"]
+albedo_color = Color(0.45, 0.27, 0.16, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="m_pink"]
+albedo_color = Color(0.94, 0.6, 0.62, 1)
+roughness = 0.75
+
+[sub_resource type="CylinderMesh" id="mesh1"]
+material = SubResource("m_brown")
+top_radius = 0.04
+bottom_radius = 0.06
+height = 0.5
+radial_segments = 6
+rings = 1
+
+[sub_resource type="SphereMesh" id="mesh2"]
+material = SubResource("m_pink")
+radius = 0.25
+height = 8
+radial_segments = 10
+rings = 5
+
+[sub_resource type="SphereMesh" id="mesh3"]
+material = SubResource("m_pink")
+radius = 0.18
+height = 8
+radial_segments = 10
+rings = 5
+
+[sub_resource type="SphereMesh" id="mesh4"]
+material = SubResource("m_pink")
+radius = 0.2
+height = 8
+radial_segments = 10
+rings = 5
+
+[node name="TreeBlossom" type="Node3D"]
+
+[node name="Trunk" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.2500, 0.0000)
+mesh = SubResource("mesh1")
+
+[node name="Crown0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.7500, 0.0000)
+mesh = SubResource("mesh2")
+
+[node name="Crown1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1500, 0.6500, 0.1000)
+mesh = SubResource("mesh3")
+
+[node name="Crown2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.1500, 0.6800, -0.0500)
+mesh = SubResource("mesh4")

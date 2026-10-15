@@ -5,8 +5,9 @@ extends RefCounted
 signal tile_changed(cell: Vector2i, tile: int)
 signal attraction_placed(attraction: Attraction)
 signal attraction_removed(attraction: Attraction)
+signal litter_changed(cell: Vector2i, amount: int)
 
-enum Tile { GRASS, PATH, ATTRACTION, ENTRANCE }
+enum Tile { GRASS, PATH, ATTRACTION, ENTRANCE, DECOR }  ## DECOR = græs-dekoration (træ/blomster)
 
 const TILE_SIZE: float = 1.0
 
@@ -16,6 +17,8 @@ var entrance: Vector2i
 var attractions: Array[Attraction] = []
 var _tiles: PackedInt32Array = PackedInt32Array()
 var _next_attraction_id: int = 1
+## Affald pr. sti-celle (kun celler med > 0).
+var litter: Dictionary = {}  ## Vector2i -> int
 
 
 func _init(p_width: int, p_height: int) -> void:
@@ -67,6 +70,7 @@ func place_path(cell: Vector2i) -> bool:
 func remove_path(cell: Vector2i) -> bool:
 	if get_tile(cell) != Tile.PATH or get_attraction_by_entrance(cell) != null:
 		return false
+	set_litter(cell, 0)
 	_set_tile(cell, Tile.GRASS)
 	return true
 
@@ -125,3 +129,78 @@ func remove_attraction(attraction_id: int) -> Attraction:
 		attraction_removed.emit(a)
 		return a
 	return null
+
+
+# --- Save/load (T-036) ---
+
+## Attraktioner gemmes af ParkSim (de kræver defs); her kun grid-state.
+func to_save() -> Dictionary:
+	return {"width": width, "height": height, "entrance": SaveCodec.v2i(entrance),
+		"tiles": Array(_tiles), "next_attraction_id": _next_attraction_id, "litter": _litter_to_save()}
+
+
+## Sætter grid-state uden at udsende tile_changed (visning genopbygges af bridge efter load).
+func load_save(d: Dictionary) -> void:
+	entrance = SaveCodec.to_v2i(d.get("entrance"), entrance)
+	var tiles: Array = SaveCodec.arr(d, "tiles")
+	if tiles.size() == width * height:
+		for i in tiles.size():
+			_tiles[i] = int(tiles[i])
+	_next_attraction_id = int(d.get("next_attraction_id", _next_attraction_id))
+	litter.clear()
+	for e: Variant in SaveCodec.arr(d, "litter"):
+		if e is Array and (e as Array).size() >= 3 and int(e[2]) > 0:
+			litter[Vector2i(int(e[0]), int(e[1]))] = int(e[2])
+
+
+## Tilføjer en indlæst attraktion uden at ændre tiles/udsende signaler.
+func restore_attraction(a: Attraction) -> void:
+	attractions.append(a)
+
+
+
+# --- Affald (T-037) ---
+
+func get_litter(cell: Vector2i) -> int:
+	return int(litter.get(cell, 0))
+
+
+func set_litter(cell: Vector2i, amount: int) -> void:
+	var before: int = get_litter(cell)
+	if amount <= 0:
+		litter.erase(cell)
+		amount = 0
+	else:
+		litter[cell] = amount
+	if before != amount:
+		litter_changed.emit(cell, amount)
+
+
+func total_litter() -> int:
+	var n: int = 0
+	for c: Vector2i in litter:
+		n += int(litter[c])
+	return n
+
+
+## Grid-sti-mål: [[x, y, n], ...] sorteret for stabil output.
+func _litter_to_save() -> Array:
+	var cells: Array = litter.keys()
+	cells.sort()
+	var out: Array = []
+	for c: Vector2i in cells:
+		out.append([c.x, c.y, litter[c]])
+	return out
+
+
+## Placering af græs-dekoration (sætter DECOR-tile).
+func place_decor_tile(cell: Vector2i) -> bool:
+	if get_tile(cell) != Tile.GRASS:
+		return false
+	_set_tile(cell, Tile.DECOR)
+	return true
+
+
+func clear_decor_tile(cell: Vector2i) -> void:
+	if get_tile(cell) == Tile.DECOR:
+		_set_tile(cell, Tile.GRASS)

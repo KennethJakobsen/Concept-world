@@ -13,6 +13,7 @@ var sim: ParkSim
 var selection: Node
 
 var _top_label: Label
+var _stars: StarRating
 var _pause_btn: Button
 var _build_buttons: Dictionary = {}  ## def_id -> Button
 var _build_costs: Dictionary = {}    ## def_id -> int
@@ -155,6 +156,11 @@ func _build_ui() -> void:
 	top.add_child(th)
 	_top_label = Label.new()
 	th.add_child(_top_label)
+	_stars = StarRating.new()
+	_stars.name = "ReputationStars"
+	_stars.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	_stars.visible = false
+	th.add_child(_stars)
 	_button(th, "Park", toggle_park_panel)
 	_pause_btn = _button(th, "Pause", _on_pause)
 	for s: float in SPEEDS:
@@ -283,11 +289,13 @@ func refresh() -> void:
 	if _top_label == null:
 		return
 	if sim == null:
-		_top_label.text = "Indlæser park…"
+		_top_label.text = "Indlæser park..."
 		return
 	var st: Dictionary = sim.get_stats()
 	var old_len: int = _top_label.text.length()
 	_top_label.text = top_text(st)
+	_stars.visible = st.has("reputation")
+	_stars.value = float(st.get("reputation", 0.0))
 	if _top_label.text.length() != old_len and is_inside_tree():
 		layout(get_viewport().get_visible_rect().size)  # topbar kan ombrydes anderledes
 	_refresh_park(st)
@@ -307,14 +315,8 @@ static func top_text(st: Dictionary) -> String:
 		t += "Gæster: %d   " % int(st.get("guests", 0))
 	t += "Glæde: %d%%" % roundi(float(st.get("avg_happiness", 0.0)))
 	if st.has("reputation"):
-		t += "   Omdømme: %s %d%%" % [stars(float(st.reputation)), roundi(float(st.reputation))]
+		t += "   Omdømme: %d%%" % roundi(float(st.reputation))  # stjerner tegnes af StarRating
 	return t
-
-
-## 0..100 → fem stjerner (afrundet til hele).
-static func stars(rep: float) -> String:
-	var n: int = clampi(roundi(rep / 20.0), 0, 5)
-	return "★".repeat(n) + "☆".repeat(5 - n)
 
 
 func _refresh_park(st: Dictionary) -> void:

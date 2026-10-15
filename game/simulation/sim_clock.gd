@@ -25,3 +25,16 @@ func advance(delta: float) -> int:
 		count += 1
 		ticked.emit(tick)
 	return count
+
+
+# --- Save/load (T-036) ---
+
+func to_save() -> Dictionary:
+	return {"tick": tick, "speed": SaveCodec.f(speed), "paused": paused, "accumulator": SaveCodec.f(_accumulator)}
+
+
+func load_save(d: Dictionary) -> void:
+	tick = int(d.get("tick", 0))
+	speed = SaveCodec.to_f(d.get("speed"), 1.0)
+	paused = bool(d.get("paused", false))
+	_accumulator = SaveCodec.to_f(d.get("accumulator"), 0.0)

@@ -1,0 +1,1 @@
+{"id": "go_karts", "name": "Gokart", "kind": "ride", "footprint": [4, 3], "build_cost": 2000, "running_cost_per_day": 320, "capacity": 8, "ride_ticks": 260, "ticket_price": 8, "excitement": 55, "satisfies": {"energy": 10, "thirst": 15}, "reliability": 0.96, "repair_ticks": 220, "model": "res://scenes/props/go_karts.tscn"}

@@ -11,10 +11,12 @@ func _init() -> void:
 	_run("Fuld park (alle 7 bygninger)", true, -1)
 	_run("Fuld park, QA-layout fra T-032 (pariserhjul/radiobiler uden sti)", true, -1, false)
 	_run("Startpark, entré 30", false, 30)
+	_run("Startpark uden personale (nedbrud + affald)", false, -1, true, false)
+	_run("Startpark + mekaniker + rengøring + 2 skraldespande (T-037)", false, -1, true, true)
 	quit(0)
 
 
-func _run(title: String, full: bool, fee: int, connect_rides: bool = true) -> void:
+func _run(title: String, full: bool, fee: int, connect_rides: bool = true, with_staff: Variant = null) -> void:
 	var sim := ParkSim.new(64, 64, 12345)
 	var e: Vector2i = sim.world.entrance
 	var ok: bool = true
@@ -44,11 +46,18 @@ func _run(title: String, full: bool, fee: int, connect_rides: bool = true) -> vo
 			ok = sim.cmd_place_path(Vector2i(x, 55)) and ok
 	if fee >= 0:
 		sim.cmd_set_entry_fee(fee)
+	if with_staff == true:
+		ok = sim.cmd_hire_staff("mechanic", Vector2i(e.x, 52)) > 0 and ok
+		ok = sim.cmd_hire_staff("cleaner", Vector2i(e.x, 51)) > 0 and ok
+		ok = sim.cmd_place_decor("bin", Vector2i(e.x + 3, 50)) > 0 and ok
+		ok = sim.cmd_place_decor("bin", Vector2i(e.x - 3, 50)) > 0 and ok
 	var st0: Dictionary = sim.get_stats()
 	print("\n=== %s ===" % title)
 	print("Byggeri ok: %s, penge: %d, entré %d, score %.2f, rate %.1f/dag, max %d, omdømme %.1f" % [
 		ok, sim.economy.money, sim.entry_fee, st0.attraction_score, st0.guests_per_day, st0.max_guests, st0.reputation])
-	print("Dag | Penge | Netto | Omdømme | Rate/dag | Nye | Gæster nu/max | Glæde")
+	print("Dag | Penge | Netto | Omdømme | Rate/dag | Nye | Gæster nu/max | Glæde | Løn | Nedbrud | I stykker | Affald")
+	var breaks: Array = [0]
+	sim.attraction_broken.connect(func(_a: Attraction) -> void: breaks[0] += 1)
 	var day_seconds: float = sim.balance.day_ticks * SimClock.TICK_DELTA
 	for d in DAYS:
 		var hap_sum: float = 0.0
@@ -64,9 +73,11 @@ func _run(title: String, full: bool, fee: int, connect_rides: bool = true) -> vo
 				samples += 1
 		var h: Dictionary = sim.economy.history.back() if not sim.economy.history.is_empty() else {}
 		var s2: Dictionary = sim.get_stats()
-		print("%d | %d | %d | %.1f | %.1f | %d | %d/%d | %.1f" % [d + 1, sim.economy.money, h.get("net", 0),
-			sim.reputation, sim.expected_guests_per_day(), sim._next_guest_id - before,
-			s2.guests, s2.max_guests, hap_sum / maxi(1, samples)])
+		print("%d | %d | %d | %.1f | %.1f | %d | %d/%d | %.1f | %d | %d | %d | %d" % [d + 1, sim.economy.money,
+			h.get("net", 0), sim.reputation, sim.expected_guests_per_day(), sim._next_guest_id - before,
+			s2.guests, s2.max_guests, hap_sum / maxi(1, samples), int(h.get("totals", {}).get("wages", 0)),
+			breaks[0], s2.broken, s2.litter])
+		breaks[0] = 0
 		if full:
 			_diag(sim)
 

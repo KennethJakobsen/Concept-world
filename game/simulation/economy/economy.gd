@@ -60,3 +60,19 @@ func _book(delta: int, category: String) -> void:
 	money += delta
 	today[category] = int(today.get(category, 0)) + delta
 	money_changed.emit(money)
+
+
+# --- Save/load (T-036) ---
+
+func to_save() -> Dictionary:
+	return {"money": money, "today": today.duplicate(), "history": history.duplicate(true)}
+
+
+func load_save(d: Dictionary) -> void:
+	money = int(d.get("money", money))
+	today = SaveCodec.to_int_dict(d.get("today", {}))
+	history.clear()
+	for h: Variant in SaveCodec.arr(d, "history"):
+		if h is Dictionary:
+			history.append({"day": int(h.get("day", 0)), "totals": SaveCodec.to_int_dict(h.get("totals", {})),
+				"net": int(h.get("net", 0))})

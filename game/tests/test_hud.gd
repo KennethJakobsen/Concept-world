@@ -91,7 +91,7 @@ func test_top_text_before_and_after_t030() -> void:
 	assert_true(old.contains("Gæster: 3") and not old.contains("Omdømme"))
 	var new: String = Hud.top_text({"money": 5, "day": 2, "guests": 3, "avg_happiness": 50.0,
 		"reputation": 80.0, "max_guests": 40})
-	assert_true(new.contains("3/40") and new.contains("★★★★☆"))
+	assert_true(new.contains("3/40") and new.contains("Omdømme: 80%"))
 
 
 func test_park_panel_inside_1024x600() -> void:

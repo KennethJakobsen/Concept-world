@@ -1,0 +1,1 @@
+{"id": "bin", "name": "Skraldespand", "kind": "bin", "footprint": [1, 1], "build_cost": 40, "on_path": true, "happiness_aura": 0, "aura_radius": 0, "model": "res://scenes/props/bin.tscn"}

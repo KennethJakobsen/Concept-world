@@ -14,6 +14,9 @@ extends Resource
 @export var excitement: int = 0
 @export var satisfies: Dictionary = {}  ## behov -> ændring ved endt besøg
 @export var model: String = ""
+## Sandsynlighed for IKKE at bryde ned pr. tur (1 = aldrig; shops/toiletter).
+@export var reliability: float = 1.0
+@export var repair_ticks: int = 150
 
 
 static func from_dict(d: Dictionary) -> AttractionDef:
@@ -34,6 +37,8 @@ static func from_dict(d: Dictionary) -> AttractionDef:
 		for k: Variant in sat:
 			def.satisfies[str(k)] = float(sat[k])
 	def.model = str(d.get("model", ""))
+	def.reliability = clampf(float(d.get("reliability", 1.0)), 0.0, 1.0)
+	def.repair_ticks = int(d.get("repair_ticks", 150))
 	return def
 
 
@@ -44,3 +49,14 @@ static func from_json(path: String) -> AttractionDef:
 		push_error("AttractionDef: kunne ikke læse %s" % path)
 		return null
 	return from_dict(data)
+
+
+## JSON-venlig snapshot (samme skema som content-JSON).
+func to_dict() -> Dictionary:
+	return {
+		"id": id, "name": name, "kind": kind, "footprint": [footprint.x, footprint.y],
+		"build_cost": build_cost, "running_cost_per_day": running_cost_per_day,
+		"capacity": capacity, "ride_ticks": ride_ticks, "ticket_price": ticket_price,
+		"excitement": excitement, "satisfies": satisfies.duplicate(), "model": model,
+		"reliability": reliability, "repair_ticks": repair_ticks,
+	}

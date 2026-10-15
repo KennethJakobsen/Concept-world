@@ -1,0 +1,1 @@
+{"id": "bench", "name": "Bænk", "kind": "bench", "footprint": [1, 1], "build_cost": 60, "on_path": true, "happiness_aura": 0.5, "aura_radius": 1, "model": "res://scenes/props/bench.tscn"}

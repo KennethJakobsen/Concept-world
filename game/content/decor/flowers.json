@@ -1,0 +1,1 @@
+{"id": "flowers", "name": "Blomster", "kind": "flowers", "footprint": [1, 1], "build_cost": 20, "on_path": false, "happiness_aura": 1.5, "aura_radius": 1, "model": "res://scenes/props/flowers.tscn"}

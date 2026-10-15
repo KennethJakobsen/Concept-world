@@ -5,6 +5,7 @@ extends RefCounted
 const ECONOMY_PATH: String = "res://content/economy.json"
 const GUESTS_PATH: String = "res://content/guests.json"
 const PARK_PATH: String = "res://content/park.json"
+const STAFF_RULES_PATH: String = "res://content/staff_rules.json"
 
 # Økonomi
 var start_money: int = 2500
@@ -70,10 +71,53 @@ var queue_max_cycles: float = 3.0
 ## T-033: glæde-tab når en gæst opgiver en fuld kø.
 var queue_full_happiness_penalty: float = 1.0
 
+# Personale/affald/dekoration (staff_rules.json, T-035/T-037)
+var litter_chance_after_shop: float = 0.5
+var litter_chance_with_bin: float = 0.1
+var bin_radius: int = 4
+var bin_capacity: int = 20
+var litter_max_per_cell: int = 5
+var dirty_threshold: int = 2
+var happiness_penalty_dirty_per_tick: float = 0.05
+var thought_dirty: String = "Her er beskidt!"
+var cleaner_sweep_ticks: int = 20
+var cleaner_empty_bin_ticks: int = 30
+var bench_energy_restore: float = -30.0
+var bench_rest_ticks: int = 60
+var bench_seek_energy: float = 70.0
+var decor_aura_max_per_tick: float = 0.03
+var aura_scale_per_tick: float = 0.01
+var entertainer_happiness_per_tick: float = 0.03
+var mechanic_inspect_interval_ticks: int = 1200
+var inspection_reliability_bonus: float = 0.01
+var inspection_ticks: int = 40
+var thought_broken: String = "Den er i stykker!"
+
 
 ## park tom → legacy-spawn (spawn_interval_ticks/max_guests fra guests).
-static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary = {}) -> Balance:
+static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary = {},
+		staff_rules: Dictionary = {}) -> Balance:
 	var b := Balance.new()
+	b.litter_chance_after_shop = float(staff_rules.get("litter_chance_after_shop", b.litter_chance_after_shop))
+	b.litter_chance_with_bin = float(staff_rules.get("litter_chance_with_bin", b.litter_chance_with_bin))
+	b.bin_radius = int(staff_rules.get("bin_radius", b.bin_radius))
+	b.bin_capacity = int(staff_rules.get("bin_capacity", b.bin_capacity))
+	b.litter_max_per_cell = int(staff_rules.get("litter_max_per_cell", b.litter_max_per_cell))
+	b.dirty_threshold = int(staff_rules.get("dirty_threshold", b.dirty_threshold))
+	b.happiness_penalty_dirty_per_tick = float(staff_rules.get("happiness_penalty_dirty_per_tick", b.happiness_penalty_dirty_per_tick))
+	b.thought_dirty = str(staff_rules.get("thought_dirty", b.thought_dirty))
+	b.cleaner_sweep_ticks = int(staff_rules.get("cleaner_sweep_ticks", b.cleaner_sweep_ticks))
+	b.cleaner_empty_bin_ticks = int(staff_rules.get("cleaner_empty_bin_ticks", b.cleaner_empty_bin_ticks))
+	b.bench_energy_restore = float(staff_rules.get("bench_energy_restore", b.bench_energy_restore))
+	b.bench_rest_ticks = int(staff_rules.get("bench_rest_ticks", b.bench_rest_ticks))
+	b.bench_seek_energy = float(staff_rules.get("bench_seek_energy", b.bench_seek_energy))
+	b.decor_aura_max_per_tick = float(staff_rules.get("decor_aura_max_per_tick", b.decor_aura_max_per_tick))
+	b.aura_scale_per_tick = float(staff_rules.get("aura_scale_per_tick", b.aura_scale_per_tick))
+	b.entertainer_happiness_per_tick = float(staff_rules.get("entertainer_happiness_per_tick", b.entertainer_happiness_per_tick))
+	b.mechanic_inspect_interval_ticks = int(staff_rules.get("mechanic_inspect_interval_ticks", b.mechanic_inspect_interval_ticks))
+	b.inspection_reliability_bonus = float(staff_rules.get("inspection_reliability_bonus", b.inspection_reliability_bonus))
+	b.inspection_ticks = int(staff_rules.get("inspection_ticks", b.inspection_ticks))
+	b.thought_broken = str(staff_rules.get("thought_broken", b.thought_broken))
 	b.has_park = not park.is_empty()
 	b.weight_ride = float(park.get("weight_ride", b.weight_ride))
 	b.weight_facility = float(park.get("weight_facility", b.weight_facility))
@@ -125,7 +169,7 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 
 
 static func load_default() -> Balance:
-	return from_dicts(_read(ECONOMY_PATH), _read(GUESTS_PATH), _read(PARK_PATH))
+	return from_dicts(_read(ECONOMY_PATH), _read(GUESTS_PATH), _read(PARK_PATH), _read(STAFF_RULES_PATH))
 
 
 static func _read(path: String) -> Dictionary:

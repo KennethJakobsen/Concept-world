@@ -101,3 +101,53 @@ Konstanter i `game/content/park.json`. Kun **åbne** bygninger tæller.
 | Alle 7 bygninger (3 rides + 4 faciliteter) | 11.18 | 11.2 | 0 | 96 | 72 | 89 | 98 | 125 |
 
 Startparken giver ~50/dag og max ~48 samtidige gæster – samme som før (spawn hver 40. tick, max 50), så T-026-balancen holder.
+
+## M3 – Personale, nedbrud, affald, dekoration (T-035)
+Konstanter: `game/content/staff_rules.json`. Personale: `game/content/staff/`, dekoration: `game/content/decor/`.
+
+### Personale
+| Type | Løn/dag | Fart (celler/tick) | Radius | Rolle |
+|---|---|---|---|---|
+| Mekaniker | 80 | 0.12 | 0 (hele parken) | reparerer + inspicerer hver 1200. tick (40 ticks) |
+| Rengøring | 60 | 0.10 | 12 | fejer en celle på 20 ticks, tømmer skraldespand på 30 |
+| Underholder | 70 | 0.08 | 8 | +0.03 glæde/tick for gæster inden for radius |
+
+Rationale: startparken tjener ca. +700/dag. En mekaniker + en rengøring (140/dag) koster ca. 20 % af det, så det mærkes, men kan betale sig. En underholder (70) svarer til ca. 12 karruselture.
+
+### Nedbrud
+Efter hver tur: nedbrud med sandsynligheden `1 − reliability`. Shops og toiletter går ikke i stykker (reliability = 1, når feltet mangler). En inspektion giver +0.01 midlertidig pålidelighed (`inspection_reliability_bonus`, højst 1.0) indtil næste nedbrud.
+| Forlystelse | reliability | repair_ticks | ture/dag (2400/ride_ticks) | forventede nedbrud/dag |
+|---|---|---|---|---|
+| Karrusel | 0.985 | 150 | 12 | 0.18 |
+| Pariserhjul | 0.98 | 200 | 7.5 | 0.15 |
+| Radiobiler | 0.97 | 180 | 10 | 0.30 |
+| Svingkarrusel | 0.975 | 180 | 11 | 0.27 |
+| Spøgelseshus | 0.98 | 160 | 13 | 0.27 |
+| Gokart | 0.96 | 220 | 9 | 0.37 |
+Uden mekaniker står karrusellen typisk i stykker fra dag 4–6 (1/0.18 ≈ 5,5 dage). Så stopper billetindtægten, og gæsterne bliver sure. Med mekaniker: et tab på ca. (150 + gangtid ~100)/2400 ≈ 10 % af én dags ture pr. nedbrud, dvs. ca. 2 % i snit.
+
+### Affald
+- Efter køb i shop: affald med sandsynligheden `litter_chance_after_shop` 0.5, eller 0.1 hvis der er en skraldespand inden for `bin_radius` 4 celler. En spand rummer 20 stk. og kræver derefter tømning.
+- Op til 5 stk. pr. sti-celle. Celle med ≥ `dirty_threshold` 2 er beskidt: gæster der går der, mister 0.05 glæde/tick og får tanken "Her er beskidt!".
+- Forventning i startparken: ~50 gæster × ~2 køb = 100 køb/dag → ~50 affald/dag uden spande, ~10 med. En rengøring fjerner ~120 stk./dag (20 ticks pr. celle inkl. gang ⇒ rigeligt). Uden rengøring bliver stierne nær boderne beskidte på dag 1–2.
+
+### Dekoration
+| id | Pris | På sti | Aura | Radius | Effekt |
+|---|---|---|---|---|---|
+| bin | 40 | ja | 0 | 0 | mindre affald (se ovenfor) |
+| bench | 60 | ja | 0.5 | 1 | gæster med energy ≥ 70 hviler 60 ticks, energy −30 |
+| tree | 30 | nej | 1.0 | 2 | glæde |
+| flowers | 20 | nej | 1.5 | 1 | glæde |
+| lamp | 50 | ja | 0.5 | 2 | glæde (forberedt på dag/nat) |
+Aura: gæst på en celle får `Σ happiness_aura × aura_scale_per_tick (0.01)` glæde pr. tick, loftet ved `decor_aura_max_per_tick` 0.03. Så det svarer højst til ca. én underholder, og mange dekorationer stabler ikke uendeligt.
+
+### Nye forlystelser
+| id | Navn | Fodaftryk | Byg | Drift/dag | Kap. | Ticks | Billet | Excitement |
+|---|---|---|---|---|---|---|---|---|
+| swing_ride | Svingkarrusel | 3×3 | 1100 | 220 | 12 | 220 | 6 | 35 |
+| haunted_house | Spøgelseshus | 3×2 | 1300 | 230 | 8 | 180 | 6 | 40 |
+| go_karts | Gokart | 4×3 | 2000 | 320 | 8 | 260 | 8 | 55 |
+Gokart har høj excitement og lav pålidelighed, så det trækker gæster men kræver en mekaniker.
+
+### Balance-forventning (beregnet, ikke målt)
+Startpark + mekaniker + rengøring: dagsnetto ≈ 754 − 140 − ~2 % nedbrudstab ≈ +600. Kumuleret fra T-034-målingen: dag 1 ≈ −1585, dag 2 ≈ −1107, dag 3 ≈ −560, dag 4 ≈ +87 ⇒ **break-even dag 4**. Ansættes personalet først på dag 2, kommer break-even på dag 3–4.

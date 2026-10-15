@@ -1,0 +1,1 @@
+{"id": "tree_round", "name": "Løvtræ", "kind": "tree", "footprint": [1, 1], "build_cost": 30, "on_path": false, "happiness_aura": 1.0, "aura_radius": 2, "model": "res://scenes/props/tree_round.tscn"}

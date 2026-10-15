@@ -49,12 +49,14 @@
 ## M3 – Spilbar loop  ([kontrakt](M3-playable/_CONTRACT.md))
 | Task | Titel | Agent | Status |
 |---|---|---|---|
-| T-035 | Personale, nedbrud, affald, dekoration, 3 forlystelser (data) | designer | ⬜ todo |
-| T-036 | Save/load med versionering | simulation | ⬜ todo |
-| T-037 | Personale, nedbrud, affald, dekoration (sim) | simulation | ⬜ todo |
-| T-038 | Props: personale, dekoration, forlystelser, effekter | graphics | ⬜ todo |
+| T-035 | Personale, nedbrud, affald, dekoration, 3 forlystelser (data) | designer | 🔍 review |
+| T-036 | Save/load med versionering | simulation | 🔍 review |
+| T-037 | Personale, nedbrud, affald, dekoration (sim) | simulation | 🔍 review |
+| T-038 | Props: personale, dekoration, forlystelser, effekter | graphics | 🔍 review |
 | T-039 | Personale/dekoration/nedbrud i scenen, indlæsning | gameplay | ⬜ todo |
 | T-040 | Hovedmenu, gem/indlæs, personale-panel | ui | ⬜ todo |
+| T-042 | Bug: omdømme-stjerner som firkanter | ui | 🔍 review |
+| T-043 | Affald spredes langs rute | simulation | ⬜ todo |
 | T-041 | M3 verifikation | qa | ⬜ todo |
 
 ## Kommende milepæle

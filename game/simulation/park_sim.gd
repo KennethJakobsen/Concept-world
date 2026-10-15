@@ -7,6 +7,12 @@ signal guest_removed(guest_id: int)
 signal day_passed(day: int)
 signal reputation_changed(value: float)
 signal attraction_removed(attraction_id: int)
+signal staff_hired(s: Staff)
+signal staff_fired(staff_id: int)
+signal decor_placed(d: Decor)
+signal decor_removed(decor_id: int)
+signal attraction_broken(a: Attraction)
+signal attraction_repaired(a: Attraction)
 
 const NEED_THOUGHTS: Dictionary = {
 	"hunger": "Jeg er sulten!",
@@ -16,6 +22,8 @@ const NEED_THOUGHTS: Dictionary = {
 }
 
 const ATTRACTION_DIR: String = "res://content/attractions/"
+const STAFF_DIR: String = "res://content/staff/"
+const DECOR_DIR: String = "res://content/decor/"
 const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
 
 var world: ParkWorld
@@ -29,6 +37,8 @@ var economy: Economy
 var day: int = 1
 var entry_fee: int = 0
 var day_tick: int = 0  ## ticks ind i nuværende dag
+var staff: Dictionary = {}  ## id -> Staff
+var decor: Dictionary = {}  ## id -> Decor
 
 ## Konfiguration
 ## Fast spawn-interval (legacy/tests). At sætte feltet slår fast_spawn til.
@@ -52,6 +62,12 @@ var _spawn_counter: int = 0
 var _def_cache: Dictionary = {}
 var _reachable: Dictionary = {}  ## celle -> true, gåbare celler forbundet til indgangen
 var _reachable_dirty: bool = true
+var _next_staff_id: int = 1
+var _next_decor_id: int = 1
+var _staff_def_cache: Dictionary = {}
+var _decor_def_cache: Dictionary = {}
+var _aura: Dictionary = {}  ## celle -> glæde/tick fra dekoration (cache)
+var _aura_dirty: bool = true
 
 
 ## p_balance = null → indlæs content/economy.json + guests.json (defaults ved mangler).
@@ -91,6 +107,8 @@ func cmd_place_path(cell: Vector2i) -> bool:
 func cmd_remove_path(cell: Vector2i) -> bool:
 	if not world.remove_path(cell):
 		return false
+	for did in _decor_ids_at(cell):
+		_remove_decor(did)
 	economy.earn(balance.path_refund, "refund")
 	return true
 
@@ -238,6 +256,9 @@ func get_stats() -> Dictionary:
 		"attraction_score": attraction_score(),
 		"guests_per_day": expected_guests_per_day(),
 		"max_guests": current_max_guests(),
+		"staff": staff.size(),
+		"broken": broken_count(),
+		"litter": world.total_litter(),
 	}
 
 
@@ -334,12 +355,19 @@ func _on_tick(_tick: int) -> void:
 			var g: Guest = guests[gid]
 			if _update_needs(g):
 				_tick_guest(g)
+	StaffAI.tick_all(self)
 
 
 func _end_day() -> void:
 	for a in attractions:
 		if a.def.running_cost_per_day > 0:
 			economy.charge(a.def.running_cost_per_day, "running")
+	var sids: Array = staff.keys()
+	sids.sort()
+	for sid in sids:
+		var w: int = (staff[sid] as Staff).def.wage_per_day
+		if w > 0:
+			economy.charge(w, "wages")
 	economy.close_day(day)
 	day += 1
 	day_passed.emit(day)
@@ -361,6 +389,8 @@ func _update_needs(g: Guest) -> bool:
 			if before <= th:
 				crossed = true
 	g.happiness = clampf(g.happiness - over * balance.happiness_decay_when_need_over_threshold, 0.0, 100.0)
+	if g.state != Guest.State.RIDING:
+		_apply_surroundings(g)
 	if g.state == Guest.State.QUEUING and g.happiness < balance.leave_happiness:
 		# T-033: utilfredse gæster opgiver køen og går hjem (betalt billet refunderes ikke).
 		var q: Attraction = get_attraction(g.target_attraction_id)
@@ -420,6 +450,28 @@ func _choose_goal(g: Guest) -> void:
 		g.thought = leave_reason
 		_start_leaving(g)
 		return
+	g.target_decor_id = -1
+	# 0) Træt → nærmeste bænk (T-037)
+	if float(g.needs.get("energy", 0.0)) >= balance.bench_seek_energy:
+		var bench: Decor = null
+		var bench_route: Array[Vector2i] = []
+		for did in _sorted_decor_ids():
+			var d: Decor = decor[did]
+			if d.def.kind != "bench":
+				continue
+			var route: Array[Vector2i] = path_finder.find_path(g.cell, d.cell)
+			if route.is_empty():
+				continue
+			if bench == null or route.size() < bench_route.size():
+				bench = d
+				bench_route = route
+		if bench != null:
+			g.state = Guest.State.WALKING
+			g.target_attraction_id = -1
+			g.target_decor_id = bench.id
+			g.thought = NEED_THOUGHTS.get("energy", "")
+			_set_route(g, bench_route)
+			return
 	# 1) Akutte behov – mest akutte først, nærmeste åbne bygning der dækker det.
 	var urgent: Array = []
 	for k: String in g.needs:
@@ -488,7 +540,7 @@ func _leave_reason(g: Guest) -> String:
 ## Åben, ikke afvist, til at betale og under betalingsvilje.
 ## Er prisen over betalingsviljen afvises bygningen (tanke "For dyrt!", glæde-straf).
 func _usable(g: Guest, a: Attraction) -> bool:
-	if not a.is_open or g.rejected_ids.has(a.id) or a.price > g.money:
+	if not a.is_open or a.broken or g.rejected_ids.has(a.id) or a.price > g.money:
 		return false
 	if is_queue_full(a):
 		return false
@@ -543,6 +595,16 @@ func _remove_guest(g: Guest) -> void:
 func _tick_guest(g: Guest) -> void:
 	if g.state == Guest.State.QUEUING or g.state == Guest.State.RIDING:
 		return
+	if g.state == Guest.State.RESTING:
+		g.rest_ticks_left -= 1
+		if g.rest_ticks_left <= 0 or not decor.has(g.target_decor_id):
+			if g.rest_ticks_left <= 0 and g.needs.has("energy"):
+				g.needs["energy"] = clampf(g.needs["energy"] + balance.bench_energy_restore, 0.0, 100.0)
+				g.thought = "Dejligt med en pause."
+			g.state = Guest.State.WALKING
+			g.target_decor_id = -1
+			_choose_goal(g)
+		return
 	if g.next_cell != g.cell:
 		if not world.is_walkable(g.next_cell):
 			if g.state == Guest.State.WALKING:
@@ -569,6 +631,13 @@ func _arrived(g: Guest) -> void:
 		else:
 			_start_leaving(g)
 		return
+	if g.target_decor_id >= 0:
+		var bench: Decor = decor.get(g.target_decor_id, null)
+		if bench != null and bench.cell == g.cell:
+			g.state = Guest.State.RESTING
+			g.rest_ticks_left = balance.bench_rest_ticks
+			return
+		g.target_decor_id = -1
 	if g.target_attraction_id >= 0:
 		var a: Attraction = get_attraction(g.target_attraction_id)
 		if a != null and a.entrance_cell == g.cell:
@@ -584,7 +653,9 @@ func _arrived(g: Guest) -> void:
 ## Betaler ved køstart. Returnerer afvisningsgrund ("" = kom ind): lukket, for dyr, for få penge.
 func _try_enter(g: Guest, a: Attraction) -> String:
 	var reason: String = ""
-	if not a.is_open:
+	if a.broken:
+		reason = balance.thought_broken
+	elif not a.is_open:
 		reason = "Den er lukket!"
 	elif a.price > price_value(a, g):
 		reason = TOO_EXPENSIVE_THOUGHT
@@ -621,10 +692,15 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 			continue
 		var g: Guest = guests[gid]
 		_apply_visit(g, a)
+		if a.def.kind == "shop":
+			_drop_litter(g)
 		if a.def.kind == "ride":
 			g.rides_left -= 1
 		g.target_attraction_id = -1
 		_choose_goal(g)
+	if a.def.kind == "ride" and not guest_ids.is_empty() and a.def.reliability < 1.0 \
+			and rng.randf() >= a.effective_reliability():
+		_break(a)
 
 
 func _apply_visit(g: Guest, a: Attraction) -> void:
@@ -638,3 +714,379 @@ func _apply_visit(g: Guest, a: Attraction) -> void:
 	g.seeking_need = ""
 	g.rejected_ids.clear()
 	g.thought = "Det var godt!" if relieved else ("Sjovt!" if a.def.kind == "ride" else "")
+
+
+# --- Personale, nedbrud, affald, dekoration (T-037) ---
+
+func get_staff_def(type_id: String) -> StaffDef:
+	if not _staff_def_cache.has(type_id):
+		var path: String = STAFF_DIR + type_id + ".json"
+		if not FileAccess.file_exists(path):
+			return null
+		_staff_def_cache[type_id] = StaffDef.from_json(path)
+	return _staff_def_cache[type_id]
+
+
+func register_staff_def(def: StaffDef) -> void:
+	_staff_def_cache[def.id] = def
+
+
+func get_decor_def(def_id: String) -> DecorDef:
+	if not _decor_def_cache.has(def_id):
+		var path: String = DECOR_DIR + def_id + ".json"
+		if not FileAccess.file_exists(path):
+			return null
+		_decor_def_cache[def_id] = DecorDef.from_json(path)
+	return _decor_def_cache[def_id]
+
+
+func register_decor_def(def: DecorDef) -> void:
+	_decor_def_cache[def.id] = def
+
+
+## Ansætter på en gåbar celle. Returnerer id eller -1.
+func cmd_hire_staff(type_id: String, cell: Vector2i) -> int:
+	var def: StaffDef = get_staff_def(type_id)
+	if def == null or not world.is_walkable(cell):
+		return -1
+	var s := Staff.new(_next_staff_id, def, cell)
+	_next_staff_id += 1
+	staff[s.id] = s
+	staff_hired.emit(s)
+	return s.id
+
+
+func cmd_fire_staff(staff_id: int) -> bool:
+	if not staff.has(staff_id):
+		return false
+	StaffAI.drop_task(self, staff[staff_id])
+	staff.erase(staff_id)
+	staff_fired.emit(staff_id)
+	return true
+
+
+## Flytter den ansatte (og arbejdsområdets centrum) til en gåbar celle.
+func cmd_move_staff(staff_id: int, cell: Vector2i) -> bool:
+	if not staff.has(staff_id) or not world.is_walkable(cell):
+		return false
+	var s: Staff = staff[staff_id]
+	StaffAI.drop_task(self, s)
+	s.cell = cell
+	s.next_cell = cell
+	s.home_cell = cell
+	return true
+
+
+func get_staff(staff_id: int) -> Staff:
+	return staff.get(staff_id, null)
+
+
+## on_path-dekoration kræver en sti-celle uden anden dekoration; øvrige kræver græs.
+func can_place_decor(def: DecorDef, cell: Vector2i) -> bool:
+	if def == null:
+		return false
+	if def.on_path:
+		return world.get_tile(cell) == ParkWorld.Tile.PATH and _decor_ids_at(cell).is_empty()
+	return world.get_tile(cell) == ParkWorld.Tile.GRASS
+
+
+## Returnerer decor-id eller -1 (ugyldig celle / ikke råd).
+func cmd_place_decor(def_id: String, cell: Vector2i) -> int:
+	var def: DecorDef = get_decor_def(def_id)
+	if not can_place_decor(def, cell) or not economy.can_afford(def.build_cost):
+		return -1
+	economy.spend(def.build_cost, "decor")
+	if not def.on_path:
+		world.place_decor_tile(cell)
+	var d := Decor.new(_next_decor_id, def, cell)
+	_next_decor_id += 1
+	decor[d.id] = d
+	_aura_dirty = true
+	decor_placed.emit(d)
+	return d.id
+
+
+## Fjerner dekoration og refunderer 50 %.
+func cmd_remove_decor(decor_id: int) -> bool:
+	if not decor.has(decor_id):
+		return false
+	economy.earn((decor[decor_id] as Decor).def.build_cost / 2, "refund")
+	_remove_decor(decor_id)
+	return true
+
+
+func _remove_decor(decor_id: int) -> void:
+	var d: Decor = decor[decor_id]
+	decor.erase(decor_id)
+	if not d.def.on_path:
+		world.clear_decor_tile(d.cell)
+	_aura_dirty = true
+	decor_removed.emit(decor_id)
+
+
+func _decor_ids_at(cell: Vector2i) -> Array:
+	var out: Array = []
+	for did in _sorted_decor_ids():
+		if (decor[did] as Decor).cell == cell:
+			out.append(did)
+	return out
+
+
+func _sorted_decor_ids() -> Array:
+	var ids: Array = decor.keys()
+	ids.sort()
+	return ids
+
+
+func get_decor(decor_id: int) -> Decor:
+	return decor.get(decor_id, null)
+
+
+## Glæde/tick fra dekorationers aura på cellen (loftet ved decor_aura_max_per_tick).
+func aura_at(cell: Vector2i) -> float:
+	if _aura_dirty:
+		_aura_dirty = false
+		_aura = {}
+		for did in _sorted_decor_ids():
+			var d: Decor = decor[did]
+			if d.def.happiness_aura <= 0.0:
+				continue
+			var r: int = d.def.aura_radius
+			for dy in range(-r, r + 1):
+				for dx in range(-r, r + 1):
+					if absi(dx) + absi(dy) > r:
+						continue
+					var c: Vector2i = d.cell + Vector2i(dx, dy)
+					_aura[c] = float(_aura.get(c, 0.0)) + d.def.happiness_aura * balance.aura_scale_per_tick
+	return minf(float(_aura.get(cell, 0.0)), balance.decor_aura_max_per_tick)
+
+
+## Aura, underholdere og beskidte stier.
+func _apply_surroundings(g: Guest) -> void:
+	var delta: float = aura_at(g.cell)
+	for sid in staff:
+		var s: Staff = staff[sid]
+		if s.def.id == StaffAI.ENTERTAINER and absi(s.cell.x - g.cell.x) + absi(s.cell.y - g.cell.y) <= s.def.work_radius:
+			delta += balance.entertainer_happiness_per_tick
+	if (g.state == Guest.State.WALKING or g.state == Guest.State.LEAVING) \
+			and world.get_litter(g.cell) >= balance.dirty_threshold:
+		delta -= balance.happiness_penalty_dirty_per_tick
+		g.thought = balance.thought_dirty
+	if delta != 0.0:
+		g.happiness = clampf(g.happiness + delta, 0.0, 100.0)
+
+
+## Nærmeste skraldespand med plads inden for bin_radius (manhattan), ellers null.
+func _bin_near(cell: Vector2i) -> Decor:
+	var best: Decor = null
+	var best_d: int = 0
+	for did in _sorted_decor_ids():
+		var d: Decor = decor[did]
+		if d.def.kind != "bin" or d.fill >= balance.bin_capacity:
+			continue
+		var dist: int = absi(d.cell.x - cell.x) + absi(d.cell.y - cell.y)
+		if dist <= balance.bin_radius and (best == null or dist < best_d):
+			best = d
+			best_d = dist
+	return best
+
+
+## Efter køb i bod: spand i nærheden fyldes, ellers (eller med lille sandsynlighed) affald på stien.
+func _drop_litter(g: Guest) -> void:
+	var bin: Decor = _bin_near(g.cell)
+	var chance: float = balance.litter_chance_with_bin if bin != null else balance.litter_chance_after_shop
+	if rng.randf() < chance:
+		if world.is_walkable(g.cell):
+			world.set_litter(g.cell, mini(world.get_litter(g.cell) + 1, balance.litter_max_per_cell))
+	elif bin != null:
+		bin.fill += 1
+
+
+func _break(a: Attraction) -> void:
+	a.broken = true
+	a.reliability_bonus = 0.0
+	var q: Array = a.queue.duplicate()
+	a.queue.clear()
+	for gid in q:
+		if not guests.has(gid):
+			continue
+		var g: Guest = guests[gid]
+		if g.paid > 0:
+			g.money += g.paid
+			economy.charge(g.paid, "tickets")  # refusion
+			g.paid = 0
+		g.state = Guest.State.WALKING
+		g.target_attraction_id = -1
+		_choose_goal(g)
+		g.thought = balance.thought_broken
+	attraction_broken.emit(a)
+
+
+func _repair(a: Attraction) -> void:
+	a.broken = false
+	a.mechanic_id = -1
+	for g: Guest in guests.values():
+		g.rejected_ids.erase(a.id)
+	attraction_repaired.emit(a)
+
+
+func broken_count() -> int:
+	var n: int = 0
+	for a in attractions:
+		if a.broken:
+			n += 1
+	return n
+
+
+# --- Save/load (T-036) ---
+# Udvidelse (T-037+): tilføj en nøgle i _park_to_save() og læs den i _park_load()
+# (med default hvis den mangler). Kræver det en formatændring der ikke er bagudkompatibel,
+# hæv SaveMigrations.CURRENT og tilføj et migrationstrin.
+
+const GAME_VERSION_DEFAULT: String = "0.3"
+
+
+## Fuld save inkl. envelope: {save_version, game_version, created, park}.
+func to_save() -> Dictionary:
+	return {
+		"save_version": SaveMigrations.CURRENT,
+		"game_version": str(ProjectSettings.get_setting("application/config/version", GAME_VERSION_DEFAULT)),
+		"created": Time.get_datetime_string_from_system(true),
+		"park": _park_to_save(),
+	}
+
+
+## Indlæser en save (migreres først). p_balance = null → content. Returnerer null ved ugyldig save.
+## p_defs: AttractionDef/StaffDef/DecorDef der registreres før load (tests/mods) og vinder over content.
+## Defs der hverken er registreret eller i content, genskabes fra savefilens snapshot.
+static func from_save(d: Dictionary, p_balance: Balance = null, p_defs: Array = []) -> ParkSim:
+	var m: Dictionary = SaveMigrations.migrate(d)
+	if m.is_empty():
+		return null
+	var park: Dictionary = SaveCodec.dict(m, "park")
+	var wd: Dictionary = SaveCodec.dict(park, "world")
+	if not wd.has("width") or not wd.has("height"):
+		return null  # ugyldig save
+	var rd: Dictionary = SaveCodec.dict(park, "rng")
+	var sim := ParkSim.new(int(wd["width"]), int(wd["height"]), str(rd.get("seed", "0")).to_int(), p_balance)
+	for def: Variant in p_defs:
+		if def is AttractionDef:
+			sim.register_def(def)
+		elif def is StaffDef:
+			sim.register_staff_def(def)
+		elif def is DecorDef:
+			sim.register_decor_def(def)
+	sim._park_load(park)
+	return sim
+
+
+func _park_to_save() -> Dictionary:
+	var gl: Array = []
+	var ids: Array = guests.keys()
+	ids.sort()
+	for gid in ids:
+		gl.append((guests[gid] as Guest).to_save())
+	var al: Array = []
+	for a in attractions:
+		al.append(a.to_save())
+	return {
+		# uint64 → streng (JSON-tal er double og mister præcision)
+		"rng": {"seed": str(rng.seed), "state": str(rng.state)},
+		"clock": clock.to_save(),
+		"world": world.to_save(),
+		"economy": economy.to_save(),
+		"attractions": al,
+		"guests": gl,
+		"day": day,
+		"day_tick": day_tick,
+		"entry_fee": entry_fee,
+		"reputation": SaveCodec.f(reputation),
+		"next_guest_id": _next_guest_id,
+		"spawn_counter": _spawn_counter,
+		"staff": _staff_to_save(),
+		"decor": _decor_to_save(),
+		"next_staff_id": _next_staff_id,
+		"next_decor_id": _next_decor_id,
+		"config": {
+			"spawn_interval_ticks": spawn_interval_ticks, "max_guests": max_guests,
+			"fixed_spawn": fixed_spawn, "guest_speed": SaveCodec.f(guest_speed),
+			"rides_per_guest_min": rides_per_guest_min, "rides_per_guest_max": rides_per_guest_max,
+			"wander_steps_max": wander_steps_max,
+		},
+	}
+
+
+func _park_load(park: Dictionary) -> void:
+	var rd: Dictionary = SaveCodec.dict(park, "rng")
+	rng.seed = str(rd.get("seed", "0")).to_int()
+	if rd.has("state"):
+		rng.state = str(rd["state"]).to_int()
+	clock.load_save(SaveCodec.dict(park, "clock"))
+	world.load_save(SaveCodec.dict(park, "world"))
+	economy.load_save(SaveCodec.dict(park, "economy"))
+	for ad: Variant in SaveCodec.arr(park, "attractions"):
+		if not ad is Dictionary:
+			continue
+		var def: AttractionDef = get_def(str(ad.get("def_id", "")))
+		if def == null:
+			def = AttractionDef.from_dict(SaveCodec.dict(ad, "def"))  # snapshot-fallback
+			register_def(def)
+		var a := Attraction.from_save(ad, def)
+		world.restore_attraction(a)
+		_on_attraction_placed(a)  # forbinder signaler + tilføjer til attractions
+	for gd: Variant in SaveCodec.arr(park, "guests"):
+		if gd is Dictionary:
+			var g := Guest.from_save(gd)
+			guests[g.id] = g
+	day = int(park.get("day", day))
+	day_tick = int(park.get("day_tick", 0))
+	entry_fee = int(park.get("entry_fee", entry_fee))
+	reputation = SaveCodec.to_f(park.get("reputation"), reputation)
+	_next_guest_id = int(park.get("next_guest_id", 1))
+	var cfg: Dictionary = SaveCodec.dict(park, "config")
+	spawn_interval_ticks = int(cfg.get("spawn_interval_ticks", spawn_interval_ticks))
+	max_guests = int(cfg.get("max_guests", max_guests))
+	fixed_spawn = bool(cfg.get("fixed_spawn", fixed_spawn))  # efter setter ovenfor
+	guest_speed = SaveCodec.to_f(cfg.get("guest_speed"), guest_speed)
+	rides_per_guest_min = int(cfg.get("rides_per_guest_min", rides_per_guest_min))
+	rides_per_guest_max = int(cfg.get("rides_per_guest_max", rides_per_guest_max))
+	wander_steps_max = int(cfg.get("wander_steps_max", wander_steps_max))
+	_spawn_counter = int(park.get("spawn_counter", 0))
+	for sd: Variant in SaveCodec.arr(park, "staff"):
+		if not sd is Dictionary:
+			continue
+		var sdef: StaffDef = get_staff_def(str(sd.get("type", "")))
+		if sdef == null:
+			sdef = StaffDef.from_dict(SaveCodec.dict(sd, "def"))
+			register_staff_def(sdef)
+		var st := Staff.from_save(sd, sdef)
+		staff[st.id] = st
+	for dd: Variant in SaveCodec.arr(park, "decor"):
+		if not dd is Dictionary:
+			continue
+		var ddef: DecorDef = get_decor_def(str(dd.get("def_id", "")))
+		if ddef == null:
+			ddef = DecorDef.from_dict(SaveCodec.dict(dd, "def"))
+			register_decor_def(ddef)
+		var dc := Decor.from_save(dd, ddef)
+		decor[dc.id] = dc
+	_next_staff_id = int(park.get("next_staff_id", 1))
+	_next_decor_id = int(park.get("next_decor_id", 1))
+	_aura_dirty = true
+	_reachable_dirty = true
+
+
+func _staff_to_save() -> Array:
+	var ids: Array = staff.keys()
+	ids.sort()
+	var out: Array = []
+	for sid in ids:
+		out.append((staff[sid] as Staff).to_save())
+	return out
+
+
+func _decor_to_save() -> Array:
+	var out: Array = []
+	for did in _sorted_decor_ids():
+		out.append((decor[did] as Decor).to_save())
+	return out

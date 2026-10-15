@@ -1,0 +1,110 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="m_brown"]
+albedo_color = Color(0.45, 0.27, 0.16, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="m_dark"]
+albedo_color = Color(0.2, 0.2, 0.24, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="m_purple"]
+albedo_color = Color(0.5, 0.35, 0.65, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="m_white"]
+albedo_color = Color(0.95, 0.95, 0.95, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="m_yellow"]
+albedo_color = Color(0.98, 0.85, 0.35, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="mesh1"]
+material = SubResource("m_dark")
+size = Vector3(2.9, 0.15, 1.9)
+
+[sub_resource type="BoxMesh" id="mesh2"]
+material = SubResource("m_purple")
+size = Vector3(2.6, 1.4, 1.6)
+
+[sub_resource type="BoxMesh" id="mesh3"]
+material = SubResource("m_dark")
+size = Vector3(2.8, 0.08, 1.05)
+
+[sub_resource type="BoxMesh" id="mesh4"]
+material = SubResource("m_dark")
+size = Vector3(2.8, 0.08, 1.05)
+
+[sub_resource type="BoxMesh" id="mesh5"]
+material = SubResource("m_purple")
+size = Vector3(0.6, 1.2, 0.6)
+
+[sub_resource type="CylinderMesh" id="mesh6"]
+material = SubResource("m_dark")
+top_radius = 0.0
+bottom_radius = 0.45
+height = 0.7
+radial_segments = 4
+rings = 1
+
+[sub_resource type="BoxMesh" id="mesh7"]
+material = SubResource("m_brown")
+size = Vector3(0.45, 0.75, 0.05)
+
+[sub_resource type="BoxMesh" id="mesh8"]
+material = SubResource("m_yellow")
+size = Vector3(0.3, 0.3, 0.04)
+
+[sub_resource type="BoxMesh" id="mesh9"]
+material = SubResource("m_yellow")
+size = Vector3(0.3, 0.3, 0.04)
+
+[sub_resource type="SphereMesh" id="mesh10"]
+material = SubResource("m_white")
+radius = 0.15
+height = 8
+radial_segments = 10
+rings = 5
+
+[node name="HauntedHouse" type="Node3D"]
+
+[node name="Base" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0750, 0.0000)
+mesh = SubResource("mesh1")
+
+[node name="Walls" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.8500, 0.0000)
+mesh = SubResource("mesh2")
+
+[node name="Roof0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.7317, -0.6816, 0.0000, 0.6816, 0.7317, 0.0000, 1.8500, -0.4200)
+mesh = SubResource("mesh3")
+
+[node name="Roof2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.7317, 0.6816, 0.0000, -0.6816, 0.7317, 0.0000, 1.8500, 0.4200)
+mesh = SubResource("mesh4")
+
+[node name="Tower" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.9000, 2.1000, -0.3000)
+mesh = SubResource("mesh5")
+
+[node name="Spire" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.9000, 3.0500, -0.3000)
+mesh = SubResource("mesh6")
+
+[node name="Door" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.5200, 0.8100)
+mesh = SubResource("mesh7")
+
+[node name="Window0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.8000, 1.1000, 0.8100)
+mesh = SubResource("mesh8")
+
+[node name="Window1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8000, 1.1000, 0.8100)
+mesh = SubResource("mesh9")
+
+[node name="Ghost" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.9000, 2.2000, 0.3000)
+mesh = SubResource("mesh10")

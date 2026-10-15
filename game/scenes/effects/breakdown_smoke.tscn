@@ -1,0 +1,38 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="m_smoke"]
+shading_mode = 0
+transparency = 1
+vertex_color_use_as_albedo = true
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+
+[sub_resource type="SphereMesh" id="puff"]
+material = SubResource("m_smoke")
+radius = 0.15
+height = 0.3
+radial_segments = 6
+rings = 3
+
+[sub_resource type="Curve" id="grow"]
+_data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[node name="BreakdownSmoke" type="Node3D"]
+
+[node name="Smoke" type="CPUParticles3D" parent="."]
+amount = 24
+lifetime = 2.0
+mesh = SubResource("puff")
+emission_shape = 1
+emission_sphere_radius = 0.3
+direction = Vector3(0, 1, 0)
+spread = 20.0
+gravity = Vector3(0, 0.6, 0)
+initial_velocity_min = 0.4
+initial_velocity_max = 0.8
+scale_amount_min = 0.6
+scale_amount_max = 1.4
+scale_amount_curve = SubResource("grow")
+color = Color(0.3, 0.3, 0.32, 0.8)
