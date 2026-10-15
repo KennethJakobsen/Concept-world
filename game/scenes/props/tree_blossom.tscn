@@ -19,21 +19,21 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh2"]
 material = SubResource("m_pink")
 radius = 0.25
-height = 8
+height = 0.5
 radial_segments = 10
 rings = 5
 
 [sub_resource type="SphereMesh" id="mesh3"]
 material = SubResource("m_pink")
 radius = 0.18
-height = 8
+height = 0.36
 radial_segments = 10
 rings = 5
 
 [sub_resource type="SphereMesh" id="mesh4"]
 material = SubResource("m_pink")
 radius = 0.2
-height = 8
+height = 0.4
 radial_segments = 10
 rings = 5
 

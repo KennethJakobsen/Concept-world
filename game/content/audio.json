@@ -5,7 +5,8 @@
    "bus": "SFX",
    "volume_db": -6,
    "generator": "procedural",
-   "description": "Kort traeklonk: to daempede slag (180 Hz + 120 Hz sinus med hurtig decay, 0.25 s) med lidt stoej-transient."
+   "description": "Kort traeklonk: to daempede slag (180 Hz + 120 Hz sinus med hurtig decay, 0.25 s) med lidt stoej-transient.",
+   "min_interval_s": 0.08
   },
   "demolish": {
    "bus": "SFX",
@@ -15,10 +16,10 @@
   },
   "cash": {
    "bus": "SFX",
-   "volume_db": -10,
+   "volume_db": -22,
    "generator": "procedural",
-   "description": "Kasseapparat-pling: to hurtige sinustoner 1320 Hz og 1760 Hz, 0.15 s hver, blid decay.",
-   "throttle_per_s": 4
+   "description": "Bloedt, daempet pling: en enkelt sinustone (~1047 Hz) med lav overtone og blid decay, 0.25 s. Hoejst 1 pr. 3 s, kun naer kameraet.",
+   "min_interval_s": 3.0
   },
   "breakdown": {
    "bus": "SFX",
@@ -30,20 +31,23 @@
    "bus": "SFX",
    "volume_db": -8,
    "generator": "procedural",
-   "description": "Skruenoegle-tik: 3 korte metalliske klik (2.5 kHz trekant, 40 ms) med 120 ms mellemrum."
+   "description": "Skruenoegle-tik: 3 korte metalliske klik (2.5 kHz trekant, 40 ms) med 120 ms mellemrum.",
+   "min_interval_s": 1.5
   },
   "sweep": {
    "bus": "SFX",
-   "volume_db": -14,
+   "volume_db": -18,
    "generator": "procedural",
-   "description": "Kostestrog: baandpasfiltreret stoej (2-5 kHz) med svulmende envelope, 0.3 s."
+   "description": "Kostestrog: baandpasfiltreret stoej (2-5 kHz) med svulmende envelope, 0.3 s.",
+   "min_interval_s": 2.0
   },
   "ride_start": {
    "bus": "SFX",
-   "volume_db": -10,
+   "volume_db": -14,
    "generator": "procedural",
    "description": "Glad klokke: tre stigende toner (C5-E5-G5) i trekantbolge, 0.12 s hver.",
-   "max_distance": 25
+   "max_distance": 25,
+   "min_interval_s": 4.0
   },
   "cheer": {
    "bus": "SFX",
@@ -97,16 +101,16 @@
   },
   "menu": {
    "bus": "Music",
-   "volume_db": -14,
+   "volume_db": -20,
    "generator": "procedural",
-   "description": "Loop (16 s, 90 BPM): rolig valseagtig melodi i C-dur, trekantbolge lead + bloed sinus-bas, spilledaase-stemning.",
+   "description": "Loop (~43 s, 90 BPM, 3/4): rolig spilledaase-vals i A-mol/C-dur, A-A'-B-A' sektioner, akkordprogression, melodivariation, bloed bas.",
    "loop": true
   },
   "park": {
    "bus": "Music",
-   "volume_db": -16,
+   "volume_db": -22,
    "generator": "procedural",
-   "description": "Loop (32 s, 110 BPM): munter tivoli-orgel-stemning i G-dur, firkant/trekant lead, oom-pah bas, let percussion af stoej-hits.",
+   "description": "Loop (~35 s, 110 BPM, 4/4): munter tivoli-melodi i C-dur, A-A'-B-A' sektioner med I-vi-IV-V / IV-V-iii-vi progression, oom-pah bas, let percussion.",
    "loop": true
   }
  }

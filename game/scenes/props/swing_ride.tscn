@@ -63,7 +63,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh4"]
 material = SubResource("m_gold")
 radius = 0.12
-height = 8
+height = 0.24
 radial_segments = 10
 rings = 5
 

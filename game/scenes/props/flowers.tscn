@@ -43,7 +43,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh3"]
 material = SubResource("m_red")
 radius = 0.045
-height = 6
+height = 0.09
 radial_segments = 10
 rings = 5
 
@@ -58,7 +58,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh5"]
 material = SubResource("m_yellow")
 radius = 0.045
-height = 6
+height = 0.09
 radial_segments = 10
 rings = 5
 
@@ -73,7 +73,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh7"]
 material = SubResource("m_pink")
 radius = 0.045
-height = 6
+height = 0.09
 radial_segments = 10
 rings = 5
 
@@ -88,7 +88,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh9"]
 material = SubResource("m_purple")
 radius = 0.045
-height = 6
+height = 0.09
 radial_segments = 10
 rings = 5
 
@@ -103,7 +103,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh11"]
 material = SubResource("m_white")
 radius = 0.045
-height = 6
+height = 0.09
 radial_segments = 10
 rings = 5
 
@@ -118,7 +118,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh13"]
 material = SubResource("m_red")
 radius = 0.045
-height = 6
+height = 0.09
 radial_segments = 10
 rings = 5
 
@@ -133,7 +133,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh15"]
 material = SubResource("m_yellow")
 radius = 0.045
-height = 6
+height = 0.09
 radial_segments = 10
 rings = 5
 
@@ -148,7 +148,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh17"]
 material = SubResource("m_pink")
 radius = 0.045
-height = 6
+height = 0.09
 radial_segments = 10
 rings = 5
 
@@ -163,7 +163,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh19"]
 material = SubResource("m_purple")
 radius = 0.045
-height = 6
+height = 0.09
 radial_segments = 10
 rings = 5
 

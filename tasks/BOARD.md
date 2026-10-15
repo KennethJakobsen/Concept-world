@@ -72,6 +72,8 @@
 | T-051 | Bridge: dag/nat, effekter og lyd i scenen | gameplay | 🔍 review |
 | T-052 | Ur, lydindstillinger, advarsler | ui | 🔍 review |
 | T-053 | M4 verifikation | qa | 🔍 review |
+| T-055 | Bug: pling for voldsomt, musik monoton | gameplay | 🔍 review |
+| T-054 | Bug: lange "spyd" (strakte kugle-meshes), nedbrudseffekt | graphics | 🔍 review |
 
 ## Kommende milepæle
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger

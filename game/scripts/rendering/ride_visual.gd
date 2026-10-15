@@ -6,6 +6,7 @@ extends Node3D
 ## (Wheel/Cab*) kontra-roteres, saa de altid haenger lodret.
 
 const ACCEL: float = 0.6  ## andel af fuld fart pr. sekund
+const BROKEN_TILT_DEG: float = 4.0  ## synlig, men ikke absurd haeldning ved nedbrud
 const BULB_COUNT: int = 12
 const BULB_COLORS: Array[Color] = [Color(1.0, 0.85, 0.4), Color(1.0, 0.45, 0.35), Color(0.5, 0.8, 1.0)]
 
@@ -54,7 +55,7 @@ func set_broken(on: bool) -> void:
 	if on:
 		_speed = 0.0
 		_apply_speed()
-	rotation.z = deg_to_rad(1.5) if on else 0.0
+	rotation.z = deg_to_rad(BROKEN_TILT_DEG) if on else 0.0
 	set_lights(lights)
 
 

@@ -32,6 +32,7 @@ var _pending_ambience: StringName = &""
 var _pending_music: StringName = &""
 var _ambience_id: StringName = &""
 var _music_id: StringName = &""
+var _last_play_ms: Dictionary = {}  # StringName -> int (Time.get_ticks_msec), til min_interval_s
 
 
 func _init() -> void:
@@ -88,6 +89,8 @@ func _input(event: InputEvent) -> void:
 
 func play_sfx(id: StringName, pos: Vector3 = Vector3.INF) -> void:
 	if not _can_play():
+		return
+	if _throttled(id):
 		return
 	var s := _stream(id)
 	if s == null:
@@ -236,6 +239,19 @@ func _start(p: AudioStreamPlayer, s: AudioStream, id: StringName) -> void:
 	if e.has("bus"):
 		p.bus = StringName(e["bus"])
 	p.play()
+
+
+## T-055: katalog-felt `min_interval_s` – samme id spilles højst én gang pr. interval.
+func _throttled(id: StringName) -> bool:
+	var e: Dictionary = _catalog.get(id, {})
+	var gap_ms := int(float(e.get("min_interval_s", 0.0)) * 1000.0)
+	if gap_ms <= 0:
+		return false
+	var now := Time.get_ticks_msec()
+	if _last_play_ms.has(id) and now - int(_last_play_ms[id]) < gap_ms:
+		return true
+	_last_play_ms[id] = now
+	return false
 
 
 func _entry_db(id: StringName) -> float:

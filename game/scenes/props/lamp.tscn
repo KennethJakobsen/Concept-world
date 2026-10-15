@@ -21,7 +21,7 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh2"]
 material = SubResource("m_cream")
 radius = 0.08
-height = 8
+height = 0.16
 radial_segments = 10
 rings = 5
 

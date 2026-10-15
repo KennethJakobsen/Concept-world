@@ -17,7 +17,7 @@ const FX_SCENES: Dictionary = {
 	&"sweep_dust": preload("res://scenes/effects/sweep_dust.tscn"),
 	&"repair_sparks": preload("res://scenes/effects/repair_sparks.tscn"),
 }
-const COIN_INTERVAL: float = 0.25   ## maks. 4 coins/cash pr. sekund
+const COIN_INTERVAL: float = 2.5    ## T-055: højst én coins-effekt pr. 2,5 s
 const RIDE_SOUND_DIST: float = 25.0 ## ride_start kun hvis kameraet er tæt på
 const HAPPY_THOUGHTS: Array[String] = ["Sjovt!", "Det var godt!", "Dejligt med en pause."]
 const BUBBLE_TIME: float = 3.0
@@ -286,13 +286,15 @@ func _on_purchase_made(_guest_id: int, building_id: int, _amount: int) -> void:
 	_coin_cd = COIN_INTERVAL
 	var pos: Vector3 = _attraction_pos(a, 1.2)
 	_fx(&"coins", pos)
-	_audio(&"sfx", &"cash", pos)
+	if _camera_near(pos):  # T-055: kun pling tæt på kameraet (AudioManager throttler yderligere)
+		_audio(&"sfx", &"cash", pos)
 
 
 func _on_litter_swept(cell: Vector2i) -> void:
 	var pos: Vector3 = cell_center(cell)
 	_fx(&"sweep_dust", pos)
-	_audio(&"sfx", &"sweep", pos)
+	if _camera_near(pos):  # T-055
+		_audio(&"sfx", &"sweep", pos)
 	var sid: int = staff_near(pos, 0.8)
 	if sid >= 0 and (_staff[sid] as Node3D).has_method("play_emote"):
 		(_staff[sid] as Node3D).call("play_emote", &"sweep")

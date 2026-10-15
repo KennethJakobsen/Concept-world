@@ -47,14 +47,14 @@ rings = 1
 [sub_resource type="SphereMesh" id="mesh4"]
 material = SubResource("m_yellow")
 radius = 0.03
-height = 6
+height = 0.06
 radial_segments = 10
 rings = 5
 
 [sub_resource type="SphereMesh" id="mesh5"]
 material = SubResource("m_red")
 radius = 0.025
-height = 6
+height = 0.05
 radial_segments = 10
 rings = 5
 

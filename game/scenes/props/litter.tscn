@@ -37,7 +37,7 @@ size = Vector3(0.1, 0.05, 0.08)
 [sub_resource type="SphereMesh" id="mesh5"]
 material = SubResource("m_white")
 radius = 0.04
-height = 6
+height = 0.08
 radial_segments = 10
 rings = 5
 
