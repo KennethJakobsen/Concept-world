@@ -6,8 +6,8 @@ extends CanvasLayer
 const ATTRACTION_DIR: String = "res://content/attractions/"
 const DECOR_DIR: String = "res://content/decor/"
 const STAFF_DIR: String = "res://content/staff/"
-const TABS: Array[String] = ["rides", "shops", "decor", "staff"]
-const TAB_NAMES: Dictionary = {"rides": "Forlystelser", "shops": "Butikker", "decor": "Dekoration", "staff": "Personale"}
+const TABS: Array[String] = ["rides", "coaster", "shops", "decor", "staff"]
+const TAB_NAMES: Dictionary = {"rides": "Forlystelser", "coaster": "Rutsjebaner", "shops": "Butikker", "decor": "Dekoration", "staff": "Personale"}
 const STAFF_STATE_NAMES: Dictionary = {0: "Ledig", 1: "Går", 2: "Arbejder"}
 const STAFF_TASK_NAMES: Dictionary = {"repair": "Reparerer", "inspect": "Inspicerer", "sweep": "Fejer",
 	"empty_bin": "Tømmer skraldespand", "patrol": "Underholder"}
@@ -47,6 +47,15 @@ var current_tab: String = "rides"
 var _sel_staff: int = -1
 var _sel_attraction: int = -1
 var _sel_guest: int = -1
+# M5 (T-071)
+var objective_panel: ObjectivePanel
+var research_panel: ResearchPanel
+var result_dialog: ResultDialog
+var coaster_palette: CoasterPalette
+var _research_btn: Button
+var _attr_resume_btn: Button
+var _build_tool: Node
+var _scn_sim: ParkSim  ## sim, hvis scenario_finished er forbundet
 
 
 func _ready() -> void:
@@ -113,6 +122,16 @@ func layout(vp: Vector2) -> void:
 	# Personale-listen scroller inden for den plads der er mellem top- og byggebjælke.
 	var scroll: ScrollContainer = _staff_list_panel.get_node("V/Scroll")
 	scroll.custom_minimum_size.y = clampf(max_h - 90.0, 40.0, 260.0)
+	if objective_panel != null:
+		objective_panel.position = Vector2(MARGIN, top_h + 2.0 * MARGIN)
+		objective_panel.size = objective_panel.get_combined_minimum_size()
+	if coaster_palette != null:
+		var ph: float = _panel_height(coaster_palette, w)
+		coaster_palette.position = Vector2(MARGIN, maxf(MARGIN, bottom.position.y - MARGIN - ph))
+		coaster_palette.size = Vector2(w, ph)
+		_sort_tree(coaster_palette)
+	if result_dialog != null:
+		result_dialog.layout(vp)
 	if _toast != null:
 		var tw: float = minf(420.0, w)
 		_toast.size = Vector2(tw, 0)
@@ -122,7 +141,7 @@ func layout(vp: Vector2) -> void:
 
 
 func right_panels() -> Array[Control]:
-	return [_attr_panel, _guest_panel, _park_panel, _staff_panel, _staff_list_panel]
+	return [_attr_panel, _guest_panel, _park_panel, _staff_panel, _staff_list_panel, research_panel]
 
 
 static func _sort_tree(c: Control) -> void:
@@ -223,6 +242,8 @@ func _build_ui() -> void:
 	th.add_child(_stars)
 	_button(th, "Park", toggle_park_panel)
 	_button(th, "Personale", toggle_staff_list)
+	_research_btn = _button(th, "Forskning", toggle_research_panel)
+	_research_btn.visible = false
 	_button(th, "Menu", open_pause_menu)
 	_pause_btn = _button(th, "Pause", _on_pause)
 	for s: float in SPEEDS:
@@ -243,6 +264,9 @@ func _build_ui() -> void:
 		tb.name = "Tab_" + t
 		_tab_buttons[t] = tb
 	for d: AttractionDef in load_defs():
+		if d.kind == "coaster":
+			_add_build_button(bh, "coaster:" + d.id, "%s ($%d+)" % [d.name, d.build_cost], d.build_cost, "coaster")
+			continue
 		var tab: String = "rides" if d.kind == "ride" else "shops"
 		_add_build_button(bh, d.id, "%s ($%d)" % [d.name, d.build_cost], d.build_cost, tab)
 	for d: DecorDef in load_decor_defs():
@@ -263,6 +287,8 @@ func _build_ui() -> void:
 	_button(ph, "Pris -", _on_price.bind(-1))
 	_button(ph, "Pris +", _on_price.bind(1))
 	_attr_open_btn = _button(av, "Luk", _on_toggle_open)
+	_attr_resume_btn = _button(av, "Fortsæt byg", _on_resume_coaster)
+	_attr_resume_btn.visible = false
 	_button(av, "Riv ned", _on_demolish)
 	_button(av, "Luk panel", clear_selection)
 	_attr_panel.visible = false
@@ -325,6 +351,7 @@ func _build_ui() -> void:
 	_pause_menu.closed.connect(_on_pause_menu_closed)
 	_pause_menu.sim_provider = func() -> ParkSim: return sim
 
+	_build_m5(root)
 	_toast = Toast.new()
 	root.add_child(_toast)
 	if is_inside_tree():
@@ -457,7 +484,11 @@ func refresh() -> void:
 	_refresh_park(st)
 	_pause_btn.text = "Fortsæt" if sim.clock.paused else "Pause"
 	for id: String in _build_buttons:
-		(_build_buttons[id] as Button).disabled = not sim.economy.can_afford(_build_costs[id])
+		var b: Button = _build_buttons[id]
+		var locked: bool = is_build_locked(id)
+		b.disabled = locked or not sim.economy.can_afford(_build_costs[id])
+		LockOverlay.apply(b, locked)
+	_refresh_m5()
 	_refresh_attraction()
 	_refresh_guest()
 	_refresh_staff()
@@ -465,6 +496,7 @@ func refresh() -> void:
 
 
 func _connect_warnings() -> void:
+	_connect_scenario()
 	if sim == _warn_sim:
 		return
 	if _warn_sim != null and _warn_sim.has_signal("warning") and _warn_sim.is_connected("warning", show_warning):
@@ -563,6 +595,9 @@ func _refresh_attraction() -> void:
 	_attr_panel.visible = true
 	_attr_label.text = attraction_text(a, sim)
 	_attr_open_btn.text = "Luk" if a.is_open else "Åbn"
+	var unfinished: bool = a.track != null and a.building
+	_attr_resume_btn.visible = unfinished
+	_attr_open_btn.visible = not unfinished
 
 
 static func status_text(a: Attraction) -> String:
@@ -586,6 +621,8 @@ static func attraction_text(a: Attraction, p_sim: ParkSim) -> String:
 			lines.append("Mekaniker: #%d" % mid)
 		elif "broken" in a and bool(a.get("broken")):
 			lines.append("Ingen mekaniker ledig!" if _has_mechanic(p_sim) else "Ansæt en mekaniker!")
+	if a.def.kind == "coaster":
+		lines.append_array(coaster_lines(a))
 	lines.append("Besøgende: %d" % a.total_visitors)
 	lines.append("Omsætning: $%d" % a.total_revenue)
 	lines.append("Pris: $%d" % a.price)
@@ -704,6 +741,8 @@ func show_attraction(id: int) -> void:
 	_sel_staff = -1
 	_sel_guest = -1
 	_sel_attraction = id
+	if coaster_palette != null:
+		coaster_palette.resume_id = id
 	refresh()
 
 
@@ -724,6 +763,9 @@ func show_staff(id: int) -> void:
 
 
 func _hide_overviews() -> void:
+	if research_panel != null:
+		research_panel.wanted = false
+		research_panel.visible = false
 	if _park_panel != null:
 		_park_panel.visible = false
 		_staff_list_panel.visible = false
@@ -795,3 +837,153 @@ func _on_toggle_open() -> void:
 func _on_demolish() -> void:
 	if sim != null and _sel_attraction >= 0 and sim.cmd_remove_attraction(_sel_attraction):
 		clear_selection()
+
+
+# --- M5 (T-071): scenarie, forskning, rutsjebane ---
+
+func _build_m5(root: Control) -> void:
+	objective_panel = ObjectivePanel.new()
+	root.add_child(objective_panel)
+	objective_panel.build()
+	research_panel = ResearchPanel.new()
+	root.add_child(research_panel)
+	research_panel.build()
+	_place_right(research_panel)
+	coaster_palette = CoasterPalette.new()
+	root.add_child(coaster_palette)
+	coaster_palette.build()
+	coaster_palette.message.connect(show_message)
+	result_dialog = ResultDialog.new()
+	root.add_child(result_dialog)
+	result_dialog.build()
+	result_dialog.continue_pressed.connect(continue_free_play)
+	result_dialog.menu_pressed.connect(func() -> void: UiSession.go_to_main_menu())
+
+
+## Forsknings-id for en byggeknap ("" = aldrig låst).
+static func research_id(build_id: String) -> String:
+	if build_id in ["select", "path", "remove"] or build_id.begins_with("staff:"):
+		return ""
+	if build_id.begins_with("decor:"):
+		return build_id.substr(6)
+	if build_id.begins_with("coaster:"):
+		return build_id.substr(8)
+	return build_id
+
+
+func is_build_locked(build_id: String) -> bool:
+	var rid: String = research_id(build_id)
+	return rid != "" and sim != null and sim.has_method("is_unlocked") and not sim.is_unlocked(rid)
+
+
+func _refresh_m5() -> void:
+	objective_panel.refresh(sim)
+	var r_on: bool = ResearchPanel.enabled(sim)
+	if _research_btn.visible != r_on:
+		_research_btn.visible = r_on
+		if is_inside_tree():
+			layout(get_viewport().get_visible_rect().size)
+	research_panel.refresh(sim)
+	_find_build_tool()
+	coaster_palette.tool = _build_tool
+	var show_pal: bool = current_tab == "coaster"
+	if coaster_palette.visible != show_pal:
+		coaster_palette.visible = show_pal
+		if is_inside_tree():
+			layout(get_viewport().get_visible_rect().size)
+	if show_pal:
+		coaster_palette.refresh(sim)
+
+
+func _find_build_tool() -> void:
+	if _build_tool != null and is_instance_valid(_build_tool):
+		return
+	_build_tool = null
+	if not is_inside_tree():
+		return
+	var found: Array[Node] = get_tree().root.find_children("*", "BuildTool", true, false)
+	if found.is_empty():
+		return
+	_build_tool = found[0]
+	if _build_tool.has_signal("coaster_errors"):
+		_build_tool.connect("coaster_errors", show_coaster_errors)
+
+
+func _connect_scenario() -> void:
+	if sim == _scn_sim:
+		return
+	if _scn_sim != null and _scn_sim.has_signal("scenario_finished") and _scn_sim.is_connected("scenario_finished", on_scenario_finished):
+		_scn_sim.disconnect("scenario_finished", on_scenario_finished)
+	_scn_sim = sim
+	if result_dialog != null:
+		result_dialog.visible = false
+	if sim != null and sim.has_signal("scenario_finished"):
+		sim.connect("scenario_finished", on_scenario_finished)
+
+
+func on_scenario_finished(won: bool, reason: String) -> void:
+	if result_dialog == null:
+		return
+	var nm: String = ""
+	if sim != null and sim.has_method("scenario_status"):
+		nm = str(sim.scenario_status().get("name", ""))
+	result_dialog.show_result(won, reason, nm)
+	if is_inside_tree():
+		result_dialog.layout(get_viewport().get_visible_rect().size)
+
+
+## "Fortsæt i fri leg": luk dialogen og lad tiden køre videre.
+func continue_free_play() -> void:
+	result_dialog.visible = false
+	if sim != null:
+		sim.clock.paused = false
+		if sim.clock.speed <= 0.0:
+			sim.clock.speed = 1.0
+
+
+func toggle_research_panel() -> void:
+	var show: bool = not research_panel.wanted
+	if show:
+		clear_selection()
+		_park_panel.visible = false
+		_staff_list_panel.visible = false
+	research_panel.wanted = show
+	refresh()
+	if is_inside_tree():
+		layout(get_viewport().get_visible_rect().size)
+
+
+func show_message(t: String) -> void:
+	if _toast != null:
+		_toast.show_message(t)
+
+
+func show_coaster_errors(codes: Array) -> void:
+	show_message(CoasterPalette.errors_text(codes))
+
+
+func _on_resume_coaster() -> void:
+	set_tab("coaster")
+	coaster_palette.resume_id = _sel_attraction
+	coaster_palette.tool = _build_tool
+	coaster_palette.resume()
+
+
+## Ratings og statistik for en rutsjebane.
+static func coaster_lines(a: Attraction) -> Array[String]:
+	var out: Array[String] = []
+	if a.building:
+		out.append("Under opførelse")
+	if a.ratings.is_empty():
+		out.append("Ratings: ikke beregnet endnu")
+	else:
+		out.append("Spænding: %.2f" % float(a.ratings.get("excitement", 0.0)))
+		out.append("Intensitet: %.2f" % float(a.ratings.get("intensity", 0.0)))
+		out.append("Kvalme: %.2f" % float(a.ratings.get("nausea", 0.0)))
+	if a.profile != null:
+		out.append("Længde: %d m" % roundi(a.profile.length))
+		out.append("Max fart: %d km/t" % roundi(a.profile.max_speed * 3.6))
+		out.append("Max g: %.1f" % a.profile.max_g)
+	if a.track != null:
+		out.append("Stykker: %d" % a.track.pieces.size())
+	return out

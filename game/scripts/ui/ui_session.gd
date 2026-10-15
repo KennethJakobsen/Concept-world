@@ -42,6 +42,20 @@ static func start_new(p_seed: int) -> void:
 		change_scene(MAIN_SCENE)
 
 
+static func start_scenario(scenario_id: String, p_seed: int) -> void:
+	if has("start_scenario"):
+		call_session("start_scenario", [scenario_id, p_seed])
+	else:
+		start_new(p_seed)
+
+
+static func start_sandbox(p_seed: int) -> void:
+	if has("start_sandbox"):
+		call_session("start_sandbox", [p_seed])
+	else:
+		start_new(p_seed)
+
+
 static func load_slot(slot: String) -> bool:
 	if has("load_from"):
 		return bool(call_session("load_from", [slot]))

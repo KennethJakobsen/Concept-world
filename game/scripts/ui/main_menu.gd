@@ -1,6 +1,6 @@
 class_name MainMenu
 extends Control
-## Hovedmenu: Ny park, Fortsæt (autosave), Indlæs (slot-liste), Afslut (skjult på web).
+## Hovedmenu: Nyt scenarie (liste), Fri leg, Fortsæt (autosave), Indlæs (slot-liste), Afslut (skjult på web).
 
 const THEME_RES: Theme = preload("res://ui/theme.tres")
 
@@ -11,6 +11,9 @@ var _quit_btn: Button
 var _load_box: VBoxContainer
 var _slots: SaveSlotList
 var _status: Label
+var _scenario_box: VBoxContainer
+var _scenario_scroll: ScrollContainer
+var scenario_list: ScenarioList
 var settings: SettingsPanel
 
 
@@ -44,7 +47,21 @@ func build() -> void:
 	title.add_theme_font_size_override("font_size", 28)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(title)
-	_btn(v, "Ny park", new_park)
+	_btn(v, "Nyt scenarie", toggle_scenario_list)
+	_scenario_box = VBoxContainer.new()
+	_scenario_box.name = "Scenarios"
+	_scenario_box.visible = false
+	v.add_child(_scenario_box)
+	_scenario_scroll = ScrollContainer.new()
+	_scenario_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scenario_scroll.custom_minimum_size = Vector2(440, 200)
+	_scenario_box.add_child(_scenario_scroll)
+	scenario_list = ScenarioList.new()
+	scenario_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_scenario_scroll.add_child(scenario_list)
+	scenario_list.build()
+	scenario_list.scenario_chosen.connect(start_scenario)
+	_btn(v, "Fri leg", new_park)
 	_continue_btn = _btn(v, "Fortsæt", continue_park)
 	_btn(v, "Indlæs...", toggle_load_list)
 	_load_box = VBoxContainer.new()
@@ -91,6 +108,7 @@ func layout(vp: Vector2) -> void:
 	size = vp
 	(get_node("Background") as Control).size = vp
 	_slots.set_height(clampf(vp.y - 360.0, 60.0, 240.0))
+	_scenario_scroll.custom_minimum_size.y = clampf(vp.y - 400.0, 80.0, 320.0)
 	var m: Vector2 = _panel.get_combined_minimum_size()
 	_panel.size = m
 	_panel.position = ((vp - m) * 0.5).max(Vector2.ZERO)
@@ -102,8 +120,29 @@ func panel_rect() -> Rect2:
 	return Rect2(_panel.position, _panel.get_combined_minimum_size())
 
 
+static func _seed() -> int:
+	return int(Time.get_unix_time_from_system()) & 0x7fffffff
+
+
+## "Fri leg" (sandbox).
 func new_park() -> void:
-	UiSession.start_new(int(Time.get_unix_time_from_system()) & 0x7fffffff)
+	UiSession.start_sandbox(_seed())
+
+
+func start_scenario(scenario_id: String) -> void:
+	UiSession.start_scenario(scenario_id, _seed())
+
+
+func toggle_scenario_list() -> void:
+	set_scenario_list_visible(not _scenario_box.visible)
+
+
+func set_scenario_list_visible(on: bool) -> void:
+	_scenario_box.visible = on
+	if on:
+		_load_box.visible = false
+	if is_inside_tree():
+		layout(get_viewport().get_visible_rect().size)
 
 
 func continue_park() -> void:
@@ -117,6 +156,8 @@ func load_slot(slot: String) -> void:
 
 func toggle_load_list() -> void:
 	_load_box.visible = not _load_box.visible
+	if _load_box.visible:
+		_scenario_box.visible = false
 	refresh()
 	if is_inside_tree():
 		layout(get_viewport().get_visible_rect().size)

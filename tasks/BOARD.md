@@ -95,7 +95,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-068 | Sim: rutsjebane (bane, fysik, ratings) | simulation | review |
 | T-069 | Grafik: procedurel bane, tog, station | graphics | ✅ done |
 | T-070 | Gameplay: rutsjebane-værktøj, bridge, scenarie-flow | gameplay | review |
-| T-071 | UI: scenarievalg, mål, forskning, rutsjebane-menu | ui | todo |
+| T-071 | UI: scenarievalg, mål, forskning, rutsjebane-menu | ui | review |
 | T-072 | M5 verifikation | qa | todo |
 | T-073 | Bug: rutsjebanestationens tag vender forkert | graphics | ✅ done |
 | T-074 | Grafik: stiliserede bygninger med tema-elementer | graphics | review |

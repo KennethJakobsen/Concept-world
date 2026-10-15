@@ -36,7 +36,10 @@ func show_message(t: String) -> void:
 	visible = true
 
 
-func show_warning(code: StringName, _data: Dictionary = {}) -> void:
+func show_warning(code: StringName, data: Dictionary = {}) -> void:
+	if code == &"research_done":
+		show_message("Ny forskning: %s er klar til at bygge!" % M5Texts.item_name(str(data.get("item_id", ""))))
+		return
 	show_message(warning_text(code))
 
 
