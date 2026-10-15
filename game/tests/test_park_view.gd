@@ -28,3 +28,45 @@ func test_guest_nodes_created_and_removed() -> void:
 	assert_true(s.cmd_remove_path(Vector2i(10, 18)))
 	assert_eq(view.path_node_count(), before - 1)
 	view.free()
+
+
+func test_build_and_remove_all_buildings() -> void:
+	var view := ParkView.new()
+	var s := ParkSim.new(64, 64, 1)
+	s.economy.earn(1000000, "test")
+	view.setup(s)
+	var ids: Array[String] = ["carousel", "ferris_wheel", "bumper_cars", "burger_stand",
+		"drinks_stand", "ice_cream_stand", "toilet"]
+	var placed: Array[int] = []
+	var x: int = 2
+	for id in ids:
+		var a: Attraction = s.cmd_place_attraction(id, Vector2i(x, 10))
+		assert_true(a != null, "kan bygge %s" % id)
+		if a == null:
+			continue
+		assert_true(view.has_attraction_node(a.id), "node for %s" % id)
+		placed.append(a.id)
+		x += a.def.footprint.x + 1
+	assert_eq(view.attraction_node_count(), ids.size())
+	for aid in placed:
+		assert_true(s.cmd_remove_attraction(aid))
+		assert_true(not view.has_attraction_node(aid))
+	assert_eq(view.attraction_node_count(), 0)
+	view.free()
+
+
+func test_thought_bubbles_capped() -> void:
+	var view := ParkView.new()
+	var s := ParkSim.new(20, 20, 3)
+	view.setup(s)
+	s.spawn_interval_ticks = 1
+	s.max_guests = 30
+	assert_true(s.cmd_place_path(Vector2i(10, 18)))
+	for i in 200:
+		s.update(SimClock.TICK_DELTA)
+		view.sync_guests()
+		for g: Guest in s.guests.values():
+			g.thought = "Tanke %d" % i
+		view.update_bubbles(SimClock.TICK_DELTA)
+		assert_true(view.bubble_count() <= ParkView.MAX_BUBBLES)
+	view.free()

@@ -126,3 +126,8 @@ func test_real_content_parses() -> void:
 			assert_true(d.kind in ["ride", "shop", "toilet"], f)
 			n += 1
 	assert_true(n > 0)
+	var s := ParkSim.new(30, 30, 1)
+	var c: Attraction = s.cmd_place_attraction("carousel", Vector2i(2, 2))
+	var g := Guest.new(1, Vector2i.ZERO)
+	g.happiness = 50.0
+	assert_eq(s.price_value(c, g), 7.0)  # GDD: karrusel 7 ved neutral glæde

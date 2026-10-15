@@ -77,7 +77,7 @@ func test_no_money_leaves() -> void:
 	s.guest_spawned.connect(func(g: Guest) -> void: seen.append([g.state, g.thought]))
 	_step(s, 200)
 	assert_true(not seen.is_empty())
-	assert_eq(seen[0], [Guest.State.LEAVING, "Jeg har ikke flere penge."])
+	assert_eq(seen[0], [Guest.State.LEAVING, "Jeg vil hjem."])
 	assert_true(_removed.has(1))
 	assert_eq(s.attractions[0].total_visitors, 0)
 
@@ -134,3 +134,91 @@ func test_get_stats() -> void:
 	st = s.get_stats()
 	assert_eq(st["guests"], 1)
 	assert_eq(st["avg_happiness"], 70.0)
+
+
+# --- T-025: GDD-afstemning ---
+
+func _ride(id: String, exc: int) -> AttractionDef:
+	return AttractionDef.from_dict({"id": id, "kind": "ride", "footprint": [1, 1], "capacity": 1,
+		"ride_ticks": 5, "ticket_price": 1, "excitement": exc})
+
+
+func test_price_value_formulas() -> void:
+	var s := _sim(_bal())
+	s.register_def(_ride("r", 25))
+	var ride: Attraction = s.cmd_place_attraction("r", Vector2i(2, 2))
+	var shop: Attraction = s.attractions[0]
+	var g := Guest.new(99, Vector2i.ZERO)
+	g.needs = {"hunger": 80.0}
+	g.happiness = 100.0
+	assert_eq(s.price_value(ride, g), 7.0 * 1.25)
+	assert_eq(s.price_value(shop, g), 4.0 * 1.8 * 1.25)
+	g.happiness = 0.0
+	g.needs = {"hunger": 0.0}
+	assert_eq(s.price_value(shop, g), 4.0 * 0.75)
+
+
+func test_reject_penalty_is_two() -> void:
+	var s := _sim(_bal(1000, 0.5))
+	assert_true(s.cmd_set_price(s.attractions[0].id, 50))
+	var seen: Dictionary = {}
+	for i in 600:
+		var before: Dictionary = {}
+		for g: Guest in s.guests.values():
+			before[g.id] = [g.happiness, g.rejected_ids.size()]
+		s.update(SimClock.TICK_DELTA)
+		for g: Guest in s.guests.values():
+			if before.has(g.id) and g.rejected_ids.size() > before[g.id][1]:
+				seen[g.id] = before[g.id][0] - g.happiness
+	assert_true(not seen.is_empty())
+	for d: float in seen.values():
+		assert_true(absf(d - 2.0) < 1e-4, "glæde -2")
+
+
+func test_start_needs_in_range_and_energy_leave() -> void:
+	var b := Balance.from_dicts({"guest_money_min": 50, "guest_money_max": 50},
+		{"needs": {"energy": {"rate": 0.0, "threshold": 80}}, "spawn_interval_ticks": 1, "max_guests": 20})
+	assert_eq(b.need_start_max, 30.0)
+	var s := _sim(b)
+	var starts: Array = []
+	s.guest_spawned.connect(func(g: Guest) -> void: starts.append(g.needs["energy"]))
+	_step(s, 30)
+	for v: float in starts:
+		assert_true(v >= 0.0 and v <= 30.0)
+	var g: Guest = s.guests.values()[0]
+	g.needs["energy"] = 90.0  # over threshold, men < 100: bliver
+	s._choose_goal(g)
+	assert_true(g.state != Guest.State.LEAVING)
+	g.needs["energy"] = 100.0
+	s._choose_goal(g)
+	assert_eq(g.state, Guest.State.LEAVING)
+	assert_eq(g.thought, "Jeg vil hjem.")
+
+
+func test_leaves_when_money_below_cheapest() -> void:
+	var s := _sim(_bal(3, 0.0))  # burger koster 4
+	var seen: Array = []
+	s.guest_spawned.connect(func(g: Guest) -> void: seen.append(g.state))
+	_step(s, 20)
+	assert_eq(seen[0], Guest.State.LEAVING)
+
+
+func test_ride_choice_weighted_by_excitement() -> void:
+	var s := _sim(_bal(1000, 0.0))
+	s.register_def(_ride("dull", 1))
+	s.register_def(_ride("wild", 50))
+	var dull: Attraction = s.cmd_place_attraction("dull", Vector2i(9, 16))
+	var wild: Attraction = s.cmd_place_attraction("wild", Vector2i(11, 16))
+	s.cmd_set_price(dull.id, 0)
+	s.cmd_set_price(wild.id, 0)
+	var g := Guest.new(99, Vector2i(10, 17))
+	g.money = 1000
+	g.needs = {}
+	g.rides_left = 1
+	s.guests[g.id] = g
+	var counts: Dictionary = {dull.id: 0, wild.id: 0}
+	for i in 300:
+		g.cell = Vector2i(10, 17)
+		s._choose_goal(g)
+		counts[g.target_attraction_id] += 1
+	assert_true(counts[wild.id] > counts[dull.id] * 10, str(counts))

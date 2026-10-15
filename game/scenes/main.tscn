@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/rendering/park_camera.gd" id="1"]
 
@@ -7,6 +7,10 @@
 [ext_resource type="Script" path="res://scripts/bridge/park_view.gd" id="3"]
 
 [ext_resource type="Script" path="res://scripts/building/build_tool.gd" id="4"]
+
+[ext_resource type="Script" path="res://scripts/bridge/selection.gd" id="sel"]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/hud.tscn" id="hud"]
 
 [sub_resource type="ShaderMaterial" id="ground_mat"]
 shader = ExtResource("2")
@@ -45,10 +49,16 @@ script = ExtResource("1")
 
 [node name="Camera3D" type="Camera3D" parent="ParkCamera"]
 
-[node name="ParkView" type="Node3D" parent="."]
+[node name="ParkView" type="Node3D" parent="." groups=["park_view"]]
 script = ExtResource("3")
 
 [node name="BuildTool" type="Node" parent="."]
 script = ExtResource("4")
 park_view_path = NodePath("../ParkView")
 camera_path = NodePath("../ParkCamera/Camera3D")
+selection_path = NodePath("../Selection")
+
+[node name="Selection" type="Node" parent="." groups=["selection"]]
+script = ExtResource("sel")
+
+[node name="Hud" parent="." instance=ExtResource("hud")]

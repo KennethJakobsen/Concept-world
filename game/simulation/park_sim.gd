@@ -10,7 +10,7 @@ signal attraction_removed(attraction_id: int)
 const NEED_THOUGHTS: Dictionary = {
 	"hunger": "Jeg er sulten!",
 	"thirst": "Jeg er tørstig!",
-	"toilet": "Jeg skal på toilettet!",
+	"toilet": "Jeg skal tisse!",
 	"energy": "Jeg er træt!",
 }
 
@@ -139,9 +139,33 @@ func get_stats() -> Dictionary:
 	}
 
 
-## Hvad gæster maksimalt vil betale for attraktionen.
-func price_value(a: Attraction) -> float:
-	return maxf(1.0, a.def.ticket_price * balance.price_tolerance + a.def.excitement * balance.excitement_value)
+const LEAVE_THOUGHT: String = "Jeg vil hjem."
+const TOO_EXPENSIVE_THOUGHT: String = "For dyrt!"
+
+
+## Maks betalingsvilje (GDD). Uden gæst: glæde = happiness_start, behov = 0.
+func price_value(a: Attraction, g: Guest = null) -> float:
+	var happiness: float = g.happiness if g != null else balance.happiness_start
+	var v: float
+	if a.def.kind == "ride":
+		v = balance.ride_price_base + a.def.excitement * balance.ride_price_per_excitement
+	else:
+		var need: float = 0.0
+		if g != null:
+			for k: String in a.def.satisfies:
+				if a.satisfies_need(k):
+					need = maxf(need, float(g.needs.get(k, 0.0)))
+		v = a.def.ticket_price * (1.0 + need / 100.0)
+	return v * (balance.happiness_price_base + happiness * balance.happiness_price_factor)
+
+
+## Billigste pris blandt åbne bygninger (-1 hvis ingen er åbne).
+func cheapest_open_price() -> int:
+	var best: int = -1
+	for a in attractions:
+		if a.is_open and (best < 0 or a.price < best):
+			best = a.price
+	return best
 
 
 func get_def(def_id: String) -> AttractionDef:
@@ -231,7 +255,7 @@ func _update_needs(g: Guest) -> bool:
 	g.happiness = clampf(g.happiness - over * balance.happiness_decay_when_need_over_threshold, 0.0, 100.0)
 	if g.state != Guest.State.WALKING:
 		return true
-	if g.happiness <= balance.leave_happiness or (crossed and g.seeking_need == ""):
+	if g.happiness < balance.leave_happiness or (crossed and g.seeking_need == ""):
 		if g.next_cell == g.cell or g.progress <= 0.0:
 			_choose_goal(g)
 			return false
@@ -282,7 +306,7 @@ func _choose_goal(g: Guest) -> void:
 	# 1) Akutte behov – mest akutte først, nærmeste åbne bygning der dækker det.
 	var urgent: Array = []
 	for k: String in g.needs:
-		if k != "energy" and g.needs[k] > balance.need_threshold(k):
+		if g.needs[k] > balance.need_threshold(k):
 			urgent.append(k)
 	urgent.sort_custom(func(x: String, y: String) -> bool:
 		return g.needs[x] > g.needs[y] or (g.needs[x] == g.needs[y] and x < y))
@@ -290,7 +314,7 @@ func _choose_goal(g: Guest) -> void:
 		var best: Attraction = null
 		var best_route: Array[Vector2i] = []
 		for a in attractions:
-			if not _usable(g, a) or not a.satisfies_need(need):
+			if not a.satisfies_need(need) or not _usable(g, a):
 				continue
 			var route: Array[Vector2i] = path_finder.find_path(g.cell, a.entrance_cell)
 			if route.is_empty():
@@ -303,7 +327,8 @@ func _choose_goal(g: Guest) -> void:
 			g.thought = NEED_THOUGHTS.get(need, "")
 			_go_to(g, best, best_route)
 			return
-		g.thought = NEED_THOUGHTS.get(need, "")
+		if g.thought != TOO_EXPENSIVE_THOUGHT:
+			g.thought = NEED_THOUGHTS.get(need, "")
 	# 2) Forlystelser
 	if g.rides_left > 0:
 		var options: Array[Attraction] = []
@@ -312,7 +337,17 @@ func _choose_goal(g: Guest) -> void:
 					and not path_finder.find_path(g.cell, a.entrance_cell).is_empty():
 				options.append(a)
 		if not options.is_empty():
-			var a: Attraction = options[rng.randi_range(0, options.size() - 1)]
+			# Vægtet efter excitement (min. vægt 1).
+			var total: int = 0
+			for o in options:
+				total += maxi(1, o.def.excitement)
+			var r: int = rng.randi_range(0, total - 1)
+			var a: Attraction = options[options.size() - 1]
+			for o in options:
+				r -= maxi(1, o.def.excitement)
+				if r < 0:
+					a = o
+					break
 			_go_to(g, a, path_finder.find_path(g.cell, a.entrance_cell))
 			return
 		if g.wander_steps < wander_steps_max:
@@ -323,19 +358,31 @@ func _choose_goal(g: Guest) -> void:
 	_start_leaving(g)
 
 
+## GDD: glæde < leave_happiness, penge < billigste åbne pris, eller energy >= leave_energy.
 func _leave_reason(g: Guest) -> String:
-	if g.money <= 0:
-		return "Jeg har ikke flere penge."
-	if g.happiness <= balance.leave_happiness:
-		return "Jeg vil hjem!"
-	if g.needs.has("energy") and g.needs["energy"] >= balance.need_threshold("energy"):
-		return "Jeg er træt, jeg går hjem."
+	var cheapest: int = cheapest_open_price()
+	if g.happiness < balance.leave_happiness \
+			or (cheapest >= 0 and g.money < cheapest) \
+			or float(g.needs.get("energy", 0.0)) >= balance.leave_energy:
+		return LEAVE_THOUGHT
 	return ""
 
 
-## Åben, ikke afvist og til at betale.
+## Åben, ikke afvist, til at betale og under betalingsvilje.
+## Er prisen over betalingsviljen afvises bygningen (tanke "For dyrt!", glæde-straf).
 func _usable(g: Guest, a: Attraction) -> bool:
-	return a.is_open and not g.rejected_ids.has(a.id) and a.price <= g.money
+	if not a.is_open or g.rejected_ids.has(a.id) or a.price > g.money:
+		return false
+	if a.price > price_value(a, g):
+		_reject_price(g, a)
+		return false
+	return true
+
+
+func _reject_price(g: Guest, a: Attraction) -> void:
+	g.thought = TOO_EXPENSIVE_THOUGHT
+	g.happiness = maxf(0.0, g.happiness - balance.reject_happiness_penalty)
+	g.rejected_ids.append(a.id)
 
 
 func _go_to(g: Guest, a: Attraction, route: Array[Vector2i]) -> void:
@@ -416,8 +463,8 @@ func _try_enter(g: Guest, a: Attraction) -> String:
 	var reason: String = ""
 	if not a.is_open:
 		reason = "Den er lukket!"
-	elif a.price > price_value(a):
-		reason = "For dyrt!"
+	elif a.price > price_value(a, g):
+		reason = TOO_EXPENSIVE_THOUGHT
 		g.happiness = maxf(0.0, g.happiness - balance.reject_happiness_penalty)
 	elif a.price > g.money:
 		reason = "Jeg har ikke råd!"

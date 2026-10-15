@@ -28,13 +28,23 @@ var leave_happiness: float = 20.0
 var spawn_interval_ticks: int = 40
 var max_guests: int = 50
 var speed: float = 0.1
-## Startværdi for behov trækkes i [0, need_start_max].
-var need_start_max: float = 20.0
-## Prisvurdering: værdi = ticket_price(default) * price_tolerance + excitement * excitement_value.
+## Startværdi for behov trækkes i [0, need_start_max] (GDD: 0–30).
+var need_start_max: float = 30.0
+## Gæsten går hjem når energy >= denne værdi (GDD: 100).
+var leave_energy: float = 100.0
+## Prisvurdering (GDD):
+##   forlystelse: max = ride_price_base + excitement * ride_price_per_excitement
+##   bod/toilet:  max = ticket_price(default) * (1 + behov / 100)
+##   begge:       max *= happiness_price_base + happiness * happiness_price_factor
+var ride_price_base: float = 2.0
+var ride_price_per_excitement: float = 0.2
+var happiness_price_base: float = 0.75
+var happiness_price_factor: float = 0.005
+## Ældre nøgler fra T-020 (ubrugt efter T-025, bevaret for kompatibilitet).
 var price_tolerance: float = 1.5
 var excitement_value: float = 0.1
 ## Glæde-tab når en gæst afviser pga. pris / ikke finder noget til et akut behov.
-var reject_happiness_penalty: float = 5.0
+var reject_happiness_penalty: float = 2.0
 ## Glæde-gevinst ved at få dækket et behov over tærsklen.
 var need_relief_happiness: float = 5.0
 
@@ -63,6 +73,11 @@ static func from_dicts(economy: Dictionary, guests: Dictionary) -> Balance:
 	b.max_guests = int(guests.get("max_guests", b.max_guests))
 	b.speed = float(guests.get("speed", b.speed))
 	b.need_start_max = float(guests.get("need_start_max", b.need_start_max))
+	b.leave_energy = float(guests.get("leave_energy", b.leave_energy))
+	b.ride_price_base = float(guests.get("ride_price_base", b.ride_price_base))
+	b.ride_price_per_excitement = float(guests.get("ride_price_per_excitement", b.ride_price_per_excitement))
+	b.happiness_price_base = float(guests.get("happiness_price_base", b.happiness_price_base))
+	b.happiness_price_factor = float(guests.get("happiness_price_factor", b.happiness_price_factor))
 	b.price_tolerance = float(guests.get("price_tolerance", b.price_tolerance))
 	b.excitement_value = float(guests.get("excitement_value", b.excitement_value))
 	b.reject_happiness_penalty = float(guests.get("reject_happiness_penalty", b.reject_happiness_penalty))
