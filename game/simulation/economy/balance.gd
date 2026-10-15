@@ -77,6 +77,8 @@ var litter_chance_with_bin: float = 0.1
 var bin_radius: int = 4
 var bin_capacity: int = 20
 var litter_max_per_cell: int = 5
+## T-043: gæsten bærer varen og smider affaldet efter 1..litter_carry_cells sti-celler.
+var litter_carry_cells: int = 8
 var dirty_threshold: int = 2
 var happiness_penalty_dirty_per_tick: float = 0.05
 var thought_dirty: String = "Her er beskidt!"
@@ -103,6 +105,7 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 	b.bin_radius = int(staff_rules.get("bin_radius", b.bin_radius))
 	b.bin_capacity = int(staff_rules.get("bin_capacity", b.bin_capacity))
 	b.litter_max_per_cell = int(staff_rules.get("litter_max_per_cell", b.litter_max_per_cell))
+	b.litter_carry_cells = int(staff_rules.get("litter_carry_cells", b.litter_carry_cells))
 	b.dirty_threshold = int(staff_rules.get("dirty_threshold", b.dirty_threshold))
 	b.happiness_penalty_dirty_per_tick = float(staff_rules.get("happiness_penalty_dirty_per_tick", b.happiness_penalty_dirty_per_tick))
 	b.thought_dirty = str(staff_rules.get("thought_dirty", b.thought_dirty))

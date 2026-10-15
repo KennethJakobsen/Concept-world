@@ -28,6 +28,8 @@ var paid: int = 0
 ## Bænk gæsten går mod/hviler på (-1 = ingen) og resterende hviletid.
 var target_decor_id: int = -1
 var rest_ticks_left: int = 0
+## T-043: antal sti-celler til affaldet smides (0 = bærer intet).
+var litter_steps_left: int = 0
 
 
 func _init(p_id: int, p_cell: Vector2i) -> void:
@@ -47,6 +49,7 @@ func to_save() -> Dictionary:
 		"needs": SaveCodec.float_dict(needs), "thought": thought, "rejected_ids": rejected_ids.duplicate(),
 		"seeking_need": seeking_need, "paid": paid,
 		"target_decor_id": target_decor_id, "rest_ticks_left": rest_ticks_left,
+		"litter_steps_left": litter_steps_left,
 	}
 
 
@@ -68,4 +71,5 @@ static func from_save(d: Dictionary) -> Guest:
 	g.paid = int(d.get("paid", 0))
 	g.target_decor_id = int(d.get("target_decor_id", -1))
 	g.rest_ticks_left = int(d.get("rest_ticks_left", 0))
+	g.litter_steps_left = int(d.get("litter_steps_left", 0))
 	return g

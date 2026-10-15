@@ -3,7 +3,9 @@ extends Node
 ## Byggeværktøjer: sender kommandoer til ParkSim via ParkView og viser preview.
 ## Værktøj vælges via Selection.build_tool_requested (UI) eller taster:
 ## 1=sti 2=karrusel 3=pariserhjul 4=radiobiler 5=burger 6=drikke 7=is 8=toilet
-## X=fjern bygning, Esc/0=vælg. Venstre=byg/træk, højre=fjern sti.
+## X=fjern bygning/dekoration, 0=vælg, Esc=vælg (eller pause-menu hvis allerede vælg).
+## "decor:<id>" placerer dekoration, "staff:<type>" ansætter på sti,
+## "staff_move:<id>" flytter personale (klik på sti). I vælg-værktøjet kan valgt personale trækkes. Venstre=byg/træk, højre=fjern sti.
 ## Space = pause, +/- = hastighed.
 
 const HIGHLIGHT_SCRIPT: Script = preload("res://scripts/rendering/cell_highlight.gd")
@@ -14,8 +16,11 @@ const TOOL_SELECT: String = "select"
 const KEY_TOOLS: Dictionary = {
 	KEY_1: "path", KEY_2: "carousel", KEY_3: "ferris_wheel", KEY_4: "bumper_cars",
 	KEY_5: "burger_stand", KEY_6: "drinks_stand", KEY_7: "ice_cream_stand", KEY_8: "toilet",
-	KEY_X: "remove", KEY_0: "select", KEY_ESCAPE: "select",
+	KEY_X: "remove", KEY_0: "select",
 }
+const PREFIX_DECOR: String = "decor:"
+const PREFIX_STAFF: String = "staff:"
+const PREFIX_MOVE: String = "staff_move:"
 const GUEST_PICK_RADIUS: float = 0.5
 
 @export var park_view_path: NodePath
@@ -30,6 +35,7 @@ var _picker: GridPicker
 var _highlights: Array[CellHighlight] = []
 var _dragging: int = 0  ## 0 = ingen, 1 = placér, 2 = fjern
 var _speed_idx: int = 1
+var _drag_staff: int = -1  ## personale der trækkes i vælg-værktøjet
 
 
 func _ready() -> void:
@@ -52,7 +58,7 @@ func set_tool(def_id: String) -> void:
 
 
 func _building_def() -> AttractionDef:
-	if tool == TOOL_PATH or tool == TOOL_REMOVE or tool == TOOL_SELECT:
+	if tool == TOOL_PATH or tool == TOOL_REMOVE or tool == TOOL_SELECT or tool.contains(":"):
 		return null
 	return _view.sim.get_def(tool)
 
@@ -101,7 +107,11 @@ func _update_preview() -> void:
 	var origin: Vector2i = _origin_under_mouse()
 	if origin == GridPicker.INVALID:
 		return
-	if tool == TOOL_REMOVE or tool == TOOL_SELECT:
+	if tool == TOOL_REMOVE and _view.decor_at(origin) >= 0:
+		_ensure_highlights(1)
+		_highlights[0].show_at(origin, false)
+		return
+	if (tool == TOOL_REMOVE or tool == TOOL_SELECT) and _drag_staff < 0:
 		var a: Attraction = w.get_attraction_at(origin)
 		if a == null:
 			return
@@ -113,7 +123,12 @@ func _update_preview() -> void:
 				j += 1
 		return
 	_ensure_highlights(fp.x * fp.y)
-	if def != null:
+	if tool.begins_with(PREFIX_DECOR):
+		var dd: DecorDef = _view.sim.get_decor_def(tool.substr(PREFIX_DECOR.length()))
+		_highlights[0].show_at(origin, _view.sim.can_place_decor(dd, origin) and dd != null and _view.sim.economy.can_afford(dd.build_cost))
+	elif tool.begins_with(PREFIX_STAFF) or tool.begins_with(PREFIX_MOVE) or _drag_staff >= 0:
+		_highlights[0].show_at(origin, w.is_walkable(origin))
+	elif def != null:
 		var valid: bool = w.can_place_attraction(def, origin) and _view.sim.economy.can_afford(def.build_cost)
 		var i: int = 0
 		for y in fp.y:
@@ -132,7 +147,34 @@ func place_building(def_id: String, origin: Vector2i) -> Attraction:
 	return a
 
 
+func place_decor(def_id: String, cell: Vector2i) -> int:
+	var id: int = _view.sim.cmd_place_decor(def_id, cell)
+	if id >= 0:
+		var dd: DecorDef = _view.sim.get_decor_def(def_id)
+		_view.spawn_floating_text(ParkView.cell_center(cell), "-%d" % dd.build_cost, Color(1, 0.4, 0.4))
+	return id
+
+
+func hire_staff(type_id: String, cell: Vector2i) -> int:
+	var id: int = _view.sim.cmd_hire_staff(type_id, cell)
+	if id >= 0 and _selection != null:
+		_selection.selected_staff.emit(id)
+	return id
+
+
+func move_staff(staff_id: int, cell: Vector2i) -> bool:
+	return _view.sim.cmd_move_staff(staff_id, cell)
+
+
+## Fjerner dekoration på cellen, ellers bygning.
 func remove_building_at(cell: Vector2i) -> bool:
+	var did: int = _view.decor_at(cell)
+	if did >= 0:
+		var refund: int = (_view.sim.get_decor(did) as Decor).def.build_cost / 2
+		if _view.sim.cmd_remove_decor(did):
+			_view.spawn_floating_text(ParkView.cell_center(cell), "+%d" % refund, Color(0.4, 1, 0.4))
+			return true
+		return false
 	var a: Attraction = _view.sim.world.get_attraction_at(cell)
 	if a == null:
 		return false
@@ -146,19 +188,25 @@ func remove_building_at(cell: Vector2i) -> bool:
 	return true
 
 
-func select_at(cell: Vector2i, ground: Variant) -> void:
+## Prioritet: personale, gæst, bygning. Returnerer valgt personale-id (eller -1).
+func select_at(cell: Vector2i, ground: Variant) -> int:
 	if _selection == null:
-		return
+		return -1
 	if ground != null:
+		var sid: int = _view.staff_near(ground as Vector3, GUEST_PICK_RADIUS)
+		if sid >= 0:
+			_selection.selected_staff.emit(sid)
+			return sid
 		var gid: int = _view.guest_near(ground as Vector3, GUEST_PICK_RADIUS)
 		if gid >= 0:
 			_selection.selected_guest.emit(gid)
-			return
+			return -1
 	var a: Attraction = _view.sim.world.get_attraction_at(cell)
 	if a != null:
 		_selection.selected_attraction.emit(a.id)
 	else:
 		_selection.cleared.emit()
+	return -1
 
 
 static func _center(a: Attraction) -> Vector3:
@@ -185,6 +233,11 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if not mb.pressed:
 			_dragging = 0
+			if _drag_staff >= 0 and mb.button_index == MOUSE_BUTTON_LEFT:
+				var drop: Vector2i = _picker.cell_under_mouse(_camera)
+				if drop != GridPicker.INVALID:
+					move_staff(_drag_staff, drop)
+				_drag_staff = -1
 			return
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			var cell: Vector2i = _picker.cell_under_mouse(_camera)
@@ -194,7 +247,15 @@ func _unhandled_input(event: InputEvent) -> void:
 			elif cell == GridPicker.INVALID:
 				return
 			elif tool == TOOL_SELECT:
-				select_at(cell, _ground_under_mouse())
+				_drag_staff = select_at(cell, _ground_under_mouse())
+			elif tool.begins_with(PREFIX_DECOR):
+				place_decor(tool.substr(PREFIX_DECOR.length()), cell)
+			elif tool.begins_with(PREFIX_STAFF):
+				if hire_staff(tool.substr(PREFIX_STAFF.length()), cell) >= 0:
+					_request_tool(TOOL_SELECT)
+			elif tool.begins_with(PREFIX_MOVE):
+				if move_staff(tool.substr(PREFIX_MOVE.length()).to_int(), cell):
+					_request_tool(TOOL_SELECT)
 			elif tool == TOOL_REMOVE:
 				remove_building_at(cell)
 			else:
@@ -208,12 +269,13 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo:
 		var k := event as InputEventKey
 		var clock: SimClock = _view.sim.clock
+		if k.keycode == KEY_ESCAPE:
+			handle_escape()
+			get_viewport().set_input_as_handled()
+			return
 		if KEY_TOOLS.has(k.keycode):
 			var id: String = KEY_TOOLS[k.keycode]
-			if _selection != null:
-				_selection.build_tool_requested.emit(id)  # UI holder sig i sync; set_tool kaldes via signal
-			else:
-				set_tool(id)
+			_request_tool(id)
 			if id == TOOL_SELECT and _selection != null:
 				_selection.cleared.emit()
 			get_viewport().set_input_as_handled()
@@ -230,3 +292,22 @@ func _unhandled_input(event: InputEvent) -> void:
 			_:
 				return
 		get_viewport().set_input_as_handled()
+
+
+## Esc: værktøj ≠ select → select; ellers pause-menu.
+func handle_escape() -> void:
+	_drag_staff = -1
+	if tool != TOOL_SELECT:
+		_request_tool(TOOL_SELECT)
+		if _selection != null:
+			_selection.cleared.emit()
+	elif _selection != null:
+		_selection.pause_menu_requested.emit()
+
+
+## Udsender via Selection (så UI holder sig i sync); set_tool kaldes via signalet.
+func _request_tool(id: String) -> void:
+	if _selection != null:
+		_selection.build_tool_requested.emit(id)
+	else:
+		set_tool(id)

@@ -164,7 +164,7 @@ func register_def(def: AttractionDef) -> void:
 func attraction_score() -> float:
 	var raw: float = 0.0
 	for a in attractions:
-		if not is_operating(a):
+		if not is_operating(a) or a.broken:  # T-043: ødelagte tæller ikke i tiltrækning (men i max_guests)
 			continue
 		if a.def.kind == "ride":
 			raw += a.def.excitement * balance.weight_ride
@@ -617,6 +617,10 @@ func _tick_guest(g: Guest) -> void:
 			return
 		g.cell = g.next_cell
 		g.progress = 0.0
+		if g.litter_steps_left > 0:
+			g.litter_steps_left -= 1
+			if g.litter_steps_left == 0:
+				_drop_litter(g)
 		if not g.path.is_empty():
 			g.next_cell = g.path.pop_front()
 			return
@@ -693,7 +697,7 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 		var g: Guest = guests[gid]
 		_apply_visit(g, a)
 		if a.def.kind == "shop":
-			_drop_litter(g)
+			g.litter_steps_left = rng.randi_range(1, maxi(1, balance.litter_carry_cells))
 		if a.def.kind == "ride":
 			g.rides_left -= 1
 		g.target_attraction_id = -1
@@ -891,7 +895,8 @@ func _bin_near(cell: Vector2i) -> Decor:
 	return best
 
 
-## Efter køb i bod: spand i nærheden fyldes, ellers (eller med lille sandsynlighed) affald på stien.
+## Når båret affald smides (T-043: på gæstens aktuelle celle efter 1..litter_carry_cells skridt):
+## spand i nærheden fyldes, ellers (eller med lille sandsynlighed) affald på stien.
 func _drop_litter(g: Guest) -> void:
 	var bin: Decor = _bin_near(g.cell)
 	var chance: float = balance.litter_chance_with_bin if bin != null else balance.litter_chance_after_shop

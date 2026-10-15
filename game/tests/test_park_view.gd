@@ -70,3 +70,108 @@ func test_thought_bubbles_capped() -> void:
 		view.update_bubbles(SimClock.TICK_DELTA)
 		assert_true(view.bubble_count() <= ParkView.MAX_BUBBLES)
 	view.free()
+
+
+func _busy_sim() -> ParkSim:
+	var s := ParkSim.new(30, 30, 5)
+	s.economy.earn(1000000, "test")
+	var e: Vector2i = s.world.entrance
+	for i in range(1, 12):
+		s.cmd_place_path(e + Vector2i(0, -i))
+	s.cmd_place_attraction("burger_stand", e + Vector2i(1, -6) - Vector2i(0, 1))
+	s.cmd_place_decor("bench", e + Vector2i(0, -3))
+	s.cmd_place_decor("tree_round", e + Vector2i(3, -2))
+	s.cmd_hire_staff("cleaner", e + Vector2i(0, -2))
+	s.cmd_hire_staff("mechanic", e + Vector2i(0, -4))
+	s.world.set_litter(e + Vector2i(0, -5), 2)
+	return s
+
+
+func test_rebuild_from_save_same_node_counts() -> void:
+	var s := _busy_sim()
+	var view := ParkView.new()
+	view.setup(s)
+	for i in 600:
+		s.update(SimClock.TICK_DELTA)
+	view.sync_guests()
+	var before: Dictionary = view.node_counts()
+	assert_true(int(before["staff"]) == 2 and int(before["decor"]) == 2, str(before))
+	var loaded: ParkSim = ParkSim.from_save(JSON.parse_string(JSON.stringify(s.to_save())))
+	assert_true(loaded != null)
+	var view2 := ParkView.new()
+	view2.setup(loaded)
+	assert_eq(view2.node_counts(), before)
+	# Genbrug af samme ParkView: setup på ny sim river gammel scene ned.
+	view.setup(loaded)
+	assert_eq(view.node_counts(), before)
+	view.free()
+	view2.free()
+
+
+func test_place_remove_all_decor() -> void:
+	var s := ParkSim.new(30, 30, 1)
+	s.economy.earn(1000000, "test")
+	var view := ParkView.new()
+	view.setup(s)
+	var ids: Array[String] = ["bench", "bin", "flowers", "lamp", "tree_blossom", "tree_pine", "tree_round"]
+	var placed: Array[int] = []
+	var x: int = 2
+	for id in ids:
+		var cell := Vector2i(x, 5)
+		if s.get_decor_def(id).on_path:
+			s.cmd_place_path(cell)
+		var did: int = s.cmd_place_decor(id, cell)
+		assert_true(did >= 0, "kan placere %s" % id)
+		assert_eq(view.decor_at(cell), did)
+		placed.append(did)
+		x += 2
+	assert_eq(view.decor_node_count(), ids.size())
+	for did in placed:
+		assert_true(s.cmd_remove_decor(did))
+	assert_eq(view.decor_node_count(), 0)
+	view.free()
+
+
+func test_hire_move_fire_staff() -> void:
+	var s := ParkSim.new(30, 30, 1)
+	var view := ParkView.new()
+	view.setup(s)
+	var e: Vector2i = s.world.entrance
+	s.cmd_place_path(e + Vector2i(0, -1))
+	s.cmd_place_path(e + Vector2i(0, -2))
+	var ids: Array[int] = []
+	for t in ["mechanic", "cleaner", "entertainer"]:
+		var sid: int = s.cmd_hire_staff(t, e + Vector2i(0, -1))
+		assert_true(sid >= 0, t)
+		ids.append(sid)
+	assert_eq(view.staff_node_count(), 3)
+	assert_true(s.cmd_move_staff(ids[0], e + Vector2i(0, -2)))
+	view.sync_staff()
+	assert_eq(view.staff_near(ParkView.cell_center(e + Vector2i(0, -2)), 0.5), ids[0])
+	for sid in ids:
+		assert_true(s.cmd_fire_staff(sid))
+	assert_eq(view.staff_node_count(), 0)
+	view.free()
+
+
+func test_litter_pool_and_smoke() -> void:
+	var s := ParkSim.new(30, 30, 1)
+	s.economy.earn(1000000, "test")
+	var view := ParkView.new()
+	view.setup(s)
+	var c := Vector2i(4, 4)
+	s.cmd_place_path(c)
+	s.world.set_litter(c, 2)
+	assert_eq(view.litter_node_count(), 1)
+	s.world.set_litter(c, 0)
+	assert_eq(view.litter_node_count(), 0)
+	s.cmd_place_path(c + Vector2i(1, 0))
+	s.world.set_litter(c + Vector2i(1, 0), 1)
+	assert_eq(view.litter_node_count(), 1)
+	var a: Attraction = s.cmd_place_attraction("carousel", Vector2i(10, 10))
+	assert_true(a != null)
+	s.attraction_broken.emit(a)
+	assert_eq(view.smoke_node_count(), 1)
+	s.attraction_repaired.emit(a)
+	assert_eq(view.smoke_node_count(), 0)
+	view.free()

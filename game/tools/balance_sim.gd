@@ -13,7 +13,69 @@ func _init() -> void:
 	_run("Startpark, entré 30", false, 30)
 	_run("Startpark uden personale (nedbrud + affald)", false, -1, true, false)
 	_run("Startpark + mekaniker + rengøring + 2 skraldespande (T-037)", false, -1, true, true)
+	_m3_compare()
 	quit(0)
+
+
+## T-041: startpark med/uden personale, 7 dage, flere seeds. Samme layout som _run.
+func _m3_compare() -> void:
+	print("\n=== T-041: startpark 7 dage, uden vs. med personale (mekaniker+rengøring+2 skraldespande) ===")
+	print("Seed | Personale | Penge d7 | Omdømme | Gæster i alt | Glæde | Nedbrud | Ødelagt-dage(snit) | Affald d7")
+	var agg: Dictionary = {}
+	for seed in [12345, 1, 2, 3, 4]:
+		for staff in [false, true]:
+			var r: Dictionary = _m3_one(seed, staff)
+			print("%d | %s | %d | %.1f | %d | %.1f | %d | %.2f | %d" % [seed, "ja" if staff else "nej", r.money,
+				r.rep, r.guests, r.hap, r.breaks, r.broken_days, r.litter])
+			var a: Dictionary = agg.get(staff, {})
+			for k: String in r:
+				a[k] = float(a.get(k, 0.0)) + float(r[k]) / 5.0
+			agg[staff] = a
+	for staff in [false, true]:
+		var a: Dictionary = agg[staff]
+		print("SNIT | %s | %d | %.1f | %d | %.1f | %.1f | %.2f | %d" % ["ja" if staff else "nej", a.money, a.rep,
+			a.guests, a.hap, a.breaks, a.broken_days, a.litter])
+
+
+func _m3_one(p_seed: int, staff: bool) -> Dictionary:
+	var sim := ParkSim.new(64, 64, p_seed)
+	var e: Vector2i = sim.world.entrance
+	for y in range(e.y - 1, 49, -1):
+		sim.cmd_place_path(Vector2i(e.x, y))
+	for x in range(e.x - 10, e.x + 11):
+		if x != e.x:
+			sim.cmd_place_path(Vector2i(x, 50))
+	sim.cmd_place_attraction("carousel", Vector2i(e.x - 2, 46))
+	sim.cmd_place_attraction("burger_stand", Vector2i(e.x + 2, 49))
+	sim.cmd_place_attraction("drinks_stand", Vector2i(e.x + 4, 49))
+	sim.cmd_place_attraction("toilet", Vector2i(e.x - 4, 49))
+	if staff:
+		sim.cmd_hire_staff("mechanic", Vector2i(e.x, 52))
+		sim.cmd_hire_staff("cleaner", Vector2i(e.x, 51))
+		sim.cmd_place_decor("bin", Vector2i(e.x + 3, 50))
+		sim.cmd_place_decor("bin", Vector2i(e.x - 3, 50))
+	var breaks: Array = [0]
+	sim.attraction_broken.connect(func(_a: Attraction) -> void: breaks[0] += 1)
+	var day_seconds: float = sim.balance.day_ticks * SimClock.TICK_DELTA
+	var total: float = day_seconds * 7
+	var t: float = 0.0
+	var hap: float = 0.0
+	var n: int = 0
+	var broken_steps: int = 0
+	var steps: int = 0
+	while t < total - 1e-3:
+		sim.update(STEP)
+		t += STEP
+		steps += 1
+		var s: Dictionary = sim.get_stats()
+		broken_steps += int(s.broken)
+		if s.guests > 0:
+			hap += s.avg_happiness
+			n += 1
+	var s2: Dictionary = sim.get_stats()
+	return {"money": sim.economy.money, "rep": sim.reputation, "guests": sim._next_guest_id - 1,
+		"hap": hap / maxi(1, n), "breaks": breaks[0], "broken_days": float(broken_steps) / steps * 7.0,
+		"litter": s2.litter}
 
 
 func _run(title: String, full: bool, fee: int, connect_rides: bool = true, with_staff: Variant = null) -> void:

@@ -4,6 +4,13 @@ extends CanvasLayer
 ## Finder ParkView (gruppe "park_view") og Selection (gruppe "selection") robust (null-checks).
 
 const ATTRACTION_DIR: String = "res://content/attractions/"
+const DECOR_DIR: String = "res://content/decor/"
+const STAFF_DIR: String = "res://content/staff/"
+const TABS: Array[String] = ["rides", "shops", "decor", "staff"]
+const TAB_NAMES: Dictionary = {"rides": "Forlystelser", "shops": "Butikker", "decor": "Dekoration", "staff": "Personale"}
+const STAFF_STATE_NAMES: Dictionary = {0: "Ledig", 1: "Går", 2: "Arbejder"}
+const STAFF_TASK_NAMES: Dictionary = {"repair": "Reparerer", "inspect": "Inspicerer", "sweep": "Fejer",
+	"empty_bin": "Tømmer skraldespand", "patrol": "Underholder"}
 const THEME_RES: Theme = preload("res://ui/theme.tres")
 const SPEEDS: Array[float] = [1.0, 2.0, 4.0]
 const MARGIN: float = 8.0
@@ -24,6 +31,16 @@ var _guest_panel: PanelContainer
 var _guest_label: Label
 var _park_panel: PanelContainer
 var _park_label: Label
+var _staff_panel: PanelContainer
+var _staff_label: Label
+var _staff_list_panel: PanelContainer
+var _staff_list: VBoxContainer
+var _staff_list_ids: Array = []
+var _pause_menu: PauseMenu
+var _build_tab: Dictionary = {}  ## def_id -> fane ("" = altid synlig)
+var _tab_buttons: Dictionary = {}  ## fane -> Button
+var current_tab: String = "rides"
+var _sel_staff: int = -1
 var _sel_attraction: int = -1
 var _sel_guest: int = -1
 
@@ -82,8 +99,21 @@ func layout(vp: Vector2) -> void:
 	bottom.size = Vector2(w, bottom_h)
 	for p: Control in [top, bottom]:
 		_sort_tree(p)
-	for p: Control in [_attr_panel, _guest_panel, _park_panel]:
+	if _staff_list_panel == null:
+		return  # under opbygning
+	var max_h: float = maxf(0.0, bottom.position.y - top_h - 3.0 * MARGIN)
+	for p: Control in right_panels():
 		p.position = Vector2(maxf(MARGIN, vp.x - MARGIN - p.custom_minimum_size.x), top_h + 2.0 * MARGIN)
+		p.size = Vector2(p.custom_minimum_size.x, minf(p.get_combined_minimum_size().y, max_h))
+	# Personale-listen scroller inden for den plads der er mellem top- og byggebjælke.
+	var scroll: ScrollContainer = _staff_list_panel.get_node("V/Scroll")
+	scroll.custom_minimum_size.y = clampf(max_h - 90.0, 40.0, 260.0)
+	if _pause_menu != null:
+		_pause_menu.layout(vp)
+
+
+func right_panels() -> Array[Control]:
+	return [_attr_panel, _guest_panel, _park_panel, _staff_panel, _staff_list_panel]
 
 
 static func _sort_tree(c: Control) -> void:
@@ -105,6 +135,8 @@ static func _panel_height(p: PanelContainer, w: float) -> float:
 	var line_h: float = 0.0
 	var total: float = 0.0
 	for ch in flow.get_children():
+		if not (ch as Control).visible:
+			continue
 		var m: Vector2 = (ch as Control).get_combined_minimum_size()
 		if x > 0.0 and x + m.x > inner_w:
 			total += line_h + vsep
@@ -130,11 +162,20 @@ func _connect_scene() -> void:
 				selection.connect("selected_guest", show_guest)
 			if selection.has_signal("cleared"):
 				selection.connect("cleared", clear_selection)
+			if selection.has_signal("selected_staff"):
+				selection.connect("selected_staff", show_staff)
+			if selection.has_signal("pause_menu_requested"):
+				selection.connect("pause_menu_requested", open_pause_menu)
 
 
 func _process(_delta: float) -> void:
-	if sim == null or selection == null:
+	if selection == null:
 		_connect_scene()
+	# Følg ParkView's sim (kan udskiftes ved indlæsning).
+	var pv: Node = get_tree().get_first_node_in_group("park_view")
+	if pv != null and "sim" in pv and pv.get("sim") != null and pv.get("sim") != sim:
+		sim = pv.get("sim")
+		clear_selection()
 	refresh()
 
 
@@ -150,7 +191,7 @@ func _build_ui() -> void:
 
 	# Top-bar
 	var top := _panel(root, "TopBar")
-	_anchor_wide(top, 0.0, Control.GROW_DIRECTION_END)
+	top.set_anchors_preset(Control.PRESET_TOP_LEFT)  # placeres af layout()
 	var th := HFlowContainer.new()
 	th.add_theme_constant_override("h_separation", 12)
 	top.add_child(th)
@@ -162,6 +203,8 @@ func _build_ui() -> void:
 	_stars.visible = false
 	th.add_child(_stars)
 	_button(th, "Park", toggle_park_panel)
+	_button(th, "Personale", toggle_staff_list)
+	_button(th, "Menu", open_pause_menu)
 	_pause_btn = _button(th, "Pause", _on_pause)
 	for s: float in SPEEDS:
 		_button(th, "%dx" % int(s), _on_speed.bind(s))
@@ -169,14 +212,25 @@ func _build_ui() -> void:
 	# Byggemenu
 	var bottom := _panel(root, "BuildMenu")
 	# Forankret i bunden; vokser opad når knapperne ombrydes (smalle vinduer).
-	_anchor_wide(bottom, 1.0, Control.GROW_DIRECTION_BEGIN)
+	bottom.set_anchors_preset(Control.PRESET_TOP_LEFT)  # placeres af layout()
 	var bh := HFlowContainer.new()
 	bottom.add_child(bh)
 	_add_build_button(bh, "select", "Vælg", 0)
 	_add_build_button(bh, "path", "Sti", 0)
 	_add_build_button(bh, "remove", "Fjern", 0)
+	for t: String in TABS:
+		var tb: Button = _button(bh, "[%s]" % TAB_NAMES[t], set_tab.bind(t))
+		tb.toggle_mode = true
+		tb.name = "Tab_" + t
+		_tab_buttons[t] = tb
 	for d: AttractionDef in load_defs():
-		_add_build_button(bh, d.id, "%s ($%d)" % [d.name, d.build_cost], d.build_cost)
+		var tab: String = "rides" if d.kind == "ride" else "shops"
+		_add_build_button(bh, d.id, "%s ($%d)" % [d.name, d.build_cost], d.build_cost, tab)
+	for d: DecorDef in load_decor_defs():
+		_add_build_button(bh, "decor:" + d.id, "%s ($%d)" % [d.name, d.build_cost], d.build_cost, "decor")
+	for d: StaffDef in load_staff_defs():
+		_add_build_button(bh, "staff:" + d.id, "%s ($%d/dag)" % [d.name, d.wage_per_day], 0, "staff")
+	set_tab(current_tab)
 
 	# Info-paneler (højre side)
 	_attr_panel = _panel(root, "AttractionPanel")
@@ -215,6 +269,42 @@ func _build_ui() -> void:
 	_button(eh, "Entré +", change_entry_fee.bind(1))
 	_button(pv, "Luk panel", toggle_park_panel)
 	_park_panel.visible = false
+
+	_staff_panel = _panel(root, "StaffPanel")
+	_place_right(_staff_panel)
+	var sv := VBoxContainer.new()
+	_staff_panel.add_child(sv)
+	_staff_label = Label.new()
+	sv.add_child(_staff_label)
+	_button(sv, "Fyr", _on_fire_selected)
+	_button(sv, "Luk panel", clear_selection)
+	_staff_panel.visible = false
+
+	_staff_list_panel = _panel(root, "StaffListPanel")
+	_place_right(_staff_list_panel)
+	var lv := VBoxContainer.new()
+	lv.name = "V"
+	_staff_list_panel.add_child(lv)
+	var lt := Label.new()
+	lt.name = "Title"
+	lv.add_child(lt)
+	var scroll := ScrollContainer.new()
+	scroll.name = "Scroll"
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.custom_minimum_size = Vector2(0, 200)
+	lv.add_child(scroll)
+	_staff_list = VBoxContainer.new()
+	_staff_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.add_child(_staff_list)
+	_button(lv, "Luk panel", toggle_staff_list)
+	_staff_list_panel.visible = false
+
+	_pause_menu = PauseMenu.new()
+	_pause_menu.name = "PauseMenu"
+	root.add_child(_pause_menu)
+	_pause_menu.build()
+	_pause_menu.closed.connect(_on_pause_menu_closed)
+	_pause_menu.sim_provider = func() -> ParkSim: return sim
 	if is_inside_tree():
 		layout.call_deferred(get_viewport().get_visible_rect().size)
 
@@ -262,22 +352,64 @@ func _button(parent: Control, text: String, cb: Callable) -> Button:
 	return b
 
 
-func _add_build_button(parent: Control, def_id: String, text: String, cost: int) -> void:
+func _add_build_button(parent: Control, def_id: String, text: String, cost: int, tab: String = "") -> void:
 	_build_buttons[def_id] = _button(parent, text, request_build_tool.bind(def_id))
 	_build_costs[def_id] = cost
+	_build_tab[def_id] = tab
 
 
-static func load_defs() -> Array[AttractionDef]:
-	var out: Array[AttractionDef] = []
-	var files: PackedStringArray = DirAccess.get_files_at(ATTRACTION_DIR)
+## Viser kun byggeknapper for fanen (Vælg/Sti/Fjern altid synlige).
+func set_tab(tab: String) -> void:
+	current_tab = tab
+	for id: String in _build_buttons:
+		var t: String = _build_tab.get(id, "")
+		(_build_buttons[id] as Button).visible = t == "" or t == tab
+	for t: String in _tab_buttons:
+		(_tab_buttons[t] as Button).set_pressed_no_signal(t == tab)
+	if is_inside_tree():
+		layout(get_viewport().get_visible_rect().size)
+
+
+func visible_build_ids() -> Array[String]:
+	var out: Array[String] = []
+	for id: String in _build_buttons:
+		if (_build_buttons[id] as Button).visible:
+			out.append(id)
+	return out
+
+
+static func _json_files(dir: String) -> Array[String]:
 	var names: Array[String] = []
-	for f in files:
+	for f in DirAccess.get_files_at(dir):
 		var fn: String = f.trim_suffix(".remap").trim_suffix(".import")
 		if fn.ends_with(".json") and not names.has(fn):
 			names.append(fn)
 	names.sort()
-	for fn in names:
+	return names
+
+
+static func load_defs() -> Array[AttractionDef]:
+	var out: Array[AttractionDef] = []
+	for fn in _json_files(ATTRACTION_DIR):
 		var d: AttractionDef = AttractionDef.from_json(ATTRACTION_DIR + fn)
+		if d != null:
+			out.append(d)
+	return out
+
+
+static func load_decor_defs() -> Array[DecorDef]:
+	var out: Array[DecorDef] = []
+	for fn in _json_files(DECOR_DIR):
+		var d: DecorDef = DecorDef.from_json(DECOR_DIR + fn)
+		if d != null:
+			out.append(d)
+	return out
+
+
+static func load_staff_defs() -> Array[StaffDef]:
+	var out: Array[StaffDef] = []
+	for fn in _json_files(STAFF_DIR):
+		var d: StaffDef = StaffDef.from_json(STAFF_DIR + fn)
 		if d != null:
 			out.append(d)
 	return out
@@ -304,6 +436,8 @@ func refresh() -> void:
 		(_build_buttons[id] as Button).disabled = not sim.economy.can_afford(_build_costs[id])
 	_refresh_attraction()
 	_refresh_guest()
+	_refresh_staff()
+	_refresh_staff_list()
 
 
 ## Topbar-tekst. Robust over for get_stats() før/efter T-030 (reputation/max_guests valgfri).
@@ -316,6 +450,10 @@ static func top_text(st: Dictionary) -> String:
 	t += "Glæde: %d%%" % roundi(float(st.get("avg_happiness", 0.0)))
 	if st.has("reputation"):
 		t += "   Omdømme: %d%%" % roundi(float(st.reputation))  # stjerner tegnes af StarRating
+	if int(st.get("broken", 0)) > 0:
+		t += "   Ødelagt: %d" % int(st.broken)
+	if st.has("litter"):
+		t += "   Affald: %d" % int(st.litter)
 	return t
 
 
@@ -350,6 +488,7 @@ func toggle_park_panel() -> void:
 	var show: bool = not _park_panel.visible
 	if show:
 		clear_selection()
+		_staff_list_panel.visible = false
 	_park_panel.visible = show
 	refresh()
 
@@ -368,10 +507,121 @@ func _refresh_attraction() -> void:
 		clear_selection()
 		return
 	_attr_panel.visible = true
-	_attr_label.text = "%s\nStatus: %s\nBesøgende: %d\nOmsætning: $%d\nPris: $%d\nKø: %d" % [
-		a.def.name, "Åben" if a.is_open else "Lukket", a.total_visitors, a.total_revenue,
-		a.price, a.queue.size()]
+	_attr_label.text = attraction_text(a, sim)
 	_attr_open_btn.text = "Luk" if a.is_open else "Åbn"
+
+
+static func status_text(a: Attraction) -> String:
+	if "status" in a:
+		match int(a.get("status")):
+			Attraction.Status.BROKEN:
+				return "I stykker"
+			Attraction.Status.CLOSED:
+				return "Lukket"
+		return "Kører"
+	return "Åben" if a.is_open else "Lukket"
+
+
+static func attraction_text(a: Attraction, p_sim: ParkSim) -> String:
+	var lines: Array[String] = [a.def.name, "Status: " + status_text(a)]
+	if a.has_method("effective_reliability"):
+		lines.append("Pålidelighed: %d%%" % roundi(float(a.call("effective_reliability")) * 100.0))
+	if "mechanic_id" in a:
+		var mid: int = int(a.get("mechanic_id"))
+		if mid >= 0:
+			lines.append("Mekaniker: #%d" % mid)
+		elif "broken" in a and bool(a.get("broken")):
+			lines.append("Ingen mekaniker ledig!" if _has_mechanic(p_sim) else "Ansæt en mekaniker!")
+	lines.append("Besøgende: %d" % a.total_visitors)
+	lines.append("Omsætning: $%d" % a.total_revenue)
+	lines.append("Pris: $%d" % a.price)
+	lines.append("Kø: %d" % a.queue.size())
+	return "\n".join(lines)
+
+
+static func _has_mechanic(p_sim: ParkSim) -> bool:
+	if p_sim == null or not "staff" in p_sim:
+		return false
+	for s: Variant in (p_sim.get("staff") as Dictionary).values():
+		if (s as Staff).type_id() == "mechanic":
+			return true
+	return false
+
+
+static func staff_status(s: Staff) -> String:
+	if s.task != "":
+		return STAFF_TASK_NAMES.get(s.task, s.task)
+	return STAFF_STATE_NAMES.get(s.state, "")
+
+
+func _get_staff_dict() -> Dictionary:
+	if sim == null or not "staff" in sim:
+		return {}
+	return sim.get("staff")
+
+
+func _refresh_staff() -> void:
+	if _sel_staff < 0:
+		_staff_panel.visible = false
+		return
+	var s: Staff = _get_staff_dict().get(_sel_staff, null)
+	if s == null:
+		clear_selection()
+		return
+	_staff_panel.visible = true
+	_staff_label.text = "%s #%d\nLøn: $%d/dag\nStatus: %s" % [s.def.name, s.id, s.def.wage_per_day, staff_status(s)]
+
+
+func _refresh_staff_list() -> void:
+	if not _staff_list_panel.visible:
+		return
+	var d: Dictionary = _get_staff_dict()
+	var ids: Array = d.keys()
+	ids.sort()
+	var wages: int = 0
+	for id: int in ids:
+		wages += (d[id] as Staff).def.wage_per_day
+	(_staff_list_panel.get_node("V/Title") as Label).text = "Personale: %d (løn $%d/dag)" % [ids.size(), wages]
+	if ids != _staff_list_ids:
+		_staff_list_ids = ids
+		for c in _staff_list.get_children():
+			_staff_list.remove_child(c)
+			c.queue_free()
+		for id: int in ids:
+			var row := HBoxContainer.new()
+			row.name = "Row_%d" % id
+			var l := Label.new()
+			l.name = "L"
+			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			row.add_child(l)
+			_button(row, "Fyr", fire_staff.bind(id))
+			_staff_list.add_child(row)
+	for id: int in ids:
+		var s: Staff = d[id]
+		var row: Node = _staff_list.get_node_or_null("Row_%d" % id)
+		if row != null:
+			(row.get_node("L") as Label).text = "%s #%d $%d - %s" % [s.def.name, id, s.def.wage_per_day, staff_status(s)]
+
+
+func toggle_staff_list() -> void:
+	var show: bool = not _staff_list_panel.visible
+	if show:
+		clear_selection()
+		_park_panel.visible = false
+	_staff_list_panel.visible = show
+	refresh()
+
+
+func fire_staff(id: int) -> void:
+	if sim != null and sim.has_method("cmd_fire_staff"):
+		sim.call("cmd_fire_staff", id)
+	if id == _sel_staff:
+		clear_selection()
+	refresh()
+
+
+func _on_fire_selected() -> void:
+	fire_staff(_sel_staff)
 
 
 func _refresh_guest() -> void:
@@ -396,25 +646,66 @@ func _refresh_guest() -> void:
 # --- Selection ---
 
 func show_attraction(id: int) -> void:
-	_park_panel.visible = false
+	_hide_overviews()
+	_sel_staff = -1
 	_sel_guest = -1
 	_sel_attraction = id
 	refresh()
 
 
 func show_guest(id: int) -> void:
-	_park_panel.visible = false
+	_hide_overviews()
+	_sel_staff = -1
 	_sel_attraction = -1
 	_sel_guest = id
 	refresh()
 
 
+func show_staff(id: int) -> void:
+	_hide_overviews()
+	_sel_attraction = -1
+	_sel_guest = -1
+	_sel_staff = id
+	refresh()
+
+
+func _hide_overviews() -> void:
+	if _park_panel != null:
+		_park_panel.visible = false
+		_staff_list_panel.visible = false
+
+
 func clear_selection() -> void:
 	_sel_attraction = -1
 	_sel_guest = -1
+	_sel_staff = -1
 	if _attr_panel != null:
 		_attr_panel.visible = false
 		_guest_panel.visible = false
+		_staff_panel.visible = false
+
+
+# --- Pause-menu ---
+
+var _was_paused: bool = false
+
+
+func open_pause_menu() -> void:
+	if _pause_menu == null or _pause_menu.visible:
+		return
+	if sim != null:
+		_was_paused = sim.clock.paused
+		sim.clock.paused = true
+	_pause_menu.open()
+
+
+func is_pause_menu_open() -> bool:
+	return _pause_menu != null and _pause_menu.visible
+
+
+func _on_pause_menu_closed() -> void:
+	if sim != null:
+		sim.clock.paused = _was_paused
 
 
 # --- Kommandoer ---

@@ -1,6 +1,6 @@
 # T-038: Grafik – Personale, dekoration, affald, nye forlystelser, nedbrudseffekt
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M3
 - **Agent:** graphics
 - **Afhænger af:** –
@@ -14,3 +14,4 @@ Props: mechanic, cleaner, entertainer (genkendelige farver/hatte), bin, bench, t
 ## Log
 - 2026-10-15 – architect: oprettet
 - 2026-10-15 – graphics: staff (mechanic/cleaner/entertainer, StaffVisual: set_color/set_walking/hop), bin+bench forskudt mod -Z-kant, tree_round/pine/blossom, flowers, lamp (OmniLight3D slukket, set_on), litter (set_level 0-3), swing_ride (3×3, roterer), haunted_house (3×2), go_karts (4×3, karts kører), effects/breakdown_smoke.tscn (CPUParticles3D). test_props.gd udvidet; import + test.sh grønne (70/0).
+- 2026-10-15 – qa: godkendt (T-041): test.sh 116/116, integration.sh grøn, smoke main_menu+main 300 frames uden ERROR/WARNING, web-build ok. → done

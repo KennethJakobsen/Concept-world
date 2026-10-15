@@ -1,6 +1,6 @@
 # T-037: Simulation – Personale, nedbrud, affald, dekoration
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M3
 - **Agent:** simulation
 - **Afhænger af:** T-035, T-036
@@ -29,3 +29,4 @@ Implementér personale (mekaniker, rengøring, entertainer), nedbrud/reparation,
 - 2026-10-15 – simulation: Tests: test_staff_decor.gd (13): nedbrud→reparation, kø opløses med tanke, inspektion, affald→fejet, skraldespand mindsker affald, fuld spand tømmes, beskidt sti, bænk sænker træthed, underholder, aura-loft, decor-regler, ansæt/fyr/flyt/løn, save-roundtrip + 2000 ticks determinisme med alt nyt. 96/96 grøn.
 - 2026-10-15 – simulation: balance.sh – nye scenarier. Startpark uden personale: karrusel bryder ned dag 2 og forbliver i stykker → netto ≈ 0/dag, glæde 86→70. Startpark + mekaniker + rengøring + 2 spande: netto −1667/+469/+484/+625/+609, glæde 80–87, ingen ødelagte forlystelser ved dagsslut, affald ≈ 0 → break-even (penge ≥ start 2200) dag 5, designeren beregnede dag 4.
 - 2026-10-15 – simulation: Noter til designer/UI/gameplay: (1) Affald lægges på bodens indgangscelle og loftes ved litter_max_per_cell, så affald pr. dag mættes ved ~5 pr. bod – evt. sprede affald over de næste celler gæsten går (kan tilføjes). (2) Ødelagte forlystelser tæller stadig i attraction_score/max_guests (midlertidig tilstand). (3) Bridge: nye signaler (staff_hired/fired, decor_placed/removed, attraction_broken/repaired, world.litter_changed), Guest.State.RESTING (synlig), Tile.DECOR (græs-dekoration) – park_view.gd er ikke ændret.
+- 2026-10-15 – qa: godkendt (T-041): test.sh 116/116, integration.sh grøn, smoke main_menu+main 300 frames uden ERROR/WARNING, web-build ok. → done

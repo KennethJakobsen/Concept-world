@@ -1,6 +1,6 @@
 # T-042: Bug – Omdømme-stjerner vises som firkanter
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M3
 - **Agent:** ui
 - **Afhænger af:** T-031
@@ -14,3 +14,4 @@ Brugerrapport (screenshot): "Omdømme: □□□□□ 50%". Godots standardfont
 ## Log
 - 2026-10-15 – architect: oprettet efter brugerrapport
 - 2026-10-15 – ui: ny StarRating (scripts/ui/star_rating.gd) tegner 5 stjerner med draw_colored_polygon, halve via Geometry2D-clipping; topbar viser 'Omdømme: N%' + StarRating. '…' → '...'. tests/test_hud_glyphs.gd: alle HUD-tekster dækket af ThemeDB.fallback_font (has_char) + StarRating-test. Import/smoke grønne; test.sh: alle UI-tests grønne, 1 fejl i test_staff_decor (simulation, igangværende arbejde) → review
+- 2026-10-15 – qa: godkendt (T-041): test.sh 116/116, integration.sh grøn, smoke main_menu+main 300 frames uden ERROR/WARNING, web-build ok. → done

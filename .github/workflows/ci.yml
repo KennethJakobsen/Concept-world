@@ -15,6 +15,7 @@ jobs:
           D=~/.local/share/godot/export_templates/4.7.2.stable && mkdir -p $D
           unzip -q Godot_v${V}_export_templates.tpz && mv templates/* $D/
       - run: ./tools/test.sh
+      - run: ./tools/integration.sh
       - run: ./tools/build_web.sh
       - uses: actions/upload-artifact@v4
         with: { name: web, path: build/web }
