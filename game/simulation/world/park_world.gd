@@ -30,6 +30,16 @@ func _init(p_width: int, p_height: int) -> void:
 	_tiles[_idx(entrance)] = Tile.ENTRANCE
 
 
+## Flytter indgangen (bruges ved scenarie-opsætning før noget er bygget).
+func set_entrance(cell: Vector2i) -> bool:
+	if not in_bounds(cell):
+		return false
+	_set_tile(entrance, Tile.GRASS)
+	entrance = cell
+	_set_tile(entrance, Tile.ENTRANCE)
+	return true
+
+
 func _idx(cell: Vector2i) -> int:
 	return cell.y * width + cell.x
 

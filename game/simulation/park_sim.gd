@@ -21,6 +21,7 @@ signal litter_swept(cell: Vector2i)
 signal ride_cycle_started(attraction_id: int)
 ## T-066 (M5)
 signal research_unlocked(item_id: String)
+signal scenario_finished(won: bool, reason: String)
 
 const PHASE_DAWN: StringName = &"dawn"
 const PHASE_DAY: StringName = &"day"
@@ -56,6 +57,9 @@ var staff: Dictionary = {}  ## id -> Staff
 var decor: Dictionary = {}  ## id -> Decor
 ## Forskning (T-066). Slået fra som default (alt låst op); scenarier slår den til.
 var research: Research
+## null = sandbox (også ældre saves).
+var scenario: Scenario = null
+var _scenario_defs: Dictionary = {}  ## id -> ScenarioDef registreret før load (tests/mods)
 
 ## Konfiguration
 ## Fast spawn-interval (legacy/tests). At sætte feltet slår fast_spawn til.
@@ -453,6 +457,7 @@ func _end_day() -> void:
 			economy.charge(w, "wages")
 	_research_day()
 	economy.close_day(day)
+	_scenario_day()
 	day += 1
 	day_passed.emit(day)
 
@@ -1065,6 +1070,112 @@ func _research_day() -> void:
 		warning.emit(WARN_RESEARCH_DONE, {"item_id": id})
 
 
+# --- Scenarier (T-067) ---
+
+## Opretter en park ud fra et scenarie. Start-bygninger er gratis (pengene sættes bagefter).
+## Mislykkede start-placeringer ignoreres med push_warning (data-fejl).
+static func new_from_scenario(def: ScenarioDef, p_seed: int, p_balance: Balance = null) -> ParkSim:
+	var sim := ParkSim.new(def.map_size.x, def.map_size.y, p_seed, p_balance)
+	if def.entrance.x >= 0:
+		sim.world.set_entrance(def.entrance)
+	sim.economy.money = 1 << 40
+	for c in def.paths:
+		if sim.world.get_tile(c) != ParkWorld.Tile.ENTRANCE and not sim.cmd_place_path(c):
+			push_warning("Scenarie %s: sti %s kunne ikke placeres" % [def.id, c])
+	for a in def.attractions:
+		if sim.cmd_place_attraction(a["def"], a["origin"]) == null:
+			push_warning("Scenarie %s: %s ved %s kunne ikke placeres" % [def.id, a["def"], a["origin"]])
+	for d in def.decor:
+		if sim.cmd_place_decor(d["def"], d["cell"]) < 0:
+			push_warning("Scenarie %s: decor %s ved %s kunne ikke placeres" % [def.id, d["def"], d["cell"]])
+	for st in def.staff:
+		if sim.cmd_hire_staff(st["type"], st["cell"]) < 0:
+			push_warning("Scenarie %s: personale %s ved %s kunne ikke ansættes" % [def.id, st["type"], st["cell"]])
+	sim.economy.money = def.start_money
+	sim.economy.today = {}
+	sim.reputation = def.start_reputation
+	if def.entry_fee >= 0:
+		sim.entry_fee = def.entry_fee
+	sim.research.setup(def.research_enabled, def.unlocked)
+	if not def.is_sandbox():
+		sim.scenario = Scenario.new(def)
+	return sim
+
+
+## Bygningers (og senere banestykkers) værdi × 0,8 + penge. Der findes intet lån i M5.
+func park_value() -> int:
+	var built: int = 0
+	for a in attractions:
+		built += a.def.build_cost
+	for did in _sorted_decor_ids():
+		built += (decor[did] as Decor).def.build_cost
+	return int(floor(built * 0.8)) + economy.money
+
+
+func rides_count() -> int:
+	var n: int = 0
+	for a in attractions:
+		if a.def.kind == "ride" or a.def.kind == "coaster":
+			n += 1
+	return n
+
+
+## Højeste excitement (0..10) blandt rutsjebaner. 0 indtil T-068 giver attraktioner ratings.
+func max_coaster_excitement() -> float:
+	var best: float = 0.0
+	for a in attractions:
+		if a.def.kind != "coaster":
+			continue
+		best = maxf(best, float(a.ratings.get("excitement", 0.0)))
+	return best
+
+
+## Aktuel værdi for en objective-type (også brugt af lose-betingelser).
+func scenario_measure(type: String) -> float:
+	match type:
+		"guests_in_park":
+			return float(guests.size())
+		"reputation_min":
+			return reputation
+		"money_min":
+			return float(economy.money)
+		"park_value_min":
+			return float(park_value())
+		"rides_count_min":
+			return float(rides_count())
+		"coaster_excitement_min":
+			return max_coaster_excitement()
+	push_warning("Ukendt scenarie-måltype: %s" % type)
+	return 0.0
+
+
+## {} i sandbox.
+func scenario_status() -> Dictionary:
+	if scenario == null:
+		return {}
+	var objs: Array = []
+	var d: ScenarioDef = scenario.def
+	if d != null:
+		for o in d.objectives:
+			var cur: float = scenario_measure(o["type"])
+			objs.append({"type": o["type"], "value": o["value"], "current": cur, "met": Scenario.is_met(o, cur)})
+	return {
+		"id": scenario.def_id, "name": d.name if d != null else scenario.def_id,
+		"state": scenario.state, "days_elapsed": scenario.days_elapsed,
+		"deadline_days": d.deadline_days if d != null else 0, "objectives": objs,
+	}
+
+
+func _scenario_day() -> void:
+	if scenario == null or not scenario.is_running():
+		return
+	var res: String = scenario.evaluate_day(scenario_measure)
+	if res == "won":
+		scenario_finished.emit(true, scenario.reason)
+	elif res != "":
+		scenario_finished.emit(false, res)
+
+
 # --- Save/load (T-036) ---
 # Udvidelse (T-037+): tilføj en nøgle i _park_to_save() og læs den i _park_load()
 # (med default hvis den mangler). Kræver det en formatændring der ikke er bagudkompatibel,
@@ -1103,6 +1214,8 @@ static func from_save(d: Dictionary, p_balance: Balance = null, p_defs: Array = 
 			sim.register_staff_def(def)
 		elif def is DecorDef:
 			sim.register_decor_def(def)
+		elif def is ScenarioDef:
+			sim._scenario_defs[(def as ScenarioDef).id] = def
 	sim._park_load(park)
 	return sim
 
@@ -1135,6 +1248,7 @@ func _park_to_save() -> Dictionary:
 		"next_staff_id": _next_staff_id,
 		"next_decor_id": _next_decor_id,
 		"research": research.to_save(),
+		"scenario": scenario.to_save() if scenario != null else null,
 		"config": {
 			"spawn_interval_ticks": spawn_interval_ticks, "max_guests": max_guests,
 			"fixed_spawn": fixed_spawn, "guest_speed": SaveCodec.f(guest_speed),
@@ -1201,6 +1315,13 @@ func _park_load(park: Dictionary) -> void:
 	_next_staff_id = int(park.get("next_staff_id", 1))
 	_next_decor_id = int(park.get("next_decor_id", 1))
 	research.load_save(SaveCodec.dict(park, "research"))
+	var sc: Variant = park.get("scenario")
+	if sc is Dictionary:
+		var sid: String = str(sc.get("def_id", ""))
+		var sdef: ScenarioDef = _scenario_defs.get(sid, null)
+		if sdef == null and sid != "":
+			sdef = ScenarioDef.find(sid)
+		scenario = Scenario.from_save(sc, sdef)
 	_aura_dirty = true
 	_reachable_dirty = true
 	_phase = phase()

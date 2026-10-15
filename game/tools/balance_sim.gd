@@ -14,6 +14,9 @@ func _init() -> void:
 	_run("Startpark uden personale (nedbrud + affald)", false, -1, true, false)
 	_run("Startpark + mekaniker + rengøring + 2 skraldespande (T-037)", false, -1, true, true)
 	_m3_compare()
+	for d in ScenarioDef.list_all():
+		if not d.is_sandbox():
+			_scenario_run(d)
 	quit(0)
 
 
@@ -170,3 +173,64 @@ func _diag(sim: ParkSim) -> void:
 	print("   køer %s" % ", ".join(queues))
 	print("   behov>tærskel %s" % over)
 	print("   tanker %s" % thoughts)
+
+
+## T-067: scenarie-run med simpel bot. Bygger en sti ind til midten og en "gade" på tværs; hver morgen
+## bygges den billigste ulåste forlystelse/bod nord for gaden, hvis der er råd (reserve 2000).
+## Forskning på niveau 1. Kører til sejr/nederlag (eller frist; max 120 dage).
+func _scenario_run(def: ScenarioDef) -> void:
+	var sim := ParkSim.new_from_scenario(def, 12345)
+	var result: Array = ["kører stadig"]
+	sim.scenario_finished.connect(func(won: bool, reason: String) -> void:
+		result[0] = ("VUNDET" if won else "TABT (%s)" % reason) + " dag %d" % sim.scenario.days_elapsed)
+	sim.cmd_set_research_funding(0)
+	var c := Vector2i(def.map_size.x / 2, def.map_size.y / 2)
+	var cur: Vector2i = sim.world.entrance
+	sim.economy.money += 0
+	while cur.y != c.y:
+		cur.y += signi(c.y - cur.y)
+		sim.cmd_place_path(cur)
+	while cur.x != c.x:
+		cur.x += signi(c.x - cur.x)
+		sim.cmd_place_path(cur)
+	for x in range(maxi(0, c.x - 24), mini(def.map_size.x, c.x + 25)):
+		sim.cmd_place_path(Vector2i(x, c.y))
+	var slot_x: Array = [maxi(1, c.x - 24)]
+	var ids: Array[String] = []
+	for f in DirAccess.get_files_at(ParkSim.ATTRACTION_DIR):
+		if f.ends_with(".json"):
+			var ad: AttractionDef = sim.get_def(f.get_basename())
+			if ad != null and ad.kind != "coaster":
+				ids.append(ad.id)
+	var built: Dictionary = {}
+	var day_seconds: float = sim.balance.day_ticks * SimClock.TICK_DELTA
+	var limit: int = def.deadline_days if def.deadline_days > 0 else 120
+	print("\n=== Scenarie-bot: %s (%s) ===" % [def.name, def.id])
+	for d in limit:
+		# byg: den billigste ikke-byggede ulåste; ellers den billigste ulåste igen
+		var best: AttractionDef = null
+		for id in ids:
+			var ad: AttractionDef = sim.get_def(id)
+			if not sim.is_unlocked(id) or sim.economy.money - ad.build_cost < 2000:
+				continue
+			var score: float = ad.build_cost * (1 + int(built.get(id, 0)) * 3)
+			if best == null or score < best.build_cost * (1 + int(built.get(best.id, 0)) * 3):
+				best = ad
+		if best != null and slot_x[0] + best.footprint.x < def.map_size.x:
+			var o := Vector2i(slot_x[0], c.y - best.footprint.y)
+			if sim.cmd_place_attraction(best.id, o) != null:
+				built[best.id] = int(built.get(best.id, 0)) + 1
+			slot_x[0] += best.footprint.x + 1
+		var t: float = 0.0
+		while t < day_seconds - 1e-3:
+			sim.update(STEP)
+			t += STEP
+		if not sim.scenario.is_running():
+			break
+	var st: Dictionary = sim.scenario_status()
+	var parts: Array[String] = []
+	for o: Dictionary in st.objectives:
+		parts.append("%s %.1f/%.1f%s" % [o.type, o.current, o.value, " ok" if o.met else ""])
+	print("Resultat: %s | penge %d, omdømme %.1f, gæster %d, forlystelser %d, parkværdi %d" % [result[0],
+		sim.economy.money, sim.reputation, sim.guests.size(), sim.rides_count(), sim.park_value()])
+	print("Mål: %s" % ", ".join(parts))

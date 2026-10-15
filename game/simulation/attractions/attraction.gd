@@ -36,6 +36,9 @@ var status: int:
 		return Status.OPERATING if is_open else Status.CLOSED
 
 
+## Rutsjebane-ratings {excitement, intensity, nausea} (T-068 udfylder; tom for andre).
+var ratings: Dictionary = {}
+
 func effective_reliability() -> float:
 	return minf(1.0, def.reliability + reliability_bonus)
 
