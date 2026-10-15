@@ -1,0 +1,49 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/coaster/coaster_demo.gd" id="s"]
+[ext_resource type="Script" path="res://scripts/rendering/coaster/coaster_track_mesh.gd" id="tm"]
+[ext_resource type="PackedScene" path="res://scenes/props/coaster_train.tscn" id="train"]
+[ext_resource type="PackedScene" path="res://scenes/props/coaster_station.tscn" id="station"]
+[ext_resource type="Texture2D" path="res://assets/textures/grass.png" id="grass"]
+
+[sub_resource type="PlaneMesh" id="ground"]
+size = Vector2(30, 30)
+
+[sub_resource type="StandardMaterial3D" id="gm"]
+albedo_color = Color(0.45, 0.7, 0.38, 1)
+albedo_texture = ExtResource("grass")
+uv1_scale = Vector3(15, 15, 15)
+
+[sub_resource type="Environment" id="env"]
+background_mode = 1
+background_color = Color(0.55, 0.75, 0.95, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.75, 0.8, 0.9, 1)
+ambient_light_energy = 0.6
+
+[node name="CoasterDemo" type="Node3D"]
+script = ExtResource("s")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("env")
+
+[node name="Sun" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.866, -0.354, 0.354, 0, 0.707, 0.707, -0.5, -0.612, 0.612, 0, 8, 0)
+shadow_enabled = true
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground")
+surface_material_override/0 = SubResource("gm")
+
+[node name="Track" type="MeshInstance3D" parent="."]
+script = ExtResource("tm")
+
+[node name="Ghost" type="MeshInstance3D" parent="."]
+script = ExtResource("tm")
+
+[node name="Station" parent="." instance=ExtResource("station")]
+
+[node name="Train" parent="." instance=ExtResource("train")]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+current = true
