@@ -50,6 +50,8 @@ var wander_steps_max: int = 30
 var _next_guest_id: int = 1
 var _spawn_counter: int = 0
 var _def_cache: Dictionary = {}
+var _reachable: Dictionary = {}  ## celle -> true, gåbare celler forbundet til indgangen
+var _reachable_dirty: bool = true
 
 
 ## p_balance = null → indlæs content/economy.json + guests.json (defaults ved mangler).
@@ -69,6 +71,7 @@ func _init(width: int, height: int, p_seed: int, p_balance: Balance = null) -> v
 	rng.seed = p_seed
 	clock.ticked.connect(_on_tick)
 	world.attraction_placed.connect(_on_attraction_placed)
+	world.tile_changed.connect(_on_tile_changed)
 	world.attraction_removed.connect(_on_attraction_removed)
 
 
@@ -143,7 +146,7 @@ func register_def(def: AttractionDef) -> void:
 func attraction_score() -> float:
 	var raw: float = 0.0
 	for a in attractions:
-		if not a.is_open:
+		if not is_operating(a):
 			continue
 		if a.def.kind == "ride":
 			raw += a.def.excitement * balance.weight_ride
@@ -152,9 +155,42 @@ func attraction_score() -> float:
 	return sqrt(maxf(0.0, raw))
 
 
+## Kan attraktionens indgang nås fra parkens indgang? (cachet, invalideres ved tile-ændring)
+func is_reachable(a: Attraction) -> bool:
+	if _reachable_dirty:
+		_reachable_dirty = false
+		_reachable = {}
+		var frontier: Array[Vector2i] = [world.entrance]
+		_reachable[world.entrance] = true
+		while not frontier.is_empty():
+			var c: Vector2i = frontier.pop_back()
+			for d in DIRS:
+				var n: Vector2i = c + d
+				if not _reachable.has(n) and world.is_walkable(n):
+					_reachable[n] = true
+					frontier.append(n)
+	return _reachable.has(a.entrance_cell)
+
+
+## Åben og nåbar fra indgangen – kun disse tæller i tiltrækning og max_guests.
+func is_operating(a: Attraction) -> bool:
+	return a.is_open and is_reachable(a)
+
+
+## Er køen fuld (capacity × queue_max_cycles)?
+func is_queue_full(a: Attraction) -> bool:
+	if balance.queue_max_cycles <= 0.0:
+		return false
+	return a.queue.size() >= int(ceil(a.def.capacity * balance.queue_max_cycles))
+
+
+func _on_tile_changed(_cell: Vector2i, _tile: int) -> void:
+	_reachable_dirty = true
+
+
 func _has_open_ride() -> bool:
 	for a in attractions:
-		if a.is_open and a.def.kind == "ride":
+		if is_operating(a) and a.def.kind == "ride":
 			return true
 	return false
 
@@ -184,7 +220,7 @@ func current_max_guests() -> int:
 		return max_guests
 	var cap: int = 0
 	for a in attractions:
-		if a.is_open:
+		if is_operating(a):
 			cap += a.def.capacity
 	return balance.max_guests_base + int(floor(cap * balance.max_guests_per_capacity))
 
@@ -207,6 +243,7 @@ func get_stats() -> Dictionary:
 
 const LEAVE_THOUGHT: String = "Jeg vil hjem."
 const TOO_EXPENSIVE_THOUGHT: String = "For dyrt!"
+const QUEUE_FULL_THOUGHT: String = "Køen er for lang!"
 
 
 ## Maks betalingsvilje (GDD). Uden gæst: glæde = happiness_start, behov = 0.
@@ -324,6 +361,15 @@ func _update_needs(g: Guest) -> bool:
 			if before <= th:
 				crossed = true
 	g.happiness = clampf(g.happiness - over * balance.happiness_decay_when_need_over_threshold, 0.0, 100.0)
+	if g.state == Guest.State.QUEUING and g.happiness < balance.leave_happiness:
+		# T-033: utilfredse gæster opgiver køen og går hjem (betalt billet refunderes ikke).
+		var q: Attraction = get_attraction(g.target_attraction_id)
+		if q != null:
+			q.queue.erase(g.id)
+		g.paid = 0
+		g.state = Guest.State.WALKING
+		_choose_goal(g)
+		return false
 	if g.state != Guest.State.WALKING:
 		return true
 	if g.happiness < balance.leave_happiness or (crossed and g.seeking_need == ""):
@@ -444,6 +490,8 @@ func _leave_reason(g: Guest) -> String:
 func _usable(g: Guest, a: Attraction) -> bool:
 	if not a.is_open or g.rejected_ids.has(a.id) or a.price > g.money:
 		return false
+	if is_queue_full(a):
+		return false
 	if a.price > price_value(a, g):
 		_reject_price(g, a)
 		return false
@@ -543,6 +591,9 @@ func _try_enter(g: Guest, a: Attraction) -> String:
 		g.happiness = maxf(0.0, g.happiness - balance.reject_happiness_penalty)
 	elif a.price > g.money:
 		reason = "Jeg har ikke råd!"
+	elif is_queue_full(a):
+		reason = QUEUE_FULL_THOUGHT
+		g.happiness = maxf(0.0, g.happiness - balance.queue_full_happiness_penalty)
 	if reason != "":
 		g.thought = reason
 		g.rejected_ids.append(a.id)

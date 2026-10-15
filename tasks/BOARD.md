@@ -41,8 +41,8 @@
 | T-030 | Sim: tiltrækning og omdømme | simulation | ✅ done |
 | T-031 | UI: omdømme og entré | ui | ✅ done |
 | T-032 | QA: tiltrækning og balance | qa | ✅ done |
-| T-033 | Sim: fuld park går i stå | simulation | ⬜ todo |
-| T-034 | Design: omdømme stiger for hurtigt | designer | ⬜ todo |
+| T-033 | Sim: fuld park går i stå | simulation | ✅ done |
+| T-034 | Design: omdømme stiger for hurtigt | designer | ✅ done |
 | T-024 | M2 verifikation | qa | ✅ done |
 | T-026 | Balance-justering | designer | ✅ done |
 

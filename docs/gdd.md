@@ -85,7 +85,7 @@ Konstanter i `game/content/park.json`. Kun **åbne** bygninger tæller.
 
 - `raw = Σ_rides excitement × weight_ride + antal(shops+toilets) × weight_facility`
 - `attraction_score = sqrt(raw)` (faldende merværdi)
-- `reputation` ∈ [0,100], start `reputation_start` (50). Når en gæst forlader parken: `reputation += (guest.happiness − reputation) × reputation_learn_rate` (0.02).
+- `reputation` ∈ [0,100], start `reputation_start` (50). Når en gæst forlader parken: `reputation += (guest.happiness − reputation) × reputation_learn_rate` (0.0025 – T-034: en god park bygger omdømme over 1–2 uger; startpark ≈70 efter 5 dage).
 - `expected_fee = expected_entry_fee_per_score × attraction_score`
 - `price_penalty = clamp((entry_fee − expected_fee) / expected_fee × price_penalty_factor, 0, price_penalty_max)` (kun straf ved for høj entré; 0 hvis score = 0)
 - `rep_mult = reputation_mult_base + reputation/100` (0.5..1.5; 1.0 ved start)

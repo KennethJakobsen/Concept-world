@@ -65,6 +65,10 @@ var spawn_min_per_day: float = 10.0
 var spawn_max_per_day: float = 400.0
 var max_guests_base: int = 20
 var max_guests_per_capacity: float = 2.0
+## T-033: maks kølængde = capacity × queue_max_cycles (0 = ubegrænset). Fuld kø → "Køen er for lang!".
+var queue_max_cycles: float = 3.0
+## T-033: glæde-tab når en gæst opgiver en fuld kø.
+var queue_full_happiness_penalty: float = 1.0
 
 
 ## park tom → legacy-spawn (spawn_interval_ticks/max_guests fra guests).
@@ -84,6 +88,8 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 	b.spawn_max_per_day = float(park.get("spawn_max_per_day", b.spawn_max_per_day))
 	b.max_guests_base = int(park.get("max_guests_base", b.max_guests_base))
 	b.max_guests_per_capacity = float(park.get("max_guests_per_capacity", b.max_guests_per_capacity))
+	b.queue_max_cycles = float(park.get("queue_max_cycles", b.queue_max_cycles))
+	b.queue_full_happiness_penalty = float(park.get("queue_full_happiness_penalty", b.queue_full_happiness_penalty))
 	b.start_money = int(economy.get("start_money", b.start_money))
 	b.entry_fee = int(economy.get("entry_fee", b.entry_fee))
 	b.path_cost = int(economy.get("path_cost", b.path_cost))
