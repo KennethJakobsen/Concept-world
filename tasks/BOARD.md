@@ -8,7 +8,7 @@
 | T-003 | Git-repo, LFS, ignore | architect | ✅ done |
 | T-004 | Godot-projekt og mappestruktur | architect | ✅ done |
 | T-005 | Test-runner | qa | ✅ done |
-| T-006 | GitHub Actions CI | architect | ⛔ blocked (GitHub-repo) |
+| T-006 | GitHub Actions CI | architect | ✅ done |
 | T-007 | Docs – GDD, ADR'er, konventioner | architect | ✅ done |
 | T-008 | Agent-definitioner | architect | ✅ done |
 | T-009 | Hello park – 3D-scene på web | graphics | 🔍 review |
