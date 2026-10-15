@@ -26,6 +26,7 @@ const GUEST_PICK_RADIUS: float = 0.5
 @export var park_view_path: NodePath
 @export var camera_path: NodePath
 @export var selection_path: NodePath
+@export var ground_path: NodePath = ^"../Ground"
 
 var tool: String = TOOL_SELECT
 var _view: ParkView
@@ -36,6 +37,7 @@ var _highlights: Array[CellHighlight] = []
 var _dragging: int = 0  ## 0 = ingen, 1 = placér, 2 = fjern
 var _speed_idx: int = 1
 var _drag_staff: int = -1  ## personale der trækkes i vælg-værktøjet
+var grid_lines: GridLineFader  ## grid-linjer kun i byggetilstand (T-063)
 
 
 func _ready() -> void:
@@ -50,11 +52,23 @@ func _ready() -> void:
 		_selection.build_tool_requested.connect(set_tool)
 	_picker = GridPicker.new()
 	add_child(_picker)
+	grid_lines = GridLineFader.new(_ground_material(), tool)
+
+
+func _ground_material() -> ShaderMaterial:
+	var ground := get_node_or_null(ground_path) as MeshInstance3D
+	if ground == null or ground.mesh == null:
+		return null
+	if ground.material_override is ShaderMaterial:
+		return ground.material_override as ShaderMaterial
+	return ground.mesh.surface_get_material(0) as ShaderMaterial
 
 
 func set_tool(def_id: String) -> void:
 	tool = def_id
 	_dragging = 0
+	if grid_lines != null:
+		grid_lines.set_tool(def_id)
 
 
 func _building_def() -> AttractionDef:
@@ -92,7 +106,9 @@ func _ensure_highlights(n: int) -> void:
 		_highlights.append(h as CellHighlight)
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	if grid_lines != null:
+		grid_lines.update(delta)
 	if _view == null or _view.sim == null:
 		return
 	_update_preview()

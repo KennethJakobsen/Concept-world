@@ -284,3 +284,50 @@ func _check_textured(n: Node, id: String) -> void:
 			assert_true(exempt or sm.albedo_texture != null, "%s/%s uden tekstur" % [id, n.get_parent().name + "/" + mi.name])
 	for c in n.get_children():
 		_check_textured(c, id)
+
+
+func _root_xf(n: Node3D, root: Node3D) -> Transform3D:
+	var xf := Transform3D.IDENTITY
+	var c: Node = n
+	while c != root and c is Node3D:
+		xf = (c as Node3D).transform * xf
+		c = c.get_parent()
+	return xf
+
+
+func _mesh_boxes(n: Node, root: Node3D, out: Array[AABB]) -> void:
+	for c in n.get_children():
+		if String(c.name) == "Bulbs":
+			continue
+		if c is MeshInstance3D and (c as MeshInstance3D).mesh:
+			out.append(_root_xf(c, root) * (c as MeshInstance3D).mesh.get_aabb())
+		_mesh_boxes(c, root, out)
+
+
+func _bulb_nodes(n: Node, out: Array[MeshInstance3D]) -> void:
+	for c in n.get_children():
+		if String(c.name) == "Bulbs":
+			for b in c.get_children():
+				out.append(b)
+		else:
+			_bulb_nodes(c, out)
+
+
+func test_ride_bulbs_sit_on_model() -> void:
+	## T-062: hver lyskæde-pære skal ligge på (tæt ved) en mesh i forlystelsen.
+	for id: String in ["carousel", "ferris_wheel", "bumper_cars", "swing_ride", "haunted_house", "go_karts"]:
+		var n: RideVisual = (load("res://scenes/props/%s.tscn" % id) as PackedScene).instantiate()
+		n._ready()
+		var boxes: Array[AABB] = []
+		_mesh_boxes(n, n, boxes)
+		var bulbs: Array[MeshInstance3D] = []
+		_bulb_nodes(n, bulbs)
+		assert_true(bulbs.size() >= 8, id + ": har lyskæde")
+		for b in bulbs:
+			var p := _root_xf(b, n).origin
+			var best := INF
+			for bb in boxes:
+				var q := Vector3(clampf(p.x, bb.position.x, bb.end.x), clampf(p.y, bb.position.y, bb.end.y), clampf(p.z, bb.position.z, bb.end.z))
+				best = minf(best, p.distance_to(q))
+			assert_true(best <= 0.06, "%s: pære %s svæver %.2f m fra modellen" % [id, p, best])
+		n.free()

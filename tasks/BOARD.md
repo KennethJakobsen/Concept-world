@@ -80,6 +80,9 @@
 | T-059 | Teksturer på terræn, stier og modeller | graphics | ✅ done |
 | T-060 | Bug: gokarts følger ikke banen | graphics | ✅ done |
 | T-061 | Bug: karrusel, gokart og pariserhjul mangler teksturer | graphics | ✅ done |
+| T-064 | Udviklingsværktøjer ud af web-build | architect | ✅ done |
+| T-063 | Grid-linjer kun i byggetilstand | gameplay | 🔍 review |
+| T-062 | Bug: lyskæde-pærer svæver fra modellen | graphics | 🔍 review |
 
 M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 
@@ -90,5 +93,5 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 - T-009, T-027: afventer brugerens visuelle bekræftelse.
 - ~~Startpark "dør" ved nedbrud uden mekaniker~~ → løst i T-046/T-047 (verificeret T-053).
 - Lyskæde-pærer svæver lidt fra gokart/spøgelseshus (set i T-058).
-- Grid-linjer altid synlige – kunne kun vises i byggetilstand (T-059).
+- ~~Grid-linjer altid synlige~~ → T-063.
 - Udviklingsværktøjer i game/tools/ kommer med i web-build (exclude_filter).
