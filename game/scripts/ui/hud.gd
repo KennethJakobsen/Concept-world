@@ -6,6 +6,7 @@ extends CanvasLayer
 const ATTRACTION_DIR: String = "res://content/attractions/"
 const THEME_RES: Theme = preload("res://ui/theme.tres")
 const SPEEDS: Array[float] = [1.0, 2.0, 4.0]
+const MARGIN: float = 8.0
 const NEED_NAMES: Dictionary = {"hunger": "Sult", "thirst": "Tørst", "toilet": "Toilet", "energy": "Træthed"}
 
 var sim: ParkSim
@@ -25,8 +26,91 @@ var _sel_guest: int = -1
 
 
 func _ready() -> void:
+	fit_window_to_screen()
 	_build_ui()
 	_connect_scene()
+
+
+## Desktop: vinduet må ikke være større end skærmens brugbare område (dock/menulinje).
+## Skaleres til max 85 % og centreres. Ingen effekt i browser/headless.
+static func fit_window_to_screen() -> void:
+	if OS.has_feature("web") or DisplayServer.get_name() == "headless":
+		return
+	if DisplayServer.window_get_mode() != DisplayServer.WINDOW_MODE_WINDOWED:
+		return
+	var screen: int = DisplayServer.window_get_current_screen()
+	var usable: Rect2i = DisplayServer.screen_get_usable_rect(screen)
+	var size: Vector2i = DisplayServer.window_get_size()
+	var max_size := Vector2i(int(usable.size.x * 0.85), int(usable.size.y * 0.85))
+	if size.x <= max_size.x and size.y <= max_size.y:
+		return
+	var f: float = minf(float(max_size.x) / size.x, float(max_size.y) / size.y)
+	size = Vector2i(int(size.x * f), int(size.y * f))
+	DisplayServer.window_set_size(size)
+	DisplayServer.window_set_position(usable.position + (usable.size - size) / 2)
+
+
+func _enter_tree() -> void:
+	if not get_viewport().size_changed.is_connected(_on_viewport_resized):
+		get_viewport().size_changed.connect(_on_viewport_resized)
+
+
+func _on_viewport_resized() -> void:
+	layout(get_viewport().get_visible_rect().size)
+
+
+## Placerer top-bar og byggemenu inden for viewporten. Panelernes højde beregnes ud fra
+## ombrydning af knapperne ved den givne bredde, så byggemenuen altid ligger helt synlig i bunden.
+func layout(vp: Vector2) -> void:
+	var root: Control = get_node_or_null("Root")
+	if root == null:
+		return
+	root.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	root.position = Vector2.ZERO
+	root.size = vp
+	var w: float = maxf(0.0, vp.x - 2.0 * MARGIN)
+	var top: PanelContainer = root.get_node("TopBar")
+	var bottom: PanelContainer = root.get_node("BuildMenu")
+	var top_h: float = _panel_height(top, w)
+	var bottom_h: float = _panel_height(bottom, w)
+	top.position = Vector2(MARGIN, MARGIN)
+	top.size = Vector2(w, top_h)
+	bottom.position = Vector2(MARGIN, maxf(MARGIN, vp.y - MARGIN - bottom_h))
+	bottom.size = Vector2(w, bottom_h)
+	for p: Control in [top, bottom]:
+		_sort_tree(p)
+	for p: Control in [_attr_panel, _guest_panel]:
+		p.position = Vector2(maxf(MARGIN, vp.x - MARGIN - p.custom_minimum_size.x), top_h + 2.0 * MARGIN)
+
+
+static func _sort_tree(c: Control) -> void:
+	if c is Container:
+		c.notification(Container.NOTIFICATION_SORT_CHILDREN)
+	for ch in c.get_children():
+		if ch is Control:
+			_sort_tree(ch)
+
+
+## Højde af et panel med én flow-container når indholdet ombrydes til bredden w.
+static func _panel_height(p: PanelContainer, w: float) -> float:
+	var sb: StyleBox = p.get_theme_stylebox("panel")
+	var inner_w: float = w - (sb.get_minimum_size().x if sb != null else 0.0)
+	var flow: FlowContainer = p.get_child(0)
+	var hsep: float = flow.get_theme_constant("h_separation")
+	var vsep: float = flow.get_theme_constant("v_separation")
+	var x: float = 0.0
+	var line_h: float = 0.0
+	var total: float = 0.0
+	for ch in flow.get_children():
+		var m: Vector2 = (ch as Control).get_combined_minimum_size()
+		if x > 0.0 and x + m.x > inner_w:
+			total += line_h + vsep
+			x = 0.0
+			line_h = 0.0
+		x += m.x + hsep
+		line_h = maxf(line_h, m.y)
+	total += line_h
+	return total + (sb.get_minimum_size().y if sb != null else 0.0)
 
 
 func _connect_scene() -> void:
@@ -63,12 +147,11 @@ func _build_ui() -> void:
 
 	# Top-bar
 	var top := _panel(root, "TopBar")
-	top.set_anchors_and_offsets_preset(Control.PRESET_TOP_WIDE, Control.PRESET_MODE_MINSIZE, 6)
-	var th := HBoxContainer.new()
-	th.add_theme_constant_override("separation", 12)
+	_anchor_wide(top, 0.0, Control.GROW_DIRECTION_END)
+	var th := HFlowContainer.new()
+	th.add_theme_constant_override("h_separation", 12)
 	top.add_child(th)
 	_top_label = Label.new()
-	_top_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	th.add_child(_top_label)
 	_pause_btn = _button(th, "Pause", _on_pause)
 	for s: float in SPEEDS:
@@ -76,7 +159,8 @@ func _build_ui() -> void:
 
 	# Byggemenu
 	var bottom := _panel(root, "BuildMenu")
-	bottom.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_MINSIZE, 6)
+	# Forankret i bunden; vokser opad når knapperne ombrydes (smalle vinduer).
+	_anchor_wide(bottom, 1.0, Control.GROW_DIRECTION_BEGIN)
 	var bh := HFlowContainer.new()
 	bottom.add_child(bh)
 	_add_build_button(bh, "select", "Vælg", 0)
@@ -109,6 +193,8 @@ func _build_ui() -> void:
 	gv.add_child(_guest_label)
 	_button(gv, "Luk panel", clear_selection)
 	_guest_panel.visible = false
+	if is_inside_tree():
+		layout.call_deferred(get_viewport().get_visible_rect().size)
 
 
 func _panel(parent: Control, n: String) -> PanelContainer:
@@ -117,6 +203,20 @@ func _panel(parent: Control, n: String) -> PanelContainer:
 	p.mouse_filter = Control.MOUSE_FILTER_STOP
 	parent.add_child(p)
 	return p
+
+
+## Fuld bredde med MARGIN, forankret top (y=0) eller bund (y=1).
+func _anchor_wide(p: Control, y: float, grow: Control.GrowDirection) -> void:
+	p.anchor_left = 0.0
+	p.anchor_right = 1.0
+	p.anchor_top = y
+	p.anchor_bottom = y
+	p.offset_left = MARGIN
+	p.offset_right = -MARGIN
+	var off: float = MARGIN if y == 0.0 else -MARGIN
+	p.offset_top = off
+	p.offset_bottom = off
+	p.grow_vertical = grow
 
 
 func _place_right(p: Control) -> void:
@@ -131,6 +231,8 @@ func _place_right(p: Control) -> void:
 func _button(parent: Control, text: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
+	b.clip_text = false
+	b.text_overrun_behavior = TextServer.OVERRUN_NO_TRIMMING
 	b.focus_mode = Control.FOCUS_NONE
 	b.mouse_filter = Control.MOUSE_FILTER_STOP
 	b.pressed.connect(cb)
