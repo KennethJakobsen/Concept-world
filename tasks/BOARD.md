@@ -11,7 +11,7 @@
 | T-006 | GitHub Actions CI | architect | ✅ done |
 | T-007 | Docs – GDD, ADR'er, konventioner | architect | ✅ done |
 | T-008 | Agent-definitioner | architect | ✅ done |
-| T-009 | Hello park – 3D-scene på web | graphics | 🔍 review |
+| T-009 | Hello park – 3D-scene på web | graphics | ✅ done |
 
 ## M1 – Gråboks
 | Task | Titel | Agent | Status |
@@ -35,7 +35,7 @@
 | T-022 | HUD, byggemenu, info-panel | ui | ✅ done |
 | T-023 | Generisk byggeri og valg | gameplay | ✅ done |
 | T-025 | Afstem simulation med GDD | simulation | ✅ done |
-| T-027 | Bug: byggemenu uden for skærm | ui | 🔍 review |
+| T-027 | Bug: byggemenu uden for skærm | ui | ✅ done |
 | T-028 | Test-runner tæller crash som bestået | qa | ✅ done |
 | T-029 | Design: tiltrækning og omdømme | designer | ✅ done |
 | T-030 | Sim: tiltrækning og omdømme | simulation | ✅ done |
@@ -81,8 +81,8 @@
 | T-060 | Bug: gokarts følger ikke banen | graphics | ✅ done |
 | T-061 | Bug: karrusel, gokart og pariserhjul mangler teksturer | graphics | ✅ done |
 | T-064 | Udviklingsværktøjer ud af web-build | architect | ✅ done |
-| T-063 | Grid-linjer kun i byggetilstand | gameplay | 🔍 review |
-| T-062 | Bug: lyskæde-pærer svæver fra modellen | graphics | 🔍 review |
+| T-063 | Grid-linjer kun i byggetilstand | gameplay | ✅ done |
+| T-062 | Bug: lyskæde-pærer svæver fra modellen | graphics | ✅ done |
 
 M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 
@@ -90,8 +90,4 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger
 
 ## Åbne punkter / backlog
-- T-009, T-027: afventer brugerens visuelle bekræftelse.
-- ~~Startpark "dør" ved nedbrud uden mekaniker~~ → løst i T-046/T-047 (verificeret T-053).
-- Lyskæde-pærer svæver lidt fra gokart/spøgelseshus (set i T-058).
-- ~~Grid-linjer altid synlige~~ → T-063.
-- Udviklingsværktøjer i game/tools/ kommer med i web-build (exclude_filter).
+- Ingen. (Startpark-nedbrud → T-047, pærer → T-062, grid → T-063, tools i web-build → T-064.)

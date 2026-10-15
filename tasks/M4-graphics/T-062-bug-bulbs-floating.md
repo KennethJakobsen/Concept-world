@@ -1,6 +1,6 @@
 # T-062: Bug: lyskæde-pærer svæver fra modellen
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M4
 - **Agent:** graphics
 - **Afhænger af:** T-049
@@ -15,10 +15,11 @@ Brugerrapport: RideVisuals emissive lyskæder svæver et stykke fra modellen (ty
 - [x] Fallback for ukendte forlystelser: øverste mesh
 - [x] Test `test_ride_bulbs_sit_on_model`: hver pære ligger højst 0,06 m fra en mesh-AABB i samme forlystelse
 - [x] test.sh grøn; kontrolrender (Compatibility, lys tændt)
-- [ ] Brugeren bekræfter visuelt
+- [x] Brugeren bekræfter visuelt
 
 ## Ejer / må ikke røre
 Ejer: `game/scripts/rendering/`, `game/scenes/props/`, `game/tests/test_props.gd`. Må ikke røre bridge (terræn-grid) eller export_presets.
 
 ## Log
 - 2026-10-15 – graphics: oprettet og udført. Årsag: pærerne lå på en ellipse rundt om hele modellens AABB i 60 % højde, dvs. i luften uden for model og hegn. Nu følger de faktiske kanter. test.sh 158/0. Kontrolrender af alle seks med lys tændt: pærer sidder på tagudhæng, karruselkant, hjulringe, tagkant, kalechekant og gokartens vægge/portal.
+- 2026-10-15 – orkestrator: brugeren har godkendt. Status: done.

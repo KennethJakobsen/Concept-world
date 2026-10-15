@@ -1,6 +1,6 @@
 # T-063: Grid-linjer kun i byggetilstand
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M4
 - **Agent:** gameplay
 - **Afhænger af:** T-059
@@ -15,10 +15,11 @@ Terrænets grid-linjer (`line_strength` i `ground_grid.gdshader`) vises kun, nå
 - [x] `BuildTool` finder Ground-materialet via `ground_path` (default `../Ground`); shaderen uændret
 - [x] Test: `tests/test_grid_lines.gd`
 - [x] test.sh 157/0, integration.sh OK
-- [ ] Brugeren bekræfter visuelt
+- [x] Brugeren bekræfter visuelt
 
 ## Ejer / må ikke røre
 Ejer: `game/scripts/building/`. Må ikke røre simulation, audio, ui, props/ride_visual, shaderen.
 
 ## Log
 - 2026-10-15 – gameplay: oprettet og udført. Fader i building-laget; set_tool opdaterer mål, _process fader. Starter skjult (vælg-værktøj). Status: review.
+- 2026-10-15 – orkestrator: brugeren har godkendt. Status: done.
