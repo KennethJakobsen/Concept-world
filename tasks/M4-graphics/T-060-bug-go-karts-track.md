@@ -21,3 +21,4 @@ Ejer: `game/scripts/rendering/kart_track.gd`, `game/scenes/props/go_karts.tscn`,
 
 ## Log
 - 2026-10-15 – graphics: oprettet og udført. Årsag: `Karts` var en Spinner, så bilerne roterede i en cirkel med radius 1.45 – ud over banens langsider/infield. Ny `KartTrack` arver Spinner (så RideVisual stadig samler den op) og placerer bilerne langs stadion-kurven. test.sh 153/0, integration OK, smoke uden fejl. Kontrolrender viser bilerne på asfalten.
+- 2026-10-15 – orkestrator: brugeren har godkendt. Status: done.
