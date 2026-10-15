@@ -46,7 +46,17 @@
 | T-024 | M2 verifikation | qa | ✅ done |
 | T-026 | Balance-justering | designer | ✅ done |
 
+## M3 – Spilbar loop  ([kontrakt](M3-playable/_CONTRACT.md))
+| Task | Titel | Agent | Status |
+|---|---|---|---|
+| T-035 | Personale, nedbrud, affald, dekoration, 3 forlystelser (data) | designer | ⬜ todo |
+| T-036 | Save/load med versionering | simulation | ⬜ todo |
+| T-037 | Personale, nedbrud, affald, dekoration (sim) | simulation | ⬜ todo |
+| T-038 | Props: personale, dekoration, forlystelser, effekter | graphics | ⬜ todo |
+| T-039 | Personale/dekoration/nedbrud i scenen, indlæsning | gameplay | ⬜ todo |
+| T-040 | Hovedmenu, gem/indlæs, personale-panel | ui | ⬜ todo |
+| T-041 | M3 verifikation | qa | ⬜ todo |
+
 ## Kommende milepæle
-- **M3 Spilbar loop:** 5–8 forlystelser, butikker, personale, save/load, UI
 - **M4 Grafikløft:** lys, dag/nat, partikler, animation, lyd
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger
