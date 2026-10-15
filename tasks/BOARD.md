@@ -78,8 +78,10 @@
 | T-057 | Bug: spøgelseshusets tag vender forkert | graphics | ✅ done |
 | T-058 | Flere detaljer på modellerne | graphics | ✅ done |
 | T-059 | Teksturer på terræn, stier og modeller | graphics | ✅ done |
+| T-060 | Bug: gokarts følger ikke banen | graphics | 🔍 review |
+| T-061 | Bug: karrusel, gokart og pariserhjul mangler teksturer | graphics | 🔍 review |
 
-M4 afsluttet 2026-10-15.
+M4 afsluttet 2026-10-15, genåbnet 2026-10-15 for T-060/T-061.
 
 ## Kommende milepæle
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger

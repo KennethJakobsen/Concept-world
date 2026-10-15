@@ -1,6 +1,6 @@
 extends SceneTree
 ## T-059: Renderer et kontrolbillede af teksturerede props i Compatibility.
-## Kør (ikke headless): cd game && godot --rendering-method gl_compatibility --script res://tools/render_preview.gd -- /sti/til/out.png
+## Kør (ikke headless): cd game && godot --rendering-method gl_compatibility --script res://tools/render_preview.gd -- /sti/til/out.png [prop1,prop2,...] [close]  (close = nærbillede af første prop)
 
 const PROPS := ["haunted_house", "toilet", "burger_stand", "bench", "carousel", "go_karts", "entrance", "bin", "lamp", "tree_round"]
 
@@ -12,6 +12,9 @@ func _init() -> void:
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0:
 		_out = args[0]
+	var props: Array = PROPS
+	if args.size() > 1:
+		props = Array(args[1].split(","))
 	var root3d := Node3D.new()
 	root.add_child(root3d)
 	var ground := MeshInstance3D.new()
@@ -28,7 +31,7 @@ func _init() -> void:
 		t.position = Vector3(i - 3 + 0.5, 0, 2.5)
 		root3d.add_child(t)
 	var x := -5.0
-	for id in PROPS:
+	for id in props:
 		var n: Node3D = (load("res://scenes/props/%s.tscn" % id) as PackedScene).instantiate()
 		n.position = Vector3(x, 0, 0 if int(x) % 2 == 0 else -2.5)
 		root3d.add_child(n)
@@ -46,13 +49,16 @@ func _init() -> void:
 	root3d.add_child(env)
 	var cam := Camera3D.new()
 	root3d.add_child(cam)
-	cam.look_at_from_position(Vector3(4, 6, 9), Vector3(4, 0.5, -1))
+	if args.size() > 2 and args[2] == "close":
+		cam.look_at_from_position(Vector3(-5 + 2.6, 2.6, 3.4), Vector3(-5, 0.6, 0))
+	else:
+		cam.look_at_from_position(Vector3(4, 6, 9), Vector3(4, 0.5, -1))
 	root.size = Vector2i(1600, 900)
 
 
 func _process(_d: float) -> bool:
 	_frames += 1
-	if _frames == 20:
+	if _frames == 40:
 		root.get_texture().get_image().save_png(_out)
 		print("saved ", _out)
 		return true

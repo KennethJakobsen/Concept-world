@@ -214,3 +214,73 @@ func test_detail_keeps_api_nodes() -> void:
 		for p in need[id]:
 			assert_true(n.get_node_or_null(p) != null, "%s/%s" % [id, p])
 		n.free()
+
+
+## T-060: Gokarts følger banens midterlinje og vender i kørselsretningen.
+func test_go_karts_follow_track() -> void:
+	var n: RideVisual = (load("res://scenes/props/go_karts.tscn") as PackedScene).instantiate()
+	n._ready()
+	var track: KartTrack = n.get_node("Karts")
+	assert_true(n._spinners.has(track), "RideVisual styrer banen")
+	for frame in 300:
+		n._process(0.05)
+		track._process(0.05)
+		if frame % 50 != 49:
+			continue
+		var karts := track._karts()
+		assert_eq(karts.size(), 3)
+		for k in karts:
+			var best := INF
+			var best_t := Vector3.ZERO
+			var L := track.length()
+			for i in 400:
+				var s := L * i / 400.0
+				var d := Vector2(k.position.x, k.position.z).distance_to(Vector2(track.point_at(s).x, track.point_at(s).z))
+				if d < best:
+					best = d
+					best_t = track.tangent_at(s)
+			assert_true(best < 0.05, "%s %.3f fra midterlinjen" % [k.name, best])
+			assert_true(k.transform.basis.z.normalized().dot(best_t) > 0.95, "%s vender i kørselsretningen" % k.name)
+			# inde på asfalten: mellem Infield (1.15 x 0.65) og Track-kant (1.75 x 1.25)
+			var p: Vector3 = k.position
+			assert_true(absf(p.x) < 1.6 and absf(p.z) < 1.1, "%s på banen" % k.name)
+			assert_true(absf(p.x) > 1.25 or absf(p.z) > 0.75, "%s ikke i infield" % k.name)
+	# blødt stop
+	n.set_running(false)
+	var before := track._s
+	for i in 100:
+		n._process(0.05)
+		track._process(0.05)
+	var mid := track._s
+	for i in 20:
+		n._process(0.05)
+		track._process(0.05)
+	assert_true(is_equal_approx(mid, track._s), "står stille efter stop")
+	assert_true(not is_equal_approx(before, mid), "decelererer blødt (kører lidt videre)")
+	n.free()
+
+
+## T-061: Ingen synlig flade på forlystelserne er en flad farve uden tekstur
+## (undtagen hud, glas og emissive pærer).
+func test_rides_fully_textured() -> void:
+	for id in RIDES:
+		var n: Node3D = (load("res://scenes/props/%s.tscn" % id) as PackedScene).instantiate()
+		_check_textured(n, id)
+		n.free()
+
+
+func _check_textured(n: Node, id: String) -> void:
+	if n is MeshInstance3D:
+		var mi := n as MeshInstance3D
+		var mat: Material = mi.material_override
+		if mat == null and mi.mesh:
+			mat = mi.mesh.surface_get_material(0)
+		var sm := mat as StandardMaterial3D
+		assert_true(sm != null, "%s/%s har materiale" % [id, mi.name])
+		if sm:
+			var c := sm.albedo_color
+			var skin := c.r > 0.9 and c.g > 0.75 and c.g < 0.85 and c.b > 0.6 and c.b < 0.7
+			var exempt := sm.emission_enabled or skin or c.a < 1.0 or String(mi.name).contains("Window")
+			assert_true(exempt or sm.albedo_texture != null, "%s/%s uden tekstur" % [id, n.get_parent().name + "/" + mi.name])
+	for c in n.get_children():
+		_check_textured(c, id)

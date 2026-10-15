@@ -16,6 +16,11 @@ func _init() -> void:
 	_save(_brick(128), "brick")
 	_save(_metal(64), "metal")
 	_save(_plaster(64), "plaster")
+	_save(_asphalt(128), "asphalt")
+	_save(_tread(64), "tread")
+	_save(_panel(64), "panel")
+	_save(_canvas(64), "canvas")
+	_save(_steel(64), "steel")
 	quit()
 
 
@@ -195,4 +200,83 @@ func _plaster(s: int) -> Image:
 		for x in s:
 			var n := _fbm(float(x) / s, float(y) / s, 4, 4, 71)
 			_gray(img, x, y, 0.9 + (n - 0.5) * 0.16 + (_hash(x, y, 72) - 0.5) * 0.04)
+	return img
+
+
+## T-061: asfalt – fint grus-korn + svage pletter, lys gråtone (tintes mørk af materialet).
+func _asphalt(s: int) -> Image:
+	var img := Image.create(s, s, false, Image.FORMAT_RGB8)
+	for y in s:
+		for x in s:
+			var n := _fbm(float(x) / s, float(y) / s, 4, 3, 81)
+			var grain := _hash(x, y, 82)
+			var g := 0.86 + (n - 0.5) * 0.14 + (grain - 0.5) * 0.12
+			if grain > 0.94:
+				g += 0.08
+			_gray(img, x, y, g)
+	return img
+
+
+## T-061: riflet gulvplade (diamantmønster) – tydelig kontrast til radiobil-gulv.
+func _tread(s: int) -> Image:
+	var img := Image.create(s, s, false, Image.FORMAT_RGB8)
+	var n_cells := 8
+	for y in s:
+		for x in s:
+			var u := float(x) / s * n_cells
+			var v := float(y) / s * n_cells
+			var cu := fposmod(u, 1.0) - 0.5
+			var cv := fposmod(v, 1.0) - 0.5
+			var flip := (int(u) + int(v)) % 2 == 0
+			var a := (cu + cv) if flip else (cu - cv)
+			var b := (cu - cv) if flip else (cu + cv)
+			var ridge := smoothstep(0.12, 0.05, absf(a)) * smoothstep(0.42, 0.3, absf(b))
+			var n := _fbm(float(x) / s, float(y) / s, 4, 3, 91)
+			_gray(img, x, y, 0.7 + (n - 0.5) * 0.12 + ridge * 0.3)
+	return img
+
+
+## T-061: malet metalpanel med samlinger og nitter (tydelig, stiliseret).
+func _panel(s: int) -> Image:
+	var img := Image.create(s, s, false, Image.FORMAT_RGB8)
+	for y in s:
+		for x in s:
+			var u := float(x) / s * 2.0
+			var v := float(y) / s * 2.0
+			var fu := fposmod(u, 1.0)
+			var fv := fposmod(v, 1.0)
+			var seam := smoothstep(0.0, 0.04, fu) * smoothstep(1.0, 0.96, fu) * smoothstep(0.0, 0.04, fv) * smoothstep(1.0, 0.96, fv)
+			var rivet := 0.0
+			for c in [Vector2(0.1, 0.1), Vector2(0.9, 0.1), Vector2(0.1, 0.9), Vector2(0.9, 0.9)]:
+				rivet = maxf(rivet, smoothstep(0.06, 0.03, Vector2(fu, fv).distance_to(c)))
+			var n := _fbm(float(x) / s, float(y) / s, 4, 3, 92)
+			var g := 0.9 + (n - 0.5) * 0.18 - (1.0 - fv) * 0.06
+			g = lerpf(0.55, g, seam) + rivet * 0.15
+			_gray(img, x, y, g)
+	return img
+
+
+## T-061: lærred/stof med vævning og svage striber (tage, markiser, sæder).
+func _canvas(s: int) -> Image:
+	var img := Image.create(s, s, false, Image.FORMAT_RGB8)
+	for y in s:
+		for x in s:
+			var weave := 0.5 + 0.5 * sin(x * PI) * sin(y * PI * 0.5 + (x % 2) * PI)
+			var stripe := 1.0 if (x / 16) % 2 == 0 else 0.86
+			var n := _fbm(float(x) / s, float(y) / s, 4, 3, 93)
+			_gray(img, x, y, stripe * (0.86 + (weave - 0.5) * 0.1 + (n - 0.5) * 0.14))
+	return img
+
+
+## T-061: børstet stål med tydelige striber og bånd (forlystelsernes stel).
+func _steel(s: int) -> Image:
+	var img := Image.create(s, s, false, Image.FORMAT_RGB8)
+	for y in s:
+		for x in s:
+			var u := float(x) / s
+			var v := float(y) / s
+			var streak := _vnoise(u * 2.0, v * 32.0, 32, 101)
+			var n := _fbm(u, v, 4, 3, 102)
+			var band := smoothstep(0.0, 0.05, fposmod(v * 2.0, 1.0)) * smoothstep(1.0, 0.95, fposmod(v * 2.0, 1.0))
+			_gray(img, x, y, lerpf(0.6, 0.85 + (streak - 0.5) * 0.25 + (n - 0.5) * 0.2, band))
 	return img

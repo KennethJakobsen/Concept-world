@@ -1,5 +1,9 @@
 [gd_scene format=3]
 
+[ext_resource type="Texture2D" path="res://assets/textures/canvas.png" id="tex_canvas"]
+
+[ext_resource type="Texture2D" path="res://assets/textures/panel.png" id="tex_panel"]
+
 [ext_resource type="Material" path="res://assets/materials/wood.tres" id="mat_wood"]
 
 [ext_resource type="Material" path="res://assets/materials/wood_dark.tres" id="mat_wood_dark"]
@@ -11,22 +15,42 @@
 [sub_resource type="StandardMaterial3D" id="m_red"]
 albedo_color = Color(0.86, 0.3, 0.28, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_canvas")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="m_cream"]
 albedo_color = Color(0.98, 0.92, 0.78, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="m_gold"]
 albedo_color = Color(0.93, 0.74, 0.3, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="m_teal"]
 albedo_color = Color(0.3, 0.66, 0.66, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="m_pink"]
 albedo_color = Color(0.94, 0.6, 0.62, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="CylinderMesh" id="base"]
 material = ExtResource("mat_wood")
@@ -109,26 +133,50 @@ size = Vector3(0.14, 0.24, 0.14)
 [sub_resource type="StandardMaterial3D" id="dm_red"]
 albedo_color = Color(0.860, 0.300, 0.280, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_canvas")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_cream"]
 albedo_color = Color(0.980, 0.920, 0.780, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_gold"]
 albedo_color = Color(0.930, 0.740, 0.300, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_teal"]
 albedo_color = Color(0.300, 0.660, 0.660, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_pink"]
 albedo_color = Color(0.940, 0.600, 0.620, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_dark"]
 albedo_color = Color(0.200, 0.200, 0.240, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_cream_0_13_0_2_0_04"]
 material = SubResource("dm_cream")

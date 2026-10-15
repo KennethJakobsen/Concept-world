@@ -1,6 +1,10 @@
 [gd_scene format=3]
 
-[ext_resource type="Material" path="res://assets/materials/metal.tres" id="mat_metal"]
+[ext_resource type="Material" path="res://assets/materials/steel.tres" id="mat_steel"]
+
+[ext_resource type="Texture2D" path="res://assets/textures/canvas.png" id="tex_canvas"]
+
+[ext_resource type="Texture2D" path="res://assets/textures/panel.png" id="tex_panel"]
 
 [ext_resource type="Material" path="res://assets/materials/wood.tres" id="mat_wood"]
 
@@ -11,26 +15,50 @@
 [sub_resource type="StandardMaterial3D" id="m_blue"]
 albedo_color = Color(0.35, 0.5, 0.85, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="m_gold"]
 albedo_color = Color(0.93, 0.74, 0.3, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="m_pink"]
 albedo_color = Color(0.94, 0.6, 0.62, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="m_red"]
 albedo_color = Color(0.86, 0.3, 0.28, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="m_teal"]
 albedo_color = Color(0.3, 0.66, 0.66, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_canvas")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="m_yellow"]
 albedo_color = Color(0.98, 0.85, 0.35, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="CylinderMesh" id="mesh1"]
 material = ExtResource("mat_wood")
@@ -41,7 +69,7 @@ radial_segments = 12
 rings = 1
 
 [sub_resource type="CylinderMesh" id="mesh2"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.12
 bottom_radius = 0.18
 height = 2.6
@@ -64,7 +92,7 @@ radial_segments = 10
 rings = 5
 
 [sub_resource type="CylinderMesh" id="mesh5"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.01
 bottom_radius = 0.01
 height = 1.4
@@ -76,7 +104,7 @@ material = SubResource("m_red")
 size = Vector3(0.18, 0.05, 0.18)
 
 [sub_resource type="CylinderMesh" id="mesh7"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.01
 bottom_radius = 0.01
 height = 1.4
@@ -88,7 +116,7 @@ material = SubResource("m_yellow")
 size = Vector3(0.18, 0.05, 0.18)
 
 [sub_resource type="CylinderMesh" id="mesh9"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.01
 bottom_radius = 0.01
 height = 1.4
@@ -100,7 +128,7 @@ material = SubResource("m_pink")
 size = Vector3(0.18, 0.05, 0.18)
 
 [sub_resource type="CylinderMesh" id="mesh11"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.01
 bottom_radius = 0.01
 height = 1.4
@@ -112,7 +140,7 @@ material = SubResource("m_blue")
 size = Vector3(0.18, 0.05, 0.18)
 
 [sub_resource type="CylinderMesh" id="mesh13"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.01
 bottom_radius = 0.01
 height = 1.4
@@ -124,7 +152,7 @@ material = SubResource("m_red")
 size = Vector3(0.18, 0.05, 0.18)
 
 [sub_resource type="CylinderMesh" id="mesh15"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.01
 bottom_radius = 0.01
 height = 1.4
@@ -136,7 +164,7 @@ material = SubResource("m_yellow")
 size = Vector3(0.18, 0.05, 0.18)
 
 [sub_resource type="CylinderMesh" id="mesh17"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.01
 bottom_radius = 0.01
 height = 1.4
@@ -148,7 +176,7 @@ material = SubResource("m_pink")
 size = Vector3(0.18, 0.05, 0.18)
 
 [sub_resource type="CylinderMesh" id="mesh19"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.01
 bottom_radius = 0.01
 height = 1.4
@@ -162,41 +190,73 @@ size = Vector3(0.18, 0.05, 0.18)
 [sub_resource type="StandardMaterial3D" id="dm_red"]
 albedo_color = Color(0.860, 0.300, 0.280, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_canvas")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_cream"]
 albedo_color = Color(0.980, 0.920, 0.780, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_gold"]
 albedo_color = Color(0.930, 0.740, 0.300, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_dark"]
 albedo_color = Color(0.200, 0.200, 0.240, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_teal"]
 albedo_color = Color(0.300, 0.660, 0.660, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_canvas")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_yellow"]
 albedo_color = Color(0.980, 0.850, 0.350, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_canvas")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_pink"]
 albedo_color = Color(0.940, 0.600, 0.620, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_blue"]
 albedo_color = Color(0.350, 0.500, 0.850, 1)
 roughness = 0.75
+albedo_texture = ExtResource("tex_panel")
+uv1_scale = Vector3(2.0, 2.0, 2.0)
+uv1_triplanar = true
+texture_filter = 5
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_dark_0_03_0_15_0_18"]
 material = SubResource("dm_dark")
 size = Vector3(0.03, 0.15, 0.18)
 
 [sub_resource type="CylinderMesh" id="dmesh_cyl_dm_grey_0_01_0_01_0_18_6"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 top_radius = 0.01
 bottom_radius = 0.01
 height = 0.18
@@ -204,7 +264,7 @@ radial_segments = 6
 rings = 1
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_grey_0_05_0_02_0_14"]
-material = ExtResource("mat_metal")
+material = ExtResource("mat_steel")
 size = Vector3(0.05, 0.02, 0.14)
 
 [sub_resource type="SphereMesh" id="dmesh_sph_dm_yellow_0_06_8_0"]
