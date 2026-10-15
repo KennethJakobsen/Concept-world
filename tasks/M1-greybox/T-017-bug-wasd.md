@@ -1,6 +1,6 @@
 # T-017: Bug – WASD flytter ikke kameraet
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M1
 - **Agent:** graphics
 - **Afhænger af:** T-009
@@ -17,3 +17,4 @@ Definér egne input-actions i project.godot (cam_left/right/forward/back = A/D/W
 ## Log
 - 2026-10-15 – architect: oprettet efter brugerrapport
 - 2026-10-15 – graphics: cam_* input-actions (physical_keycode, WASD+pile, Q/E) i project.godot; park_camera bruger dem; test_input_map.gd. Ingen kollision med 1/2/Space/+/-. Import, tests (20/20) og smoke grønne.
+- 2026-10-15 – qa: bruger har verificeret manuelt – done

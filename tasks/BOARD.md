@@ -23,10 +23,20 @@
 | T-014 | Terræn, picking, props | graphics | ✅ done |
 | T-015 | Bridge og byggeværktøjer | gameplay | ✅ done |
 | T-016 | M1 verifikation | qa | ✅ done |
-| T-017 | Bug: WASD virker ikke | graphics | 🔍 review |
+| T-017 | Bug: WASD virker ikke | graphics | ✅ done |
+
+## M2 – Kernesimulation  ([kontrakt](M2-core-sim/_CONTRACT.md))
+| Task | Titel | Agent | Status |
+|---|---|---|---|
+| T-018 | Indholdsdata og balance | designer | ⬜ todo |
+| T-019 | Økonomi | simulation | ⬜ todo |
+| T-020 | Behov, butikker, glæde | simulation | ⬜ todo |
+| T-021 | Props til M2-bygninger | graphics | ⬜ todo |
+| T-022 | HUD, byggemenu, info-panel | ui | ⬜ todo |
+| T-023 | Generisk byggeri og valg | gameplay | ⬜ todo |
+| T-024 | M2 verifikation | qa | ⬜ todo |
 
 ## Kommende milepæle
-- **M2 Kernesimulation:** behov, køer, priser, økonomi
 - **M3 Spilbar loop:** 5–8 forlystelser, butikker, personale, save/load, UI
 - **M4 Grafikløft:** lys, dag/nat, partikler, animation, lyd
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger
