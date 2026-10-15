@@ -1,0 +1,1 @@
+{"id": "pirate_ship", "name": "Gyngeskibet", "kind": "ride", "footprint": [4, 2], "build_cost": 1600, "running_cost_per_day": 320, "capacity": 20, "ride_ticks": 240, "ticket_price": 6, "excitement": 45, "satisfies": {"energy": 5}, "model": "res://scenes/props/pirate_ship.tscn", "reliability": 0.975, "repair_ticks": 150, "intensity": 50, "nausea": 45}

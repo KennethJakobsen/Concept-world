@@ -1,0 +1,1 @@
+{"id": "balloon_stand", "name": "Ballonbåsen", "kind": "shop", "footprint": [1, 1], "build_cost": 220, "running_cost_per_day": 40, "capacity": 2, "ride_ticks": 30, "ticket_price": 2, "excitement": 10, "satisfies": {}, "model": "res://scenes/props/balloon_stand.tscn", "carry_item": "balloon"}

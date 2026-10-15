@@ -1,0 +1,1 @@
+{"id": "fries_stand", "name": "Fritterbixen", "kind": "shop", "footprint": [1, 1], "build_cost": 260, "running_cost_per_day": 60, "capacity": 2, "ride_ticks": 40, "ticket_price": 3, "excitement": 0, "satisfies": {"hunger": -50, "thirst": 15, "toilet": 10}, "model": "res://scenes/props/fries_stand.tscn"}

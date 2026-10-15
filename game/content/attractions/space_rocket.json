@@ -1,0 +1,1 @@
+{"id": "space_rocket", "name": "Månefærgen", "kind": "ride", "footprint": [3, 3], "build_cost": 2200, "running_cost_per_day": 420, "capacity": 12, "ride_ticks": 260, "ticket_price": 8, "excitement": 55, "satisfies": {"energy": 5}, "model": "res://scenes/props/space_rocket.tscn", "reliability": 0.97, "repair_ticks": 150, "intensity": 60, "nausea": 40}

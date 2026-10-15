@@ -1,0 +1,1 @@
+{"id": "drop_tower", "name": "Faldtårnet", "kind": "ride", "footprint": [2, 2], "build_cost": 3000, "running_cost_per_day": 500, "capacity": 12, "ride_ticks": 200, "ticket_price": 9, "excitement": 65, "satisfies": {"energy": 5}, "model": "res://scenes/props/drop_tower.tscn", "reliability": 0.97, "repair_ticks": 200, "intensity": 85, "nausea": 30}

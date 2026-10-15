@@ -1,0 +1,1 @@
+{"id": "souvenir_shop", "name": "Mindebutikken", "kind": "shop", "footprint": [2, 1], "build_cost": 500, "running_cost_per_day": 90, "capacity": 3, "ride_ticks": 50, "ticket_price": 5, "excitement": 10, "satisfies": {}, "model": "res://scenes/props/souvenir_shop.tscn", "carry_item": "souvenir"}

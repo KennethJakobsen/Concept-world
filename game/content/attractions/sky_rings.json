@@ -1,0 +1,1 @@
+{"id": "sky_rings", "name": "Himmelringene", "kind": "ride", "footprint": [2, 2], "build_cost": 1400, "running_cost_per_day": 280, "capacity": 2, "ride_ticks": 180, "ticket_price": 7, "excitement": 45, "satisfies": {"energy": 5}, "model": "res://scenes/props/sky_rings.tscn", "reliability": 0.975, "repair_ticks": 150, "intensity": 70, "nausea": 60}
