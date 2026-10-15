@@ -1,6 +1,6 @@
 {
   "points_per_day_base": 10,
-  "cost_per_level": [0, 500, 1000, 2000],
+  "cost_per_level": [0, 150, 300, 600],
   "topics": [
     {"id": "gentle_rides", "name": "Rolige forlystelser", "unlocks": ["ferris_wheel", "haunted_house"]},
     {"id": "thrill_rides", "name": "Vilde forlystelser", "unlocks": ["swing_ride", "go_karts", "bumper_cars"]},

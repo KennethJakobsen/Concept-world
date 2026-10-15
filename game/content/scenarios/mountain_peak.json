@@ -1,8 +1,8 @@
 {"id": "mountain_peak", "name": "Bjergtoppen", "description": "Lidt penge, høje forventninger. Byg en stor og værdifuld park med vilde rutsjebaner.", "order": 3,
  "map": {"width": 64, "height": 64, "entrance": [0, 32]},
- "start": {"money": 8000, "loan": 0, "reputation": 35, "paths": [[0,32],[1,32],[2,32]],
+ "start": {"money": 10000, "loan": 0, "reputation": 35, "paths": [[0,32],[1,32],[2,32]],
    "attractions": [], "decor": [], "staff": [],
    "unlocked": [], "research_enabled": true, "entry_fee": 12},
  "objectives": [{"type": "guests_in_park", "value": 350}, {"type": "park_value_min", "value": 60000}, {"type": "coaster_excitement_min", "value": 7.0}, {"type": "reputation_min", "value": 75}],
  "deadline_days": 90,
- "lose": [{"type": "money_below", "value": -3000, "days": 3}, {"type": "reputation_below", "value": 15, "days": 4}]}
+ "lose": [{"type": "money_below", "value": -4000, "days": 4}, {"type": "reputation_below", "value": 15, "days": 4}]}

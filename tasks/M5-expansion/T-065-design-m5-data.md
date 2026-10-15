@@ -14,7 +14,7 @@ Lever alt indhold til M5 efter `_CONTRACT.md` §0, og beskriv systemerne i `docs
 - [x] `coaster/pieces.json` (mindst de 7 stykker fra kontrakten), `coaster/trains.json`, `coaster/ratings.json`, `attractions/wooden_coaster.json`
 - [x] Alle id'er krydsrefererer korrekt (verificeres af testen i T-066/T-067). Kun ASCII og danske bogstaver, der findes i fonten
 - [x] GDD: afsnit om forskning, scenarier og rutsjebane, inklusive rating-formlen i ord og en tabel over scenarie-mål
-- [ ] Efter T-068: balance-noter for en "typisk" oval rutsjebane (forventede ratings) i loggen
+- [x] Efter T-068: balance-noter for en "typisk" oval rutsjebane (forventede ratings) i loggen
 
 ## Ejer / må ikke røre
 Ejer: `game/content/**`, `docs/gdd.md`. Må ikke røre kode.
@@ -22,3 +22,4 @@ Ejer: `game/content/**`, `docs/gdd.md`. Må ikke røre kode.
 ## Log
 - 2026-10-15 – architect: oprettet
 - 2026-10-15 – designer: alt data og GDD-afsnit er leveret. `wooden_coaster.json` har `kind: "coaster"`, og derfor fejler `test_economy.test_real_content_parses` (den accepterer kun ride/shop/toilet), indtil simulation udvider testen. Gæsternes tolerance ligger i `ratings.json.guest_tolerance` og ikke i `guests.json`. Balance-noter følger efter T-068.
+- 2026-10-15 – designer: balance-noter for en typisk oval (16 stykker, 17,6 m, vmax 7,85) efter T-075-tuning: E 4,66 / I 4,67 / N 2,50. Se T-075.
