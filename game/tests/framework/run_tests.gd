@@ -7,6 +7,8 @@ const TEST_DIR := "res://tests"
 func _init() -> void:
 	var failed: int = 0
 	var passed: int = 0
+	var logger := TestErrorCounter.new()
+	OS.add_logger(logger)
 	for path in _find_tests(TEST_DIR):
 		var script: GDScript = load(path)
 		for m in script.get_script_method_list():
@@ -14,12 +16,16 @@ func _init() -> void:
 			if not name.begins_with("test_"):
 				continue
 			var tc: TestCase = script.new()
+			logger.take()
 			tc.call(name)
+			for e in logger.take():
+				tc.failures.append("script error: " + e)
 			if tc.failures.is_empty():
 				passed += 1
 			else:
 				failed += 1
 				printerr("FAIL %s::%s – %s" % [path, name, "; ".join(tc.failures)])
+	OS.remove_logger(logger)
 	print("Tests: %d passed, %d failed" % [passed, failed])
 	quit(1 if failed > 0 else 0)
 

@@ -36,7 +36,7 @@
 | T-023 | Generisk byggeri og valg | gameplay | ✅ done |
 | T-025 | Afstem simulation med GDD | simulation | ✅ done |
 | T-027 | Bug: byggemenu uden for skærm | ui | 🔍 review |
-| T-028 | Test-runner tæller crash som bestået | qa | ⬜ todo |
+| T-028 | Test-runner tæller crash som bestået | qa | ✅ done |
 | T-024 | M2 verifikation | qa | ✅ done |
 | T-026 | Balance-justering | designer | ✅ done |
 
