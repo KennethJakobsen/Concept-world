@@ -1,0 +1,58 @@
+{
+ "system": {
+  "closed_loop": true,
+  "max_stations": 1,
+  "clearance_levels": 1,
+  "speed_mode": "constant"
+ },
+ "pieces": [
+  {
+   "id": "train_station",
+   "name": "Perron",
+   "cost": 300,
+   "length": 1.0,
+   "turn": 0,
+   "rise": 0,
+   "kind": "station",
+   "system": "train",
+   "max_level": 0,
+   "allow_rise": false
+  },
+  {
+   "id": "train_straight",
+   "name": "Lige skinner",
+   "cost": 20,
+   "length": 1.0,
+   "turn": 0,
+   "rise": 0,
+   "kind": "track",
+   "system": "train",
+   "max_level": 0,
+   "allow_rise": false
+  },
+  {
+   "id": "train_turn_left",
+   "name": "Skinner venstre",
+   "cost": 30,
+   "length": 0.785,
+   "turn": -1,
+   "rise": 0,
+   "kind": "track",
+   "system": "train",
+   "max_level": 0,
+   "allow_rise": false
+  },
+  {
+   "id": "train_turn_right",
+   "name": "Skinner højre",
+   "cost": 30,
+   "length": 0.785,
+   "turn": 1,
+   "rise": 0,
+   "kind": "track",
+   "system": "train",
+   "max_level": 0,
+   "allow_rise": false
+  }
+ ]
+}

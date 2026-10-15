@@ -1,0 +1,25 @@
+{
+ "id": "mini_train",
+ "name": "Bimmelbanen",
+ "kind": "train",
+ "footprint": [
+  1,
+  1
+ ],
+ "build_cost": 1200,
+ "running_cost_per_day": 200,
+ "capacity": 16,
+ "ride_ticks": 400,
+ "ticket_price": 4,
+ "excitement": 25,
+ "satisfies": {
+  "energy": -5
+ },
+ "model": "res://scenes/props/coaster_station.tscn",
+ "reliability": 0.975,
+ "repair_ticks": 180,
+ "train": "mini_loco",
+ "intensity": 5,
+ "nausea": 0,
+ "max_height": 0
+}

@@ -1,3 +1,6 @@
 [
-  {"id": "basic_train", "name": "Trætog", "cars": 3, "seats_per_car": 4, "mass": 1.0, "friction": 0.02, "station_speed": 2.0, "lift_speed": 2.5, "curve_radius": 4.0, "transition_len": 3.0}
+  {"id": "basic_train", "name": "Trætog", "cars": 3, "seats_per_car": 4, "mass": 1.0, "friction": 0.02, "station_speed": 2.0, "lift_speed": 2.5, "curve_radius": 4.0, "transition_len": 3.0},
+  {"id": "log_boat", "name": "Træstammebåd", "cars": 2, "seats_per_car": 4, "mass": 1.0, "friction": 0.01, "station_speed": 1.5, "lift_speed": 2.0, "curve_radius": 4.0, "transition_len": 3.0},
+  {"id": "mini_loco", "name": "Bimmeltog", "cars": 4, "seats_per_car": 4, "mass": 1.0, "friction": 0.02, "station_speed": 1.5, "lift_speed": 1.5, "curve_radius": 4.0, "transition_len": 3.0, "cruise_speed": 2.5},
+  {"id": "monorail_cabin", "name": "Svævekabine", "cars": 2, "seats_per_car": 10, "mass": 1.0, "friction": 0.02, "station_speed": 2.0, "lift_speed": 2.0, "curve_radius": 4.0, "transition_len": 3.0, "cruise_speed": 4.0}
 ]

@@ -1,0 +1,26 @@
+{
+ "id": "monorail",
+ "name": "Svævebanen",
+ "kind": "transport",
+ "footprint": [
+  1,
+  1
+ ],
+ "build_cost": 2500,
+ "running_cost_per_day": 300,
+ "capacity": 20,
+ "ride_ticks": 200,
+ "ticket_price": 2,
+ "excitement": 15,
+ "satisfies": {
+  "energy": -10
+ },
+ "model": "res://scenes/props/coaster_station.tscn",
+ "reliability": 0.975,
+ "repair_ticks": 180,
+ "train": "monorail_cabin",
+ "intensity": 0,
+ "nausea": 0,
+ "transport_cost": 4.0,
+ "max_height": 4
+}

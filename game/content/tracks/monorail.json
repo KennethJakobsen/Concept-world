@@ -1,0 +1,89 @@
+{
+ "system": {
+  "closed_loop": false,
+  "max_stations": 2,
+  "clearance_levels": 3,
+  "speed_mode": "constant"
+ },
+ "pieces": [
+  {
+   "id": "monorail_station_start",
+   "name": "Startstation",
+   "cost": 500,
+   "length": 1.0,
+   "turn": 0,
+   "rise": 0,
+   "kind": "station",
+   "system": "monorail",
+   "station_role": "start",
+   "min_level": 2
+  },
+  {
+   "id": "monorail_station_end",
+   "name": "Endestation",
+   "cost": 500,
+   "length": 1.0,
+   "turn": 0,
+   "rise": 0,
+   "kind": "station",
+   "system": "monorail",
+   "station_role": "end",
+   "min_level": 2
+  },
+  {
+   "id": "monorail_straight",
+   "name": "Lige bjælke",
+   "cost": 50,
+   "length": 1.0,
+   "turn": 0,
+   "rise": 0,
+   "kind": "track",
+   "system": "monorail",
+   "min_level": 2
+  },
+  {
+   "id": "monorail_turn_left",
+   "name": "Bjælke venstre",
+   "cost": 70,
+   "length": 0.785,
+   "turn": -1,
+   "rise": 0,
+   "kind": "track",
+   "system": "monorail",
+   "min_level": 2
+  },
+  {
+   "id": "monorail_turn_right",
+   "name": "Bjælke højre",
+   "cost": 70,
+   "length": 0.785,
+   "turn": 1,
+   "rise": 0,
+   "kind": "track",
+   "system": "monorail",
+   "min_level": 2
+  },
+  {
+   "id": "monorail_up",
+   "name": "Bjælke op",
+   "cost": 80,
+   "length": 1.414,
+   "turn": 0,
+   "rise": 1,
+   "kind": "track",
+   "system": "monorail",
+   "min_level": 2
+  },
+  {
+   "id": "monorail_down",
+   "name": "Bjælke ned",
+   "cost": 80,
+   "length": 1.414,
+   "turn": 0,
+   "rise": -1,
+   "kind": "track",
+   "system": "monorail",
+   "min_level": 2
+  }
+ ]
+}

@@ -1,0 +1,26 @@
+{
+ "id": "log_flume",
+ "name": "Tømmerrenden",
+ "kind": "flume",
+ "footprint": [
+  1,
+  1
+ ],
+ "build_cost": 2800,
+ "running_cost_per_day": 450,
+ "capacity": 8,
+ "ride_ticks": 360,
+ "ticket_price": 8,
+ "excitement": 60,
+ "satisfies": {
+  "energy": 5
+ },
+ "model": "res://scenes/props/coaster_station.tscn",
+ "reliability": 0.975,
+ "repair_ticks": 180,
+ "train": "log_boat",
+ "intensity": 40,
+ "nausea": 10,
+ "wet_thirst": -10,
+ "max_height": 4
+}

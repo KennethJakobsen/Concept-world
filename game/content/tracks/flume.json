@@ -1,0 +1,83 @@
+{
+ "system": {
+  "closed_loop": true,
+  "max_stations": 1,
+  "clearance_levels": 1,
+  "speed_mode": "physics"
+ },
+ "pieces": [
+  {
+   "id": "flume_station",
+   "name": "Rende-station",
+   "cost": 400,
+   "length": 1.0,
+   "turn": 0,
+   "rise": 0,
+   "kind": "station",
+   "system": "flume",
+   "water": true,
+   "friction": 0.01
+  },
+  {
+   "id": "flume_straight",
+   "name": "Lige rende",
+   "cost": 40,
+   "length": 1.0,
+   "turn": 0,
+   "rise": 0,
+   "kind": "track",
+   "system": "flume",
+   "water": true,
+   "friction": 0.01
+  },
+  {
+   "id": "flume_turn_left",
+   "name": "Rende venstre",
+   "cost": 60,
+   "length": 0.785,
+   "turn": -1,
+   "rise": 0,
+   "kind": "track",
+   "system": "flume",
+   "water": true,
+   "friction": 0.015
+  },
+  {
+   "id": "flume_turn_right",
+   "name": "Rende højre",
+   "cost": 60,
+   "length": 0.785,
+   "turn": 1,
+   "rise": 0,
+   "kind": "track",
+   "system": "flume",
+   "water": true,
+   "friction": 0.015
+  },
+  {
+   "id": "flume_lift_up",
+   "name": "Rende-lift",
+   "cost": 140,
+   "length": 1.414,
+   "turn": 0,
+   "rise": 1,
+   "kind": "lift",
+   "system": "flume",
+   "water": true,
+   "lift_speed": 2.0
+  },
+  {
+   "id": "flume_drop",
+   "name": "Plask-fald",
+   "cost": 120,
+   "length": 2.236,
+   "turn": 0,
+   "rise": -2,
+   "kind": "track",
+   "system": "flume",
+   "water": true,
+   "splash": true,
+   "friction": 0.01
+  }
+ ]
+}
