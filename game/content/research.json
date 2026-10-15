@@ -1,0 +1,28 @@
+{
+  "points_per_day_base": 10,
+  "cost_per_level": [0, 500, 1000, 2000],
+  "topics": [
+    {"id": "gentle_rides", "name": "Rolige forlystelser", "unlocks": ["ferris_wheel", "haunted_house"]},
+    {"id": "thrill_rides", "name": "Vilde forlystelser", "unlocks": ["swing_ride", "go_karts", "bumper_cars"]},
+    {"id": "roller_coasters", "name": "Rutsjebaner", "unlocks": ["track_turn_left", "track_turn_right", "track_up", "track_down", "track_lift_up"]},
+    {"id": "shops", "name": "Butikker og boder", "unlocks": ["ice_cream_stand"]},
+    {"id": "scenery", "name": "Natur og pynt", "unlocks": ["flowers", "tree_pine", "tree_blossom"]}
+  ],
+  "items": [
+    {"id": "track_turn_left", "topic": "roller_coasters", "points": 60},
+    {"id": "track_turn_right", "topic": "roller_coasters", "points": 60},
+    {"id": "flowers", "topic": "scenery", "points": 40},
+    {"id": "ice_cream_stand", "topic": "shops", "points": 80},
+    {"id": "ferris_wheel", "topic": "gentle_rides", "points": 120},
+    {"id": "track_lift_up", "topic": "roller_coasters", "points": 120},
+    {"id": "track_down", "topic": "roller_coasters", "points": 100},
+    {"id": "bumper_cars", "topic": "thrill_rides", "points": 150},
+    {"id": "tree_pine", "topic": "scenery", "points": 50},
+    {"id": "track_up", "topic": "roller_coasters", "points": 100},
+    {"id": "haunted_house", "topic": "gentle_rides", "points": 180},
+    {"id": "swing_ride", "topic": "thrill_rides", "points": 200},
+    {"id": "tree_blossom", "topic": "scenery", "points": 60},
+    {"id": "go_karts", "topic": "thrill_rides", "points": 250}
+  ],
+  "start_unlocked": ["carousel", "burger_stand", "drinks_stand", "toilet", "bench", "bin", "lamp", "tree_round", "coaster_station", "track_straight", "wooden_coaster"]
+}

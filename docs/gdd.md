@@ -188,3 +188,30 @@ Lamper: varm gul #FFD27A. Forlystelseslys: mættede tivolifarver (rød, gul, cya
 - Rationale (T-041-tal): uden reparation forblev karrusellen nede og startparken endte på -16 til -990 kr. Med ekstern service er en nedbrudt forlystelse nede ~½ dag og koster 250 + tabt billetsalg (~200–300) ≈ 500 pr. nedbrud – overlevelig med startkapital 2200.
 - En mekaniker koster 60/dag (420 pr. uge) og reparerer på ~150–220 ticks. Allerede ét nedbrud om ugen gør mekanikeren rentabel; med flere forlystelser er han klart nødvendig.
 - UI-advarsel `broken_no_mechanic` lærer spilleren at ansætte en mekaniker.
+
+## M5 – Udvidelse (T-065)
+
+### Forskning (`research.json`)
+- Spilleren vælger et finansieringsniveau 0–3. Det koster 0/500/1000/2000 pr. dag og giver `10 × niveau` point pr. dag.
+- Emnerne er rolige forlystelser, vilde forlystelser, rutsjebaner, butikker og natur/pynt. Spilleren kan prioritere ét emne. Ellers forskes der i den rækkefølge, `items` står i. Den er lagt sådan, at der kommer billige rutsjebanestykker tidligt, og go-karts kommer til sidst.
+- Fra start er grundpakken låst op: karrusel, burger- og drikkebod, toilet, bænk, skraldespand, lampe, rundt træ, rutsjebanestation og lige skinne. Med niveau 2 (20 point/dag) tager hele træet cirka 78 dage.
+
+### Scenarier (`scenarios/`)
+Man vinder, når alle mål er opfyldt samme dag. Man taber, hvis fristen udløber, eller hvis en tabsbetingelse holder i N dage i træk. Fri leg (`sandbox`) har ingen mål og ingen forskning, og alt er låst op.
+
+| Scenarie | Start | Mål | Frist | Tab |
+|---|---|---|---|---|
+| 1 Grøn eng (48×48) | 15000, omd. 50, karrusel+drikkebod | 150 gæster, omdømme ≥ 60 | 40 dage | penge < -5000 i 5 dage |
+| 2 Floddalen (64×64) | 12000, omd. 45, karrusel | rutsjebane-excitement ≥ 5,0, ≥ 5 forlystelser, penge ≥ 20000 | 60 dage | penge < -5000 i 3 dage, omd. < 20 i 5 dage |
+| 3 Bjergtoppen (64×64) | 8000, omd. 35, tom | 350 gæster, parkværdi ≥ 60000, excitement ≥ 7,0, omdømme ≥ 75 | 90 dage | penge < -3000 i 3 dage, omd. < 15 i 4 dage |
+
+### Rutsjebane (`coaster/`, `attractions/wooden_coaster.json`)
+- Træ-rutsjebanen har en grundpris på 1000, og hvert stykke koster ekstra: station 300, lige 40, sving 60, op/ned 70, kædelift 120. Billetten koster 8 og driften 300 pr. dag. Toget har 3 vogne med 4 pladser hver (12 i alt), og max højde er 8 niveauer.
+- Banen bygges stykke for stykke fra stationen og skal være lukket. Et fald giver fart. En kædelift trækker toget op med mindst 2,5 m/s.
+- **Ratings i ord** (`ratings.json`): hver rating består af en grundværdi plus vægtede bidrag.
+  - *Excitement* stiger med længde (bonusen er højst 2), topfart, antal fald, max vertikal g, max lateral g og turens varighed.
+  - *Intensity* stiger mest med g-kræfter (især laterale) og topfart.
+  - *Nausea* stiger med lateral g, vertikal g og antal sving.
+  - Over 4,0 vertikal g eller 2,5 lateral g halveres excitement-bidraget (straf). Alle ratings klippes til 0..10.
+- Excitement ganges med 10 til den eksisterende 0–100-skala for besøgsvalg. Gæster vil i udgangspunktet have en intensity mellem 3 og 8. Hvis den er højere, afviser de turen med begrundelsen "too_intense". Risikoen for at blive syg efter turen er 2 % pr. nausea-point.
+- Forventning: en simpel oval med lift, ét fald og 4 sving bør give cirka E 4–5, I 3–5 og N 2–3. Det skal verificeres efter T-068.

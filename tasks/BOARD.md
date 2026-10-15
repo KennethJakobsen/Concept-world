@@ -89,7 +89,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 ## M5 – Udvidelse  ([kontrakt](M5-expansion/_CONTRACT.md), [ADR-003](../docs/adr/ADR-003-coaster.md))
 | Task | Titel | Agent | Status |
 |---|---|---|---|
-| T-065 | Data: forskning, scenarier, rutsjebane | designer | todo |
+| T-065 | Data: forskning, scenarier, rutsjebane | designer | review |
 | T-066 | Sim: forskning + save v2 | simulation | todo |
 | T-067 | Sim: scenarier, mål, sejr/nederlag | simulation | todo |
 | T-068 | Sim: rutsjebane (bane, fysik, ratings) | simulation | todo |

@@ -1,0 +1,4 @@
+{"id": "sandbox", "name": "Fri leg", "description": "Byg frit uden mål. Alt er låst op.", "order": 0,
+ "map": {"width": 64, "height": 64, "entrance": [32, 63]},
+ "start": {"money": 50000, "loan": 0, "reputation": 50, "paths": [[32,63],[32,62],[32,61]], "attractions": [], "decor": [], "staff": [], "unlocked": [], "research_enabled": false, "entry_fee": 10},
+ "objectives": [], "deadline_days": 0, "lose": []}

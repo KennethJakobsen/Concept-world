@@ -1,0 +1,8 @@
+{"id": "green_meadow", "name": "Grøn eng", "description": "En lille park på en fredelig eng. Få gæsterne til at strømme ind.", "order": 1,
+ "map": {"width": 48, "height": 48, "entrance": [24, 47]},
+ "start": {"money": 15000, "loan": 0, "reputation": 50, "paths": [[24,47],[24,46],[24,45],[24,44],[24,43]],
+   "attractions": [{"def": "carousel", "origin": [25, 42]}, {"def": "drinks_stand", "origin": [23, 45]}], "decor": [{"def": "bench", "cell": [24, 44]}], "staff": [],
+   "unlocked": [], "research_enabled": true, "entry_fee": 8},
+ "objectives": [{"type": "guests_in_park", "value": 150}, {"type": "reputation_min", "value": 60}],
+ "deadline_days": 40,
+ "lose": [{"type": "money_below", "value": -5000, "days": 5}]}

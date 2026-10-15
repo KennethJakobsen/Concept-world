@@ -1,0 +1,9 @@
+[
+  {"id": "coaster_station", "name": "Station", "cost": 300, "length": 1.0, "turn": 0, "rise": 0, "kind": "station"},
+  {"id": "track_straight", "name": "Lige", "cost": 40, "length": 1.0, "turn": 0, "rise": 0, "kind": "track"},
+  {"id": "track_turn_left", "name": "Venstresving", "cost": 60, "length": 0.785, "turn": -1, "rise": 0, "kind": "track"},
+  {"id": "track_turn_right", "name": "Højresving", "cost": 60, "length": 0.785, "turn": 1, "rise": 0, "kind": "track"},
+  {"id": "track_up", "name": "Stigning", "cost": 70, "length": 1.414, "turn": 0, "rise": 1, "kind": "track"},
+  {"id": "track_down", "name": "Fald", "cost": 70, "length": 1.414, "turn": 0, "rise": -1, "kind": "track"},
+  {"id": "track_lift_up", "name": "Kædelift", "cost": 120, "length": 1.414, "turn": 0, "rise": 1, "kind": "lift", "lift_speed": 2.5}
+]

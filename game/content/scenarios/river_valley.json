@@ -1,0 +1,8 @@
+{"id": "river_valley", "name": "Floddalen", "description": "Dalen har plads til mere. Byg en rutsjebane og få parken til at give overskud.", "order": 2,
+ "map": {"width": 64, "height": 64, "entrance": [32, 63]},
+ "start": {"money": 12000, "loan": 0, "reputation": 45, "paths": [[32,63],[32,62],[32,61],[32,60]],
+   "attractions": [{"def": "carousel", "origin": [33, 58]}], "decor": [], "staff": [],
+   "unlocked": [], "research_enabled": true, "entry_fee": 10},
+ "objectives": [{"type": "coaster_excitement_min", "value": 5.0}, {"type": "rides_count_min", "value": 5}, {"type": "money_min", "value": 20000}],
+ "deadline_days": 60,
+ "lose": [{"type": "money_below", "value": -5000, "days": 3}, {"type": "reputation_below", "value": 20, "days": 5}]}

@@ -1,0 +1,10 @@
+{
+  "excitement": {"base": 1.0, "per_length": 0.05, "per_max_speed": 0.25, "per_drop": 0.4, "per_max_g": 0.6, "per_max_lat": 0.5, "per_duration_s": 0.02, "max_length_bonus": 2.0},
+  "intensity": {"base": 0.5, "per_max_speed": 0.2, "per_max_g": 1.5, "per_max_lat": 2.0, "per_drop": 0.2},
+  "nausea": {"base": 0.3, "per_max_lat": 1.5, "per_max_g": 0.8, "per_turn": 0.05},
+  "thresholds": {"max_g_penalty": 4.0, "max_lat_penalty": 2.5, "penalty_factor": 0.5},
+  "load_ticks": 60,
+  "excitement_scale": 10.0,
+  "guest_tolerance": {"intensity_pref_min": 3.0, "intensity_pref_max": 8.0},
+  "sick_chance_per_nausea": 0.02
+}
