@@ -28,12 +28,13 @@
 ## M2 – Kernesimulation  ([kontrakt](M2-core-sim/_CONTRACT.md))
 | Task | Titel | Agent | Status |
 |---|---|---|---|
-| T-018 | Indholdsdata og balance | designer | ⬜ todo |
-| T-019 | Økonomi | simulation | ⬜ todo |
-| T-020 | Behov, butikker, glæde | simulation | ⬜ todo |
-| T-021 | Props til M2-bygninger | graphics | ⬜ todo |
+| T-018 | Indholdsdata og balance | designer | 🔍 review |
+| T-019 | Økonomi | simulation | 🔍 review |
+| T-020 | Behov, butikker, glæde | simulation | 🔍 review |
+| T-021 | Props til M2-bygninger | graphics | 🔍 review |
 | T-022 | HUD, byggemenu, info-panel | ui | ⬜ todo |
 | T-023 | Generisk byggeri og valg | gameplay | ⬜ todo |
+| T-025 | Afstem simulation med GDD | simulation | ⬜ todo |
 | T-024 | M2 verifikation | qa | ⬜ todo |
 
 ## Kommende milepæle

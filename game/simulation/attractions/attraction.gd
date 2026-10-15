@@ -12,6 +12,10 @@ var entrance_cell: Vector2i
 var queue: Array = []   ## guest ids (int) i kø-rækkefølge
 var riders: Array = []  ## guest ids der kører nu
 var ticks_left: int = 0
+var is_open: bool = true
+var price: int = 0
+var total_visitors: int = 0
+var total_revenue: int = 0
 
 
 func _init(p_id: int, p_def: AttractionDef, p_origin: Vector2i) -> void:
@@ -19,6 +23,12 @@ func _init(p_id: int, p_def: AttractionDef, p_origin: Vector2i) -> void:
 	def = p_def
 	origin = p_origin
 	entrance_cell = Vector2i(origin.x + def.footprint.x / 2, origin.y + def.footprint.y)
+	price = def.ticket_price
+
+
+## Tilfredsstiller bygningen behovet (negativ ændring)?
+func satisfies_need(need: String) -> bool:
+	return float(def.satisfies.get(need, 0.0)) < 0.0
 
 
 func is_running() -> bool:

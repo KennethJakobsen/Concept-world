@@ -1,0 +1,1 @@
+{"needs":{"hunger":{"rate":0.03,"threshold":60},"thirst":{"rate":0.04,"threshold":60},"toilet":{"rate":0.02,"threshold":70},"energy":{"rate":0.015,"threshold":80}},"happiness_start":70,"happiness_decay_when_need_over_threshold":0.02,"leave_happiness":20,"spawn_interval_ticks":40,"max_guests":50,"speed":0.1}

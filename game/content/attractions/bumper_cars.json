@@ -1,0 +1,1 @@
+{"id":"bumper_cars","name":"Radiobiler","kind":"ride","footprint":[4,4],"build_cost":1500,"running_cost_per_day":70,"capacity":10,"ride_ticks":240,"ticket_price":7,"excitement":45,"satisfies":{"energy":10,"thirst":10},"model":"res://scenes/props/bumper_cars.tscn"}

@@ -4,6 +4,15 @@ extends RefCounted
 
 signal guest_spawned(guest: Guest)
 signal guest_removed(guest_id: int)
+signal day_passed(day: int)
+signal attraction_removed(attraction_id: int)
+
+const NEED_THOUGHTS: Dictionary = {
+	"hunger": "Jeg er sulten!",
+	"thirst": "Jeg er tørstig!",
+	"toilet": "Jeg skal på toilettet!",
+	"energy": "Jeg er træt!",
+}
 
 const ATTRACTION_DIR: String = "res://content/attractions/"
 const DIRS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]
@@ -14,6 +23,11 @@ var path_finder: PathFinder
 var rng: RandomNumberGenerator
 var guests: Dictionary = {}  ## id -> Guest
 var attractions: Array[Attraction] = []
+var balance: Balance
+var economy: Economy
+var day: int = 1
+var entry_fee: int = 0
+var day_tick: int = 0  ## ticks ind i nuværende dag
 
 ## Konfiguration
 var spawn_interval_ticks: int = 40
@@ -28,7 +42,14 @@ var _spawn_counter: int = 0
 var _def_cache: Dictionary = {}
 
 
-func _init(width: int, height: int, p_seed: int) -> void:
+## p_balance = null → indlæs content/economy.json + guests.json (defaults ved mangler).
+func _init(width: int, height: int, p_seed: int, p_balance: Balance = null) -> void:
+	balance = p_balance if p_balance != null else Balance.load_default()
+	economy = Economy.new(balance.start_money)
+	entry_fee = balance.entry_fee
+	spawn_interval_ticks = balance.spawn_interval_ticks
+	max_guests = balance.max_guests
+	guest_speed = balance.speed
 	world = ParkWorld.new(width, height)
 	clock = SimClock.new()
 	path_finder = PathFinder.new(world)
@@ -36,6 +57,7 @@ func _init(width: int, height: int, p_seed: int) -> void:
 	rng.seed = p_seed
 	clock.ticked.connect(_on_tick)
 	world.attraction_placed.connect(_on_attraction_placed)
+	world.attraction_removed.connect(_on_attraction_removed)
 
 
 func update(delta: float) -> void:
@@ -45,15 +67,81 @@ func update(delta: float) -> void:
 # --- Kommandoer ---
 
 func cmd_place_path(cell: Vector2i) -> bool:
+	if not world.can_place_path(cell) or not economy.can_afford(balance.path_cost):
+		return false
+	economy.spend(balance.path_cost, "path")
 	return world.place_path(cell)
 
 
 func cmd_remove_path(cell: Vector2i) -> bool:
-	return world.remove_path(cell)
+	if not world.remove_path(cell):
+		return false
+	economy.earn(balance.path_refund, "refund")
+	return true
 
 
 func cmd_place_attraction(def_id: String, origin: Vector2i) -> Attraction:
-	return world.place_attraction(get_def(def_id), origin)
+	var def: AttractionDef = get_def(def_id)
+	if not world.can_place_attraction(def, origin) or not economy.can_afford(def.build_cost):
+		return null
+	economy.spend(def.build_cost, "build")
+	return world.place_attraction(def, origin)
+
+
+## Fjerner attraktionen og refunderer 50% af byggeprisen.
+func cmd_remove_attraction(attraction_id: int) -> bool:
+	var a: Attraction = world.remove_attraction(attraction_id)
+	if a == null:
+		return false
+	economy.earn(a.def.build_cost / 2, "refund")
+	return true
+
+
+func cmd_set_price(attraction_id: int, price: int) -> bool:
+	var a: Attraction = get_attraction(attraction_id)
+	if a == null or price < 0:
+		return false
+	a.price = price
+	for g: Guest in guests.values():
+		g.rejected_ids.erase(attraction_id)
+	return true
+
+
+func cmd_set_open(attraction_id: int, open: bool) -> bool:
+	var a: Attraction = get_attraction(attraction_id)
+	if a == null:
+		return false
+	a.is_open = open
+	if open:
+		for g: Guest in guests.values():
+			g.rejected_ids.erase(attraction_id)
+	return true
+
+
+func cmd_set_entry_fee(fee: int) -> void:
+	entry_fee = maxi(0, fee)
+
+
+## Registrér en def direkte (tests/mods) – overskriver cache for id.
+func register_def(def: AttractionDef) -> void:
+	_def_cache[def.id] = def
+
+
+func get_stats() -> Dictionary:
+	var total: float = 0.0
+	for g: Guest in guests.values():
+		total += g.happiness
+	return {
+		"guests": guests.size(),
+		"avg_happiness": total / guests.size() if not guests.is_empty() else 0.0,
+		"money": economy.money,
+		"day": day,
+	}
+
+
+## Hvad gæster maksimalt vil betale for attraktionen.
+func price_value(a: Attraction) -> float:
+	return maxf(1.0, a.def.ticket_price * balance.price_tolerance + a.def.excitement * balance.excitement_value)
 
 
 func get_def(def_id: String) -> AttractionDef:
@@ -76,11 +164,31 @@ func get_attraction(attraction_id: int) -> Attraction:
 
 func _on_attraction_placed(a: Attraction) -> void:
 	attractions.append(a)
-	a.ride_finished.connect(_on_ride_finished)
+	a.ride_finished.connect(_on_ride_finished.bind(a))
 	a.ride_started.connect(_on_ride_started.bind(a))
 
 
+func _on_attraction_removed(a: Attraction) -> void:
+	attractions.erase(a)
+	var affected: Array = a.queue + a.riders
+	a.queue.clear()
+	a.riders.clear()
+	for gid in affected:
+		if guests.has(gid):
+			var g: Guest = guests[gid]
+			g.money += g.paid
+			g.paid = 0
+			g.state = Guest.State.WALKING
+			g.target_attraction_id = -1
+			_choose_goal(g)
+	attraction_removed.emit(a.id)
+
+
 func _on_tick(_tick: int) -> void:
+	day_tick += 1
+	if day_tick >= balance.day_ticks:
+		day_tick = 0
+		_end_day()
 	_spawn_counter += 1
 	if _spawn_counter >= spawn_interval_ticks:
 		_spawn_counter = 0
@@ -91,7 +199,43 @@ func _on_tick(_tick: int) -> void:
 	ids.sort()
 	for gid in ids:
 		if guests.has(gid):
-			_tick_guest(guests[gid])
+			var g: Guest = guests[gid]
+			if _update_needs(g):
+				_tick_guest(g)
+
+
+func _end_day() -> void:
+	for a in attractions:
+		if a.def.running_cost_per_day > 0:
+			economy.charge(a.def.running_cost_per_day, "running")
+	economy.close_day(day)
+	day += 1
+	day_passed.emit(day)
+
+
+## Opdaterer behov/glæde. Returnerer false hvis gæsten blev omdirigeret/fjernet denne tick.
+func _update_needs(g: Guest) -> bool:
+	var keys: Array = g.needs.keys()
+	var over: int = 0
+	var crossed: bool = false
+	for k: String in keys:
+		var cfg: Dictionary = balance.needs.get(k, {})
+		var th: float = float(cfg.get("threshold", 100.0))
+		var before: float = g.needs[k]
+		var after: float = minf(100.0, before + float(cfg.get("rate", 0.0)))
+		g.needs[k] = after
+		if after > th:
+			over += 1
+			if before <= th:
+				crossed = true
+	g.happiness = clampf(g.happiness - over * balance.happiness_decay_when_need_over_threshold, 0.0, 100.0)
+	if g.state != Guest.State.WALKING:
+		return true
+	if g.happiness <= balance.leave_happiness or (crossed and g.seeking_need == ""):
+		if g.next_cell == g.cell or g.progress <= 0.0:
+			_choose_goal(g)
+			return false
+	return true
 
 
 func _entrance_connected() -> bool:
@@ -107,6 +251,15 @@ func _try_spawn() -> void:
 	var g := Guest.new(_next_guest_id, world.entrance)
 	_next_guest_id += 1
 	g.rides_left = rng.randi_range(rides_per_guest_min, rides_per_guest_max)
+	g.money = rng.randi_range(balance.guest_money_min, balance.guest_money_max)
+	var need_keys: Array = balance.needs.keys()
+	need_keys.sort()
+	for k: String in need_keys:
+		g.needs[k] = rng.randf_range(0.0, balance.need_start_max)
+	g.happiness = balance.happiness_start
+	var fee: int = mini(entry_fee, g.money)
+	g.money -= fee
+	economy.earn(fee, "entry")
 	guests[g.id] = g
 	_choose_goal(g)
 	guest_spawned.emit(g)
@@ -120,16 +273,47 @@ func _set_route(g: Guest, route: Array[Vector2i]) -> void:
 
 
 func _choose_goal(g: Guest) -> void:
+	g.seeking_need = ""
+	var leave_reason: String = _leave_reason(g)
+	if leave_reason != "":
+		g.thought = leave_reason
+		_start_leaving(g)
+		return
+	# 1) Akutte behov – mest akutte først, nærmeste åbne bygning der dækker det.
+	var urgent: Array = []
+	for k: String in g.needs:
+		if k != "energy" and g.needs[k] > balance.need_threshold(k):
+			urgent.append(k)
+	urgent.sort_custom(func(x: String, y: String) -> bool:
+		return g.needs[x] > g.needs[y] or (g.needs[x] == g.needs[y] and x < y))
+	for need: String in urgent:
+		var best: Attraction = null
+		var best_route: Array[Vector2i] = []
+		for a in attractions:
+			if not _usable(g, a) or not a.satisfies_need(need):
+				continue
+			var route: Array[Vector2i] = path_finder.find_path(g.cell, a.entrance_cell)
+			if route.is_empty():
+				continue
+			if best == null or route.size() < best_route.size():
+				best = a
+				best_route = route
+		if best != null:
+			g.seeking_need = need
+			g.thought = NEED_THOUGHTS.get(need, "")
+			_go_to(g, best, best_route)
+			return
+		g.thought = NEED_THOUGHTS.get(need, "")
+	# 2) Forlystelser
 	if g.rides_left > 0:
 		var options: Array[Attraction] = []
 		for a in attractions:
-			if not path_finder.find_path(g.cell, a.entrance_cell).is_empty():
+			if a.def.kind == "ride" and _usable(g, a) \
+					and not path_finder.find_path(g.cell, a.entrance_cell).is_empty():
 				options.append(a)
 		if not options.is_empty():
 			var a: Attraction = options[rng.randi_range(0, options.size() - 1)]
-			g.state = Guest.State.WALKING
-			g.target_attraction_id = a.id
-			_set_route(g, path_finder.find_path(g.cell, a.entrance_cell))
+			_go_to(g, a, path_finder.find_path(g.cell, a.entrance_cell))
 			return
 		if g.wander_steps < wander_steps_max:
 			g.state = Guest.State.WALKING
@@ -137,6 +321,27 @@ func _choose_goal(g: Guest) -> void:
 			_wander_step(g)
 			return
 	_start_leaving(g)
+
+
+func _leave_reason(g: Guest) -> String:
+	if g.money <= 0:
+		return "Jeg har ikke flere penge."
+	if g.happiness <= balance.leave_happiness:
+		return "Jeg vil hjem!"
+	if g.needs.has("energy") and g.needs["energy"] >= balance.need_threshold("energy"):
+		return "Jeg er træt, jeg går hjem."
+	return ""
+
+
+## Åben, ikke afvist og til at betale.
+func _usable(g: Guest, a: Attraction) -> bool:
+	return a.is_open and not g.rejected_ids.has(a.id) and a.price <= g.money
+
+
+func _go_to(g: Guest, a: Attraction, route: Array[Vector2i]) -> void:
+	g.state = Guest.State.WALKING
+	g.target_attraction_id = a.id
+	_set_route(g, route)
 
 
 func _wander_step(g: Guest) -> void:
@@ -197,10 +402,38 @@ func _arrived(g: Guest) -> void:
 	if g.target_attraction_id >= 0:
 		var a: Attraction = get_attraction(g.target_attraction_id)
 		if a != null and a.entrance_cell == g.cell:
-			g.state = Guest.State.QUEUING
-			a.enqueue(g.id)
+			var reason: String = _try_enter(g, a)
+			if reason == "":
+				return
+			_choose_goal(g)
+			g.thought = reason  # afvisningen er det seneste gæsten tænkte
 			return
 	_choose_goal(g)
+
+
+## Betaler ved køstart. Returnerer afvisningsgrund ("" = kom ind): lukket, for dyr, for få penge.
+func _try_enter(g: Guest, a: Attraction) -> String:
+	var reason: String = ""
+	if not a.is_open:
+		reason = "Den er lukket!"
+	elif a.price > price_value(a):
+		reason = "For dyrt!"
+		g.happiness = maxf(0.0, g.happiness - balance.reject_happiness_penalty)
+	elif a.price > g.money:
+		reason = "Jeg har ikke råd!"
+	if reason != "":
+		g.thought = reason
+		g.rejected_ids.append(a.id)
+		g.target_attraction_id = -1
+		return reason
+	g.money -= a.price
+	g.paid = a.price
+	economy.earn(a.price, "tickets")
+	a.total_revenue += a.price
+	a.total_visitors += 1
+	g.state = Guest.State.QUEUING
+	a.enqueue(g.id)
+	return ""
 
 
 func _on_ride_started(a: Attraction) -> void:
@@ -209,11 +442,26 @@ func _on_ride_started(a: Attraction) -> void:
 			(guests[gid] as Guest).state = Guest.State.RIDING
 
 
-func _on_ride_finished(guest_ids: Array) -> void:
+func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 	for gid in guest_ids:
 		if not guests.has(gid):
 			continue
 		var g: Guest = guests[gid]
-		g.rides_left -= 1
+		_apply_visit(g, a)
+		if a.def.kind == "ride":
+			g.rides_left -= 1
 		g.target_attraction_id = -1
 		_choose_goal(g)
+
+
+func _apply_visit(g: Guest, a: Attraction) -> void:
+	var relieved: bool = g.seeking_need != "" and a.satisfies_need(g.seeking_need)
+	for k: String in a.def.satisfies:
+		if g.needs.has(k):
+			g.needs[k] = clampf(g.needs[k] + float(a.def.satisfies[k]), 0.0, 100.0)
+	var gain: float = a.def.excitement + (balance.need_relief_happiness if relieved else 0.0)
+	g.happiness = clampf(g.happiness + gain, 0.0, 100.0)
+	g.paid = 0
+	g.seeking_need = ""
+	g.rejected_ids.clear()
+	g.thought = "Det var godt!" if relieved else ("Sjovt!" if a.def.kind == "ride" else "")

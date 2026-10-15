@@ -1,0 +1,1 @@
+{"id":"ice_cream_stand","name":"Isbod","kind":"shop","footprint":[1,1],"build_cost":280,"running_cost_per_day":15,"capacity":2,"ride_ticks":30,"ticket_price":3,"excitement":5,"satisfies":{"hunger":-25,"thirst":-20,"toilet":10},"model":"res://scenes/props/ice_cream_stand.tscn"}

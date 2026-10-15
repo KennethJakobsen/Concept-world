@@ -4,6 +4,7 @@ extends RefCounted
 
 signal tile_changed(cell: Vector2i, tile: int)
 signal attraction_placed(attraction: Attraction)
+signal attraction_removed(attraction: Attraction)
 
 enum Tile { GRASS, PATH, ATTRACTION, ENTRANCE }
 
@@ -108,4 +109,19 @@ func get_attraction_at(cell: Vector2i) -> Attraction:
 	for a in attractions:
 		if a.occupies(cell):
 			return a
+	return null
+
+
+## Fjerner attraktionen; footprint bliver græs, indgangscellen forbliver sti.
+func remove_attraction(attraction_id: int) -> Attraction:
+	for i in attractions.size():
+		var a: Attraction = attractions[i]
+		if a.id != attraction_id:
+			continue
+		attractions.remove_at(i)
+		for y in a.def.footprint.y:
+			for x in a.def.footprint.x:
+				_set_tile(a.origin + Vector2i(x, y), Tile.GRASS)
+		attraction_removed.emit(a)
+		return a
 	return null
