@@ -103,10 +103,33 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-076 | Bug: rengøringsfolk løber i flok (opgavereservation) | simulation | review |
 | T-077 | Bug: test_ui_m5 forældet efter T-075-data | ui | review |
 | T-078 | Balance: Floddalen/Bjergtoppen kan ikke vindes | designer | todo |
-| T-079 | Design: forslag til flere forlystelser og butikker | designer | in-progress |
+
+## M6 – Mere indhold  ([kontrakt](M6-content/_CONTRACT.md), [ADR-004](../docs/adr/ADR-004-track-systems.md))
+| Task | Titel | Agent | Status |
+|---|---|---|---|
+| T-079 | Design: forslag til flere forlystelser og butikker | designer | ✅ done |
+| T-080 | M6 kontrakt, ADR-004 og tasks | architect | ✅ done |
+| T-081 | Data: 14 bygninger, intensity/nausea, præmier, bærbare ting | designer | todo |
+| T-082 | Data: spor til tømmerrende, minitog og svævebane | designer | todo |
+| T-083 | Grafik: props med tema-elementer til 14 bygninger | graphics | todo |
+| T-084 | Sim: intensity, kvalme, opkast + save v3 | simulation | todo |
+| T-085 | Sim: sideshows og præmier | simulation | todo |
+| T-086 | Sim: bærbare ting (ballon, souvenir, præmier) | simulation | todo |
+| T-087 | Grafik: bærbare ting, opkast og plask | graphics | todo |
+| T-088 | Gameplay: B/D/E i scenen | gameplay | todo |
+| T-089 | UI: intensity, kvalme, præmier og ting | ui | todo |
+| T-090 | Sim: generaliseret spor, tømmerrende og minitog | simulation | todo |
+| T-091 | Sim: svævebane – transport mellem to stationer | simulation | todo |
+| T-092 | Grafik: trug, togskinner, monorail-bjælke og køretøjer | graphics | todo |
+| T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | todo |
+| T-094 | UI: spor-faner, fejltekster og info | ui | todo |
+| T-095 | Balance: M6-indhold | designer | todo |
+| T-096 | M6 verifikation | qa | todo |
+
+Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/T-088/T-089 · 4) T-090→T-091, T-092 · 5) T-093/T-094, derefter T-095 · 6) T-096.
 
 ## Kommende milepæle
-- Ingen planlagt efter M5.
+- Ingen planlagt efter M6.
 
 ## Åbne punkter / backlog
 - Ingen. (Startpark-nedbrud → T-047, pærer → T-062, grid → T-063, tools i web-build → T-064.)

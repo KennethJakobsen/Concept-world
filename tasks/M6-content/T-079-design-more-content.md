@@ -1,7 +1,7 @@
 # T-079: Forslag til flere forlystelser, butikker og sideshows
 
-- **Status:** in-progress
-- **Milepæl:** M5
+- **Status:** done
+- **Milepæl:** M6 (flyttet fra M5)
 - **Agent:** designer
 - **Afhænger af:** –
 
@@ -63,3 +63,4 @@ Typekoder: **D** = data plus en prop (eksisterende sim). **A–E** = kræver ny 
 ## Log
 - 2026-10-15 – designer: oprettet og startet (in-progress)
 - 2026-10-15 – designer: forslaget er skrevet her og i gdd.md. Bliver stående på in-progress, til brugeren har valgt.
+- 2026-10-15 – architect: brugeren har godkendt hele forslaget. Flyttet til M6 og sat til done. Implementeringen ligger i T-080..T-096 (se `_CONTRACT.md`).
