@@ -56,6 +56,90 @@ rings = 1
 material = SubResource("m_yellow")
 size = Vector3(0.1, 0.06, 0.04)
 
+[sub_resource type="StandardMaterial3D" id="dm_denim"]
+albedo_color = Color(0.250, 0.320, 0.500, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_skin"]
+albedo_color = Color(0.960, 0.800, 0.660, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_dark"]
+albedo_color = Color(0.200, 0.200, 0.240, 1)
+roughness = 0.75
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_denim_0_123_0_123_0_14_10"]
+material = SubResource("dm_denim")
+top_radius = 0.123
+bottom_radius = 0.123
+height = 0.14
+radial_segments = 10
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="dm_sleeve"]
+albedo_color = Color(0.400, 0.720, 0.420, 1)
+roughness = 0.75
+
+[sub_resource type="CapsuleMesh" id="dmesh_cap_dm_sleeve_0_035_0_24"]
+material = SubResource("dm_sleeve")
+radius = 0.035
+height = 0.24
+radial_segments = 6
+rings = 2
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_skin_0_03_6_0"]
+material = SubResource("dm_skin")
+radius = 0.03
+height = 0.06
+radial_segments = 6
+rings = 3
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_dark_0_012_4_0"]
+material = SubResource("dm_dark")
+radius = 0.012
+height = 0.024
+radial_segments = 4
+rings = 3
+
+[sub_resource type="StandardMaterial3D" id="dm_yellow"]
+albedo_color = Color(0.980, 0.850, 0.350, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_grey"]
+albedo_color = Color(0.550, 0.570, 0.600, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_white"]
+albedo_color = Color(0.950, 0.950, 0.950, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_blue"]
+albedo_color = Color(0.350, 0.500, 0.850, 1)
+roughness = 0.75
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_blue_0_05_0_04_0_08_8"]
+material = SubResource("dm_blue")
+top_radius = 0.05
+bottom_radius = 0.04
+height = 0.08
+radial_segments = 8
+rings = 1
+
+[sub_resource type="TorusMesh" id="dmesh_tor_dm_grey_0_045_0_055_10"]
+material = SubResource("dm_grey")
+inner_radius = 0.045
+outer_radius = 0.055
+rings = 10
+ring_segments = 4
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_white_0_14_0_16_0_02"]
+material = SubResource("dm_white")
+size = Vector3(0.14, 0.16, 0.02)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_yellow_0_1_0_01_0_08"]
+material = SubResource("dm_yellow")
+size = Vector3(0.1, 0.01, 0.08)
+
 [node name="Cleaner" type="Node3D"]
 script = ExtResource("1")
 
@@ -80,3 +164,47 @@ mesh = SubResource("mesh4")
 [node name="Bristles" type="MeshInstance3D" parent="Figure"]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2000, 0.0200, 0.0500)
 mesh = SubResource("mesh5")
+
+[node name="Pants" type="MeshInstance3D" parent="Figure"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0800, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_denim_0_123_0_123_0_14_10")
+
+[node name="ArmL" type="MeshInstance3D" parent="Figure"]
+transform = Transform3D(0.9848, 0.1736, 0.0000, -0.1736, 0.9848, 0.0000, 0.0000, 0.0000, 1.0000, -0.1400, 0.2600, 0.0000)
+mesh = SubResource("dmesh_cap_dm_sleeve_0_035_0_24")
+
+[node name="ArmR" type="MeshInstance3D" parent="Figure"]
+transform = Transform3D(0.9848, -0.1736, 0.0000, 0.1736, 0.9848, 0.0000, 0.0000, 0.0000, 1.0000, 0.1400, 0.2600, 0.0000)
+mesh = SubResource("dmesh_cap_dm_sleeve_0_035_0_24")
+
+[node name="HandL" type="MeshInstance3D" parent="Figure"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.1650, 0.1400, 0.0000)
+mesh = SubResource("dmesh_sph_dm_skin_0_03_6_0")
+
+[node name="HandR" type="MeshInstance3D" parent="Figure"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1650, 0.1400, 0.0000)
+mesh = SubResource("dmesh_sph_dm_skin_0_03_6_0")
+
+[node name="EyeL" type="MeshInstance3D" parent="Figure/Head"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0300, 0.0100, 0.0720)
+mesh = SubResource("dmesh_sph_dm_dark_0_012_4_0")
+
+[node name="EyeR" type="MeshInstance3D" parent="Figure/Head"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0300, 0.0100, 0.0720)
+mesh = SubResource("dmesh_sph_dm_dark_0_012_4_0")
+
+[node name="Bucket" type="MeshInstance3D" parent="Figure"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2000, 0.0400, 0.0500)
+mesh = SubResource("dmesh_cyl_dm_blue_0_05_0_04_0_08_8")
+
+[node name="BucketRim" type="MeshInstance3D" parent="Figure"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2000, 0.0800, 0.0500)
+mesh = SubResource("dmesh_tor_dm_grey_0_045_0_055_10")
+
+[node name="Apron" type="MeshInstance3D" parent="Figure"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.2000, 0.1180)
+mesh = SubResource("dmesh_box_dm_white_0_14_0_16_0_02")
+
+[node name="Dustpan" type="MeshInstance3D" parent="Figure"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2700, 0.0100, 0.1200)
+mesh = SubResource("dmesh_box_dm_yellow_0_1_0_01_0_08")

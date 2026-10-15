@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/rendering/guest_visual.gd" id="1"]
 
@@ -18,6 +18,30 @@ height = 0.16
 radial_segments = 10
 rings = 5
 
+[sub_resource type="StandardMaterial3D" id="dm_denim"]
+albedo_color = Color(0.250, 0.320, 0.500, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_hair"]
+albedo_color = Color(0.350, 0.220, 0.120, 1)
+roughness = 0.75
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_denim_0_123_0_123_0_14_10"]
+material = SubResource("dm_denim")
+top_radius = 0.123
+bottom_radius = 0.123
+height = 0.14
+radial_segments = 10
+rings = 1
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_hair_0_085_10_1"]
+material = SubResource("dm_hair")
+radius = 0.085
+height = 0.085
+radial_segments = 10
+rings = 5
+is_hemisphere = true
+
 [node name="Guest" type="Node3D"]
 script = ExtResource("1")
 
@@ -28,3 +52,11 @@ mesh = SubResource("body")
 [node name="Head" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.46, 0)
 mesh = SubResource("head")
+
+[node name="Pants" type="MeshInstance3D" parent="Body"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, -0.1200, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_denim_0_123_0_123_0_14_10")
+
+[node name="Hair" type="MeshInstance3D" parent="Head"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0050, -0.0040)
+mesh = SubResource("dmesh_sph_dm_hair_0_085_10_1")

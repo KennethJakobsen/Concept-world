@@ -37,6 +37,41 @@ height = 0.4
 radial_segments = 10
 rings = 5
 
+[sub_resource type="StandardMaterial3D" id="dm_white"]
+albedo_color = Color(0.950, 0.950, 0.950, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_brown"]
+albedo_color = Color(0.450, 0.270, 0.160, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_pink"]
+albedo_color = Color(0.940, 0.600, 0.620, 1)
+roughness = 0.75
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_brown_0_02_0_03_0_3_6"]
+material = SubResource("dm_brown")
+top_radius = 0.02
+bottom_radius = 0.03
+height = 0.3
+radial_segments = 6
+rings = 1
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_white_0_04_6_0"]
+material = SubResource("dm_white")
+radius = 0.04
+height = 0.08
+radial_segments = 6
+rings = 3
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_brown_0_06_0_1_0_06_6"]
+material = SubResource("dm_brown")
+top_radius = 0.06
+bottom_radius = 0.1
+height = 0.06
+radial_segments = 6
+rings = 1
+
 [node name="TreeBlossom" type="Node3D"]
 
 [node name="Trunk" type="MeshInstance3D" parent="."]
@@ -54,3 +89,31 @@ mesh = SubResource("mesh3")
 [node name="Crown2" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.1500, 0.6800, -0.0500)
 mesh = SubResource("mesh4")
+
+[node name="Branch" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.8192, 0.5736, 0.0000, -0.5736, 0.8192, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, 0.5500, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_brown_0_02_0_03_0_3_6")
+
+[node name="Petal0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1800, 0.8000, 0.1500)
+mesh = SubResource("dmesh_sph_dm_white_0_04_6_0")
+
+[node name="Petal1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.1500, 0.8500, 0.1800)
+mesh = SubResource("dmesh_sph_dm_white_0_04_6_0")
+
+[node name="Petal2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0500, 1.0000, -0.1500)
+mesh = SubResource("dmesh_sph_dm_white_0_04_6_0")
+
+[node name="Petal3" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2000, 0.7000, -0.1000)
+mesh = SubResource("dmesh_sph_dm_white_0_04_6_0")
+
+[node name="Petal4" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2200, 0.6500, -0.0800)
+mesh = SubResource("dmesh_sph_dm_white_0_04_6_0")
+
+[node name="Roots" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0300, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_brown_0_06_0_1_0_06_6")

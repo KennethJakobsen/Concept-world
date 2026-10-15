@@ -108,6 +108,132 @@ height = 0.25
 radial_segments = 5
 rings = 1
 
+[sub_resource type="StandardMaterial3D" id="dm_cream"]
+albedo_color = Color(0.980, 0.920, 0.780, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_dark"]
+albedo_color = Color(0.200, 0.200, 0.240, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_glass"]
+albedo_color = Color(0.550, 0.750, 0.850, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_gold"]
+albedo_color = Color(0.930, 0.740, 0.300, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_wood"]
+albedo_color = Color(0.620, 0.380, 0.240, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_red"]
+albedo_color = Color(0.860, 0.300, 0.280, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_brown"]
+albedo_color = Color(0.450, 0.270, 0.160, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_lettuce"]
+albedo_color = Color(0.450, 0.800, 0.300, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_pink"]
+albedo_color = Color(0.940, 0.600, 0.620, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_choco"]
+albedo_color = Color(0.400, 0.240, 0.140, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_mint"]
+albedo_color = Color(0.650, 0.920, 0.780, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_blue"]
+albedo_color = Color(0.350, 0.500, 0.850, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_white"]
+albedo_color = Color(0.950, 0.950, 0.950, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_yellow"]
+albedo_color = Color(0.980, 0.850, 0.350, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_cream_0_12_0_02_0_76"]
+material = SubResource("dm_cream")
+size = Vector3(0.12, 0.02, 0.76)
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_cream_0_045_6_0"]
+material = SubResource("dm_cream")
+radius = 0.045
+height = 0.09
+radial_segments = 6
+rings = 3
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_blue_0_045_6_0"]
+material = SubResource("dm_blue")
+radius = 0.045
+height = 0.09
+radial_segments = 6
+rings = 3
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_cream_0_88_0_03_0_16"]
+material = SubResource("dm_cream")
+size = Vector3(0.88, 0.03, 0.16)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_dark_0_56_0_26_0_01"]
+material = SubResource("dm_dark")
+size = Vector3(0.56, 0.26, 0.01)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_dark_0_26_0_2_0_02"]
+material = SubResource("dm_dark")
+size = Vector3(0.26, 0.2, 0.02)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_white_0_18_0_02_0_01"]
+material = SubResource("dm_white")
+size = Vector3(0.18, 0.02, 0.01)
+
+[sub_resource type="StandardMaterial3D" id="dm_grey"]
+albedo_color = Color(0.550, 0.570, 0.600, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_grey_0_12_0_08_0_1"]
+material = SubResource("dm_grey")
+size = Vector3(0.12, 0.08, 0.1)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_dark_0_1_0_04_0_02"]
+material = SubResource("dm_dark")
+size = Vector3(0.1, 0.04, 0.02)
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_white_0_125_0_12_0_06_12"]
+material = SubResource("dm_white")
+top_radius = 0.125
+bottom_radius = 0.12
+height = 0.06
+radial_segments = 12
+rings = 1
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_red_0_035_0_028_0_08_8"]
+material = SubResource("dm_red")
+top_radius = 0.035
+bottom_radius = 0.028
+height = 0.08
+radial_segments = 8
+rings = 1
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_glass_0_08_0_08_0_2_8"]
+material = SubResource("dm_glass")
+top_radius = 0.08
+bottom_radius = 0.08
+height = 0.2
+radial_segments = 8
+rings = 1
+
 [node name="DrinksStand" type="Node3D"]
 
 [node name="Counter" type="MeshInstance3D" parent="."]
@@ -149,3 +275,87 @@ mesh = SubResource("mesh9")
 [node name="Straw" type="MeshInstance3D" parent="."]
 transform = Transform3D(0.9801, -0.1987, 0.0000, 0.1987, 0.9801, 0.0000, 0.0000, 0.0000, 1.0000, 0.0400, 1.7500, 0.0000)
 mesh = SubResource("mesh10")
+
+[node name="AwnStripe0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.9888, -0.1494, 0.0000, 0.1494, 0.9888, -0.3200, 1.2546, 0.0552)
+mesh = SubResource("dmesh_box_dm_cream_0_12_0_02_0_76")
+
+[node name="AwnStripe1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.9888, -0.1494, 0.0000, 0.1494, 0.9888, 0.0000, 1.2546, 0.0552)
+mesh = SubResource("dmesh_box_dm_cream_0_12_0_02_0_76")
+
+[node name="AwnStripe2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.9888, -0.1494, 0.0000, 0.1494, 0.9888, 0.3200, 1.2546, 0.0552)
+mesh = SubResource("dmesh_box_dm_cream_0_12_0_02_0_76")
+
+[node name="Scallop0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.4000, 1.1200, 0.4200)
+mesh = SubResource("dmesh_sph_dm_cream_0_045_6_0")
+
+[node name="Scallop1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2400, 1.1200, 0.4200)
+mesh = SubResource("dmesh_sph_dm_blue_0_045_6_0")
+
+[node name="Scallop2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0800, 1.1200, 0.4200)
+mesh = SubResource("dmesh_sph_dm_cream_0_045_6_0")
+
+[node name="Scallop3" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0800, 1.1200, 0.4200)
+mesh = SubResource("dmesh_sph_dm_blue_0_045_6_0")
+
+[node name="Scallop4" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2400, 1.1200, 0.4200)
+mesh = SubResource("dmesh_sph_dm_cream_0_045_6_0")
+
+[node name="Scallop5" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.4000, 1.1200, 0.4200)
+mesh = SubResource("dmesh_sph_dm_blue_0_045_6_0")
+
+[node name="CounterTop" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.6350, 0.3000)
+mesh = SubResource("dmesh_box_dm_cream_0_88_0_03_0_16")
+
+[node name="ServeWindow" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.9300, -0.1950)
+mesh = SubResource("dmesh_box_dm_dark_0_56_0_26_0_01")
+
+[node name="Menu" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2500, 0.9500, -0.1900)
+mesh = SubResource("dmesh_box_dm_dark_0_26_0_2_0_02")
+
+[node name="MenuLine0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2500, 1.0000, -0.1780)
+mesh = SubResource("dmesh_box_dm_white_0_18_0_02_0_01")
+
+[node name="MenuLine1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2500, 0.9500, -0.1780)
+mesh = SubResource("dmesh_box_dm_white_0_18_0_02_0_01")
+
+[node name="MenuLine2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2500, 0.9000, -0.1780)
+mesh = SubResource("dmesh_box_dm_white_0_18_0_02_0_01")
+
+[node name="Register" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2500, 0.6900, 0.1800)
+mesh = SubResource("dmesh_box_dm_grey_0_12_0_08_0_1")
+
+[node name="RegisterTop" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.9063, 0.4226, 0.0000, -0.4226, 0.9063, -0.2500, 0.7500, 0.1500)
+mesh = SubResource("dmesh_box_dm_dark_0_1_0_04_0_02")
+
+[node name="CupBand" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.4600, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_white_0_125_0_12_0_06_12")
+
+[node name="Item0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0500, 0.6900, 0.2800)
+mesh = SubResource("dmesh_cyl_dm_red_0_035_0_028_0_08_8")
+
+[node name="Item1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1600, 0.6900, 0.2800)
+mesh = SubResource("dmesh_cyl_dm_red_0_035_0_028_0_08_8")
+
+[node name="Tap" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.7500, -0.0800)
+mesh = SubResource("dmesh_cyl_dm_glass_0_08_0_08_0_2_8")

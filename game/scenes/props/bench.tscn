@@ -24,6 +24,34 @@ size = Vector3(0.04, 0.22, 0.16)
 material = SubResource("m_dark")
 size = Vector3(0.04, 0.22, 0.16)
 
+[sub_resource type="StandardMaterial3D" id="dm_wood"]
+albedo_color = Color(0.620, 0.380, 0.240, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_dark"]
+albedo_color = Color(0.200, 0.200, 0.240, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_brown"]
+albedo_color = Color(0.450, 0.270, 0.160, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_brown_0_72_0_04_0_03"]
+material = SubResource("dm_brown")
+size = Vector3(0.72, 0.04, 0.03)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_brown_0_7_0_012_0_015"]
+material = SubResource("dm_brown")
+size = Vector3(0.7, 0.012, 0.015)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_dark_0_04_0_03_0_2"]
+material = SubResource("dm_dark")
+size = Vector3(0.04, 0.03, 0.2)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_dark_0_03_0_1_0_03"]
+material = SubResource("dm_dark")
+size = Vector3(0.03, 0.1, 0.03)
+
 [node name="Bench" type="Node3D"]
 
 [node name="Seat" type="MeshInstance3D" parent="."]
@@ -41,3 +69,27 @@ mesh = SubResource("mesh3")
 [node name="Leg1" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.3000, 0.1100, -0.3900)
 mesh = SubResource("mesh4")
+
+[node name="BackRail" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.9888, -0.1494, 0.0000, 0.1494, 0.9888, 0.0000, 0.4800, -0.4750)
+mesh = SubResource("dmesh_box_dm_brown_0_72_0_04_0_03")
+
+[node name="Gap" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.2460, -0.3800)
+mesh = SubResource("dmesh_box_dm_brown_0_7_0_012_0_015")
+
+[node name="ArmL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.3300, 0.3300, -0.3700)
+mesh = SubResource("dmesh_box_dm_dark_0_04_0_03_0_2")
+
+[node name="ArmR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.3300, 0.3300, -0.3700)
+mesh = SubResource("dmesh_box_dm_dark_0_04_0_03_0_2")
+
+[node name="ArmPostL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.3300, 0.2800, -0.2900)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_1_0_03")
+
+[node name="ArmPostR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.3300, 0.2800, -0.2900)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_1_0_03")

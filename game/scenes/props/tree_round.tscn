@@ -23,6 +23,51 @@ height = 0.7
 radial_segments = 10
 rings = 5
 
+[sub_resource type="StandardMaterial3D" id="dm_green"]
+albedo_color = Color(0.400, 0.720, 0.420, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_dkgreen"]
+albedo_color = Color(0.250, 0.520, 0.300, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_brown"]
+albedo_color = Color(0.450, 0.270, 0.160, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_red"]
+albedo_color = Color(0.860, 0.300, 0.280, 1)
+roughness = 0.75
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_dkgreen_0_22_8_0"]
+material = SubResource("dm_dkgreen")
+radius = 0.22
+height = 0.44
+radial_segments = 8
+rings = 4
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_green_0_2_8_0"]
+material = SubResource("dm_green")
+radius = 0.2
+height = 0.4
+radial_segments = 8
+rings = 4
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_brown_0_07_0_11_0_06_6"]
+material = SubResource("dm_brown")
+top_radius = 0.07
+bottom_radius = 0.11
+height = 0.06
+radial_segments = 6
+rings = 1
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_red_0_03_6_0"]
+material = SubResource("dm_red")
+radius = 0.03
+height = 0.06
+radial_segments = 6
+rings = 3
+
 [node name="TreeRound" type="Node3D"]
 
 [node name="Trunk" type="MeshInstance3D" parent="."]
@@ -32,3 +77,27 @@ mesh = SubResource("mesh1")
 [node name="Crown" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.8500, 0.0000)
 mesh = SubResource("mesh2")
+
+[node name="CrownL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2200, 0.7500, 0.0800)
+mesh = SubResource("dmesh_sph_dm_dkgreen_0_22_8_0")
+
+[node name="CrownR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2000, 0.8000, -0.1000)
+mesh = SubResource("dmesh_sph_dm_green_0_2_8_0")
+
+[node name="Roots" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0300, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_brown_0_07_0_11_0_06_6")
+
+[node name="Apple0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2000, 0.9000, 0.2700)
+mesh = SubResource("dmesh_sph_dm_red_0_03_6_0")
+
+[node name="Apple1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.1500, 0.9500, 0.3000)
+mesh = SubResource("dmesh_sph_dm_red_0_03_6_0")
+
+[node name="Apple2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.3000, 0.7500, 0.1000)
+mesh = SubResource("dmesh_sph_dm_red_0_03_6_0")

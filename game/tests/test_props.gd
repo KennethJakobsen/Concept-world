@@ -3,7 +3,8 @@ extends TestCase
 const PROPS := ["carousel", "ferris_wheel", "bumper_cars", "burger_stand",
 	"drinks_stand", "ice_cream_stand", "toilet", "thought_bubble",
 	"mechanic", "cleaner", "entertainer", "bin", "bench", "tree_round", "tree_pine",
-	"tree_blossom", "flowers", "lamp", "litter", "swing_ride", "haunted_house", "go_karts"]
+	"tree_blossom", "flowers", "lamp", "litter", "swing_ride", "haunted_house", "go_karts",
+	"guest", "entrance"]
 
 
 func test_all_props_instantiate() -> void:
@@ -182,3 +183,34 @@ func _check_basis(n: Node, id: String) -> void:
 		assert_true(sc.x < 3.0 and sc.y < 3.0 and sc.z < 3.0 and sc.x > 0.05, "%s/%s skala %s" % [id, n.name, sc])
 	for c in n.get_children():
 		_check_basis(c, id)
+
+
+## T-058: Gaesten skal forblive billig (200+ i parken).
+const GUEST_MESH_CAP: int = 5
+
+
+func _count_meshes(n: Node) -> int:
+	var c := 1 if n is MeshInstance3D else 0
+	for ch in n.get_children():
+		c += _count_meshes(ch)
+	return c
+
+
+func test_guest_mesh_budget() -> void:
+	var n: Node = (load("res://scenes/props/guest.tscn") as PackedScene).instantiate()
+	var c := _count_meshes(n)
+	assert_true(c <= GUEST_MESH_CAP, "guest har %d meshes (loft %d)" % [c, GUEST_MESH_CAP])
+	n.free()
+
+
+## T-058: Detaljer maa ikke flytte noder, som scripts er afhaengige af.
+func test_detail_keeps_api_nodes() -> void:
+	var need := {"carousel": ["Top/Horse0/Head"], "ferris_wheel": ["Wheel/Cab0/Roof"],
+		"swing_ride": ["Top/Arm0/Seat/Back"], "bumper_cars": ["Cars/Car0/Seat"],
+		"go_karts": ["Karts/Kart0/Driver/Helmet"], "haunted_house": ["Ghost"],
+		"lamp": ["Light", "Bulb"], "guest": ["Body/Pants", "Head/Hair"]}
+	for id in need:
+		var n: Node = (load("res://scenes/props/%s.tscn" % id) as PackedScene).instantiate()
+		for p in need[id]:
+			assert_true(n.get_node_or_null(p) != null, "%s/%s" % [id, p])
+		n.free()

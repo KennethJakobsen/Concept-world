@@ -40,6 +40,18 @@ height = 0.45
 radial_segments = 8
 rings = 1
 
+[sub_resource type="StandardMaterial3D" id="dm_brown"]
+albedo_color = Color(0.450, 0.270, 0.160, 1)
+roughness = 0.75
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_brown_0_06_0_1_0_06_6"]
+material = SubResource("dm_brown")
+top_radius = 0.06
+bottom_radius = 0.1
+height = 0.06
+radial_segments = 6
+rings = 1
+
 [node name="TreePine" type="Node3D"]
 
 [node name="Trunk" type="MeshInstance3D" parent="."]
@@ -57,3 +69,7 @@ mesh = SubResource("mesh3")
 [node name="Layer2" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0500, 0.0000)
 mesh = SubResource("mesh4")
+
+[node name="Roots" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0300, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_brown_0_06_0_1_0_06_6")

@@ -163,6 +163,143 @@ rings = 1
 material = SubResource("m_blue")
 size = Vector3(0.18, 0.05, 0.18)
 
+[sub_resource type="StandardMaterial3D" id="dm_red"]
+albedo_color = Color(0.860, 0.300, 0.280, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_cream"]
+albedo_color = Color(0.980, 0.920, 0.780, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_gold"]
+albedo_color = Color(0.930, 0.740, 0.300, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_dark"]
+albedo_color = Color(0.200, 0.200, 0.240, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_grey"]
+albedo_color = Color(0.550, 0.570, 0.600, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_teal"]
+albedo_color = Color(0.300, 0.660, 0.660, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_yellow"]
+albedo_color = Color(0.980, 0.850, 0.350, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_pink"]
+albedo_color = Color(0.940, 0.600, 0.620, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_blue"]
+albedo_color = Color(0.350, 0.500, 0.850, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="dm_wood"]
+albedo_color = Color(0.620, 0.380, 0.240, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_dark_0_03_0_15_0_18"]
+material = SubResource("dm_dark")
+size = Vector3(0.03, 0.15, 0.18)
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_grey_0_01_0_01_0_18_6"]
+material = SubResource("dm_grey")
+top_radius = 0.01
+bottom_radius = 0.01
+height = 0.18
+radial_segments = 6
+rings = 1
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_grey_0_05_0_02_0_14"]
+material = SubResource("dm_grey")
+size = Vector3(0.05, 0.02, 0.14)
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_yellow_0_06_8_0"]
+material = SubResource("dm_yellow")
+radius = 0.06
+height = 0.12
+radial_segments = 8
+rings = 4
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_red_0_06_8_0"]
+material = SubResource("dm_red")
+radius = 0.06
+height = 0.12
+radial_segments = 8
+rings = 4
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_cream_0_05_0_03_1_2"]
+material = SubResource("dm_cream")
+size = Vector3(0.05, 0.03, 1.2)
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_dark_0_012_0_012_0_35_6"]
+material = SubResource("dm_dark")
+top_radius = 0.012
+bottom_radius = 0.012
+height = 0.35
+radial_segments = 6
+rings = 1
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_yellow_0_2_0_12_0_01"]
+material = SubResource("dm_yellow")
+size = Vector3(0.2, 0.12, 0.01)
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_gold_0_2_0_2_0_08_8"]
+material = SubResource("dm_gold")
+top_radius = 0.2
+bottom_radius = 0.2
+height = 0.08
+radial_segments = 8
+rings = 1
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_gold_0_025_0_025_0_45_6"]
+material = SubResource("dm_gold")
+top_radius = 0.025
+bottom_radius = 0.025
+height = 0.45
+radial_segments = 6
+rings = 1
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_cream_0_03_0_03_0_48"]
+material = SubResource("dm_cream")
+size = Vector3(0.03, 0.03, 0.48)
+
+[sub_resource type="CylinderMesh" id="dmesh_cyl_dm_gold_0_04_0_05_0_9_8"]
+material = SubResource("dm_gold")
+top_radius = 0.04
+bottom_radius = 0.05
+height = 0.9
+radial_segments = 8
+rings = 1
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_teal_0_66_0_22_0_05"]
+material = SubResource("dm_teal")
+size = Vector3(0.66, 0.22, 0.05)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_gold_0_72_0_04_0_07"]
+material = SubResource("dm_gold")
+size = Vector3(0.72, 0.04, 0.07)
+
+[sub_resource type="SphereMesh" id="dmesh_sph_dm_gold_0_05_8_0"]
+material = SubResource("dm_gold")
+radius = 0.05
+height = 0.1
+radial_segments = 8
+rings = 4
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_gold_0_08_0_08_0_02"]
+material = SubResource("dm_gold")
+size = Vector3(0.08, 0.08, 0.02)
+
+[sub_resource type="BoxMesh" id="dmesh_box_dm_wood_0_5_0_1_0_18"]
+material = SubResource("dm_wood")
+size = Vector3(0.5, 0.1, 0.18)
+
 [node name="SwingRide" type="Node3D"]
 script = ExtResource("rv")
 
@@ -274,3 +411,390 @@ mesh = SubResource("mesh19")
 [node name="Seat" type="MeshInstance3D" parent="Top/Arm7"]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, -1.4000, 0.0000)
 mesh = SubResource("mesh20")
+
+[node name="Back" type="MeshInstance3D" parent="Top/Arm0/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0800, 0.0900, 0.0000)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_15_0_18")
+
+[node name="Bar" type="MeshInstance3D" parent="Top/Arm0/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.0000, -1.0000, 0.0000, 1.0000, 0.0000, 0.0800, 0.1200, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_grey_0_01_0_01_0_18_6")
+
+[node name="Footrest" type="MeshInstance3D" parent="Top/Arm0/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, -0.1000, 0.0000)
+mesh = SubResource("dmesh_box_dm_grey_0_05_0_02_0_14")
+
+[node name="Back" type="MeshInstance3D" parent="Top/Arm1/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0800, 0.0900, 0.0000)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_15_0_18")
+
+[node name="Bar" type="MeshInstance3D" parent="Top/Arm1/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.0000, -1.0000, 0.0000, 1.0000, 0.0000, 0.0800, 0.1200, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_grey_0_01_0_01_0_18_6")
+
+[node name="Footrest" type="MeshInstance3D" parent="Top/Arm1/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, -0.1000, 0.0000)
+mesh = SubResource("dmesh_box_dm_grey_0_05_0_02_0_14")
+
+[node name="Back" type="MeshInstance3D" parent="Top/Arm2/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0800, 0.0900, 0.0000)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_15_0_18")
+
+[node name="Bar" type="MeshInstance3D" parent="Top/Arm2/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.0000, -1.0000, 0.0000, 1.0000, 0.0000, 0.0800, 0.1200, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_grey_0_01_0_01_0_18_6")
+
+[node name="Footrest" type="MeshInstance3D" parent="Top/Arm2/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, -0.1000, 0.0000)
+mesh = SubResource("dmesh_box_dm_grey_0_05_0_02_0_14")
+
+[node name="Back" type="MeshInstance3D" parent="Top/Arm3/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0800, 0.0900, 0.0000)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_15_0_18")
+
+[node name="Bar" type="MeshInstance3D" parent="Top/Arm3/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.0000, -1.0000, 0.0000, 1.0000, 0.0000, 0.0800, 0.1200, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_grey_0_01_0_01_0_18_6")
+
+[node name="Footrest" type="MeshInstance3D" parent="Top/Arm3/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, -0.1000, 0.0000)
+mesh = SubResource("dmesh_box_dm_grey_0_05_0_02_0_14")
+
+[node name="Back" type="MeshInstance3D" parent="Top/Arm4/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0800, 0.0900, 0.0000)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_15_0_18")
+
+[node name="Bar" type="MeshInstance3D" parent="Top/Arm4/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.0000, -1.0000, 0.0000, 1.0000, 0.0000, 0.0800, 0.1200, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_grey_0_01_0_01_0_18_6")
+
+[node name="Footrest" type="MeshInstance3D" parent="Top/Arm4/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, -0.1000, 0.0000)
+mesh = SubResource("dmesh_box_dm_grey_0_05_0_02_0_14")
+
+[node name="Back" type="MeshInstance3D" parent="Top/Arm5/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0800, 0.0900, 0.0000)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_15_0_18")
+
+[node name="Bar" type="MeshInstance3D" parent="Top/Arm5/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.0000, -1.0000, 0.0000, 1.0000, 0.0000, 0.0800, 0.1200, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_grey_0_01_0_01_0_18_6")
+
+[node name="Footrest" type="MeshInstance3D" parent="Top/Arm5/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, -0.1000, 0.0000)
+mesh = SubResource("dmesh_box_dm_grey_0_05_0_02_0_14")
+
+[node name="Back" type="MeshInstance3D" parent="Top/Arm6/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0800, 0.0900, 0.0000)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_15_0_18")
+
+[node name="Bar" type="MeshInstance3D" parent="Top/Arm6/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.0000, -1.0000, 0.0000, 1.0000, 0.0000, 0.0800, 0.1200, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_grey_0_01_0_01_0_18_6")
+
+[node name="Footrest" type="MeshInstance3D" parent="Top/Arm6/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, -0.1000, 0.0000)
+mesh = SubResource("dmesh_box_dm_grey_0_05_0_02_0_14")
+
+[node name="Back" type="MeshInstance3D" parent="Top/Arm7/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.0800, 0.0900, 0.0000)
+mesh = SubResource("dmesh_box_dm_dark_0_03_0_15_0_18")
+
+[node name="Bar" type="MeshInstance3D" parent="Top/Arm7/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.0000, -1.0000, 0.0000, 1.0000, 0.0000, 0.0800, 0.1200, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_grey_0_01_0_01_0_18_6")
+
+[node name="Footrest" type="MeshInstance3D" parent="Top/Arm7/Seat"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, -0.1000, 0.0000)
+mesh = SubResource("dmesh_box_dm_grey_0_05_0_02_0_14")
+
+[node name="Drop0" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2302, 0.0200, 1.1573)
+mesh = SubResource("dmesh_sph_dm_yellow_0_06_8_0")
+
+[node name="Drop1" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.6556, 0.0200, 0.9811)
+mesh = SubResource("dmesh_sph_dm_red_0_06_8_0")
+
+[node name="Drop2" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.9811, 0.0200, 0.6556)
+mesh = SubResource("dmesh_sph_dm_yellow_0_06_8_0")
+
+[node name="Drop3" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 1.1573, 0.0200, 0.2302)
+mesh = SubResource("dmesh_sph_dm_red_0_06_8_0")
+
+[node name="Drop4" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 1.1573, 0.0200, -0.2302)
+mesh = SubResource("dmesh_sph_dm_yellow_0_06_8_0")
+
+[node name="Drop5" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.9811, 0.0200, -0.6556)
+mesh = SubResource("dmesh_sph_dm_red_0_06_8_0")
+
+[node name="Drop6" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.6556, 0.0200, -0.9811)
+mesh = SubResource("dmesh_sph_dm_yellow_0_06_8_0")
+
+[node name="Drop7" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2302, 0.0200, -1.1573)
+mesh = SubResource("dmesh_sph_dm_red_0_06_8_0")
+
+[node name="Drop8" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2302, 0.0200, -1.1573)
+mesh = SubResource("dmesh_sph_dm_yellow_0_06_8_0")
+
+[node name="Drop9" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.6556, 0.0200, -0.9811)
+mesh = SubResource("dmesh_sph_dm_red_0_06_8_0")
+
+[node name="Drop10" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.9811, 0.0200, -0.6556)
+mesh = SubResource("dmesh_sph_dm_yellow_0_06_8_0")
+
+[node name="Drop11" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -1.1573, 0.0200, -0.2302)
+mesh = SubResource("dmesh_sph_dm_red_0_06_8_0")
+
+[node name="Drop12" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -1.1573, 0.0200, 0.2302)
+mesh = SubResource("dmesh_sph_dm_yellow_0_06_8_0")
+
+[node name="Drop13" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.9811, 0.0200, 0.6556)
+mesh = SubResource("dmesh_sph_dm_red_0_06_8_0")
+
+[node name="Drop14" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.6556, 0.0200, 0.9811)
+mesh = SubResource("dmesh_sph_dm_yellow_0_06_8_0")
+
+[node name="Drop15" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2302, 0.0200, 1.1573)
+mesh = SubResource("dmesh_sph_dm_red_0_06_8_0")
+
+[node name="CanopyRib0" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(0.9239, 0.1308, 0.3596, 0.0000, 0.9398, -0.3417, -0.3827, 0.3157, 0.8683, 0.2373, 0.2600, 0.5728)
+mesh = SubResource("dmesh_box_dm_cream_0_05_0_03_1_2")
+
+[node name="CanopyRib1" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(0.3827, 0.3157, 0.8683, 0.0000, 0.9398, -0.3417, -0.9239, 0.1308, 0.3596, 0.5728, 0.2600, 0.2373)
+mesh = SubResource("dmesh_box_dm_cream_0_05_0_03_1_2")
+
+[node name="CanopyRib2" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(-0.3827, 0.3157, 0.8683, 0.0000, 0.9398, -0.3417, -0.9239, -0.1308, -0.3596, 0.5728, 0.2600, -0.2373)
+mesh = SubResource("dmesh_box_dm_cream_0_05_0_03_1_2")
+
+[node name="CanopyRib3" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(-0.9239, 0.1308, 0.3596, 0.0000, 0.9398, -0.3417, -0.3827, -0.3157, -0.8683, 0.2373, 0.2600, -0.5728)
+mesh = SubResource("dmesh_box_dm_cream_0_05_0_03_1_2")
+
+[node name="CanopyRib4" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(-0.9239, -0.1308, -0.3596, 0.0000, 0.9398, -0.3417, 0.3827, -0.3157, -0.8683, -0.2373, 0.2600, -0.5728)
+mesh = SubResource("dmesh_box_dm_cream_0_05_0_03_1_2")
+
+[node name="CanopyRib5" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(-0.3827, -0.3157, -0.8683, 0.0000, 0.9398, -0.3417, 0.9239, -0.1308, -0.3596, -0.5728, 0.2600, -0.2373)
+mesh = SubResource("dmesh_box_dm_cream_0_05_0_03_1_2")
+
+[node name="CanopyRib6" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(0.3827, -0.3157, -0.8683, 0.0000, 0.9398, -0.3417, 0.9239, 0.1308, 0.3596, -0.5728, 0.2600, 0.2373)
+mesh = SubResource("dmesh_box_dm_cream_0_05_0_03_1_2")
+
+[node name="CanopyRib7" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(0.9239, -0.1308, -0.3596, 0.0000, 0.9398, -0.3417, 0.3827, 0.3157, 0.8683, -0.2373, 0.2600, 0.5728)
+mesh = SubResource("dmesh_box_dm_cream_0_05_0_03_1_2")
+
+[node name="FlagPole" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.7500, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_dark_0_012_0_012_0_35_6")
+
+[node name="Flag" type="MeshInstance3D" parent="Top"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.1000, 0.8600, 0.0000)
+mesh = SubResource("dmesh_box_dm_yellow_0_2_0_12_0_01")
+
+[node name="MastBand0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.6000, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_gold_0_2_0_2_0_08_8")
+
+[node name="MastBand1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.6000, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_gold_0_2_0_2_0_08_8")
+
+[node name="MastBand2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 2.4500, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_gold_0_2_0_2_0_08_8")
+
+[node name="FencePost0" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.2250, 1.4700)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail0" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.1564, 0.0000, 0.9877, 0.0000, 1.0000, 0.0000, -0.9877, 0.0000, -0.1564, 0.2271, 0.4050, 1.4340)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost1" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.4543, 0.2250, 1.3981)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FencePost4" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 1.3981, 0.2250, 0.4543)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail4" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.9877, 0.0000, 0.1564, 0.0000, 1.0000, 0.0000, -0.1564, 0.0000, -0.9877, 1.4340, 0.4050, 0.2271)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost5" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 1.4700, 0.2250, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail5" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.9877, 0.0000, -0.1564, 0.0000, 1.0000, 0.0000, 0.1564, 0.0000, -0.9877, 1.4340, 0.4050, -0.2271)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost6" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 1.3981, 0.2250, -0.4543)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail6" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.8910, 0.0000, -0.4540, 0.0000, 1.0000, 0.0000, 0.4540, 0.0000, -0.8910, 1.2937, 0.4050, -0.6591)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost7" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 1.1893, 0.2250, -0.8640)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail7" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.7071, 0.0000, -0.7071, 0.0000, 1.0000, 0.0000, 0.7071, 0.0000, -0.7071, 1.0266, 0.4050, -1.0266)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost8" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.8640, 0.2250, -1.1893)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail8" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.4540, 0.0000, -0.8910, 0.0000, 1.0000, 0.0000, 0.8910, 0.0000, -0.4540, 0.6591, 0.4050, -1.2937)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost9" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.4543, 0.2250, -1.3981)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail9" type="MeshInstance3D" parent="."]
+transform = Transform3D(-0.1564, 0.0000, -0.9877, 0.0000, 1.0000, 0.0000, 0.9877, 0.0000, -0.1564, 0.2271, 0.4050, -1.4340)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost10" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.2250, -1.4700)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail10" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.1564, 0.0000, -0.9877, 0.0000, 1.0000, 0.0000, 0.9877, 0.0000, 0.1564, -0.2271, 0.4050, -1.4340)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost11" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.4543, 0.2250, -1.3981)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail11" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.4540, 0.0000, -0.8910, 0.0000, 1.0000, 0.0000, 0.8910, 0.0000, 0.4540, -0.6591, 0.4050, -1.2937)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost12" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.8640, 0.2250, -1.1893)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail12" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.7071, 0.0000, -0.7071, 0.0000, 1.0000, 0.0000, 0.7071, 0.0000, 0.7071, -1.0266, 0.4050, -1.0266)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost13" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -1.1893, 0.2250, -0.8640)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail13" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.8910, 0.0000, -0.4540, 0.0000, 1.0000, 0.0000, 0.4540, 0.0000, 0.8910, -1.2937, 0.4050, -0.6591)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost14" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -1.3981, 0.2250, -0.4543)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail14" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9877, 0.0000, -0.1564, 0.0000, 1.0000, 0.0000, 0.1564, 0.0000, 0.9877, -1.4340, 0.4050, -0.2271)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost15" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -1.4700, 0.2250, -0.0000)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail15" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.9877, 0.0000, 0.1564, 0.0000, 1.0000, 0.0000, -0.1564, 0.0000, 0.9877, -1.4340, 0.4050, 0.2271)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost16" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -1.3981, 0.2250, 0.4543)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail16" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.8910, 0.0000, 0.4540, 0.0000, 1.0000, 0.0000, -0.4540, 0.0000, 0.8910, -1.2937, 0.4050, 0.6591)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost17" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -1.1893, 0.2250, 0.8640)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail17" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.7071, 0.0000, 0.7071, 0.0000, 1.0000, 0.0000, -0.7071, 0.0000, 0.7071, -1.0266, 0.4050, 1.0266)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost18" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.8640, 0.2250, 1.1893)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail18" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.4540, 0.0000, 0.8910, 0.0000, 1.0000, 0.0000, -0.8910, 0.0000, 0.4540, -0.6591, 0.4050, 1.2937)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="FencePost19" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.4543, 0.2250, 1.3981)
+mesh = SubResource("dmesh_cyl_dm_gold_0_025_0_025_0_45_6")
+
+[node name="FenceRail19" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.1564, 0.0000, 0.9877, 0.0000, 1.0000, 0.0000, -0.9877, 0.0000, 0.1564, -0.2271, 0.4050, 1.4340)
+mesh = SubResource("dmesh_box_dm_cream_0_03_0_03_0_48")
+
+[node name="EntryArch" type="Node3D" parent="."]
+transform = Transform3D(0.7071, 0.0000, 0.7071, 0.0000, 1.0000, 0.0000, -0.7071, 0.0000, 0.7071, 1.0600, 0.0000, 1.0600)
+
+[node name="PostL" type="MeshInstance3D" parent="EntryArch"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2500, 0.4500, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_gold_0_04_0_05_0_9_8")
+
+[node name="PostR" type="MeshInstance3D" parent="EntryArch"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2500, 0.4500, 0.0000)
+mesh = SubResource("dmesh_cyl_dm_gold_0_04_0_05_0_9_8")
+
+[node name="Sign" type="MeshInstance3D" parent="EntryArch"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.9600, 0.0000)
+mesh = SubResource("dmesh_box_dm_teal_0_66_0_22_0_05")
+
+[node name="SignTrim" type="MeshInstance3D" parent="EntryArch"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0900, 0.0000)
+mesh = SubResource("dmesh_box_dm_gold_0_72_0_04_0_07")
+
+[node name="KnobL" type="MeshInstance3D" parent="EntryArch"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.2500, 1.1500, 0.0000)
+mesh = SubResource("dmesh_sph_dm_gold_0_05_8_0")
+
+[node name="KnobR" type="MeshInstance3D" parent="EntryArch"]
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2500, 1.1500, 0.0000)
+mesh = SubResource("dmesh_sph_dm_gold_0_05_8_0")
+
+[node name="Star" type="MeshInstance3D" parent="EntryArch"]
+transform = Transform3D(0.7071, -0.7071, 0.0000, 0.7071, 0.7071, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.9600, 0.0300)
+mesh = SubResource("dmesh_box_dm_gold_0_08_0_08_0_02")
+
+[node name="Step" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.7071, 0.0000, 0.7071, 0.0000, 1.0000, 0.0000, -0.7071, 0.0000, 0.7071, 0.9800, 0.0500, 0.9800)
+mesh = SubResource("dmesh_box_dm_wood_0_5_0_1_0_18")

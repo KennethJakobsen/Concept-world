@@ -73,9 +73,10 @@
 | T-052 | Ur, lydindstillinger, advarsler | ui | 🔍 review |
 | T-053 | M4 verifikation | qa | 🔍 review |
 | T-055 | Bug: pling for voldsomt, musik monoton | gameplay | 🔍 review |
-| T-054 | Bug: lange "spyd" (strakte kugle-meshes), nedbrudseffekt | graphics | 🔍 review |
-| T-056 | Bug: tankebobler passer ikke til teksten | graphics | 🔍 review |
+| T-054 | Bug: lange "spyd" (strakte kugle-meshes), nedbrudseffekt | graphics | ✅ done |
+| T-056 | Bug: tankebobler passer ikke til teksten | graphics | ✅ done |
 | T-057 | Bug: spøgelseshusets tag vender forkert | graphics | 🔍 review |
+| T-058 | Flere detaljer på modellerne | graphics | 🔍 review |
 
 ## Kommende milepæle
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger
