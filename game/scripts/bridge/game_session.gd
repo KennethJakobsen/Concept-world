@@ -6,6 +6,7 @@ const MAIN_SCENE: String = "res://scenes/main.tscn"
 const MENU_SCENE: String = "res://scenes/main_menu.tscn"
 
 var pending_save: Dictionary = {}
+var pending_scenario: String = ""  ## T-070: ParkView opretter sim fra dette scenarie ("" = fri leg)
 var seed: int = 1
 var store: SaveStore = SaveStore.new()
 var _hooked_sim: ParkSim
@@ -20,16 +21,32 @@ func _process(_delta: float) -> void:
 		_hooked_sim = s
 		if s != null:
 			s.day_passed.connect(_on_day_passed)
+			s.research_unlocked.connect(_on_research_unlocked)
+			s.scenario_finished.connect(_on_scenario_finished)
 
 
+## Alias for start_sandbox (bagudkompatibelt).
 func start_new(p_seed: int = randi()) -> void:
+	start_sandbox(p_seed)
+
+
+func start_sandbox(p_seed: int = randi()) -> void:
 	seed = p_seed
 	pending_save = {}
+	pending_scenario = ""
+	_change(MAIN_SCENE)
+
+
+func start_scenario(scenario_id: String, p_seed: int = randi()) -> void:
+	seed = p_seed
+	pending_save = {}
+	pending_scenario = scenario_id
 	_change(MAIN_SCENE)
 
 
 func start_from_save(d: Dictionary) -> void:
 	pending_save = d
+	pending_scenario = ""
 	_change(MAIN_SCENE)
 
 
@@ -62,6 +79,24 @@ func go_to_main_menu() -> void:
 
 func _on_day_passed(_day: int) -> void:
 	save_to(SaveStore.AUTOSAVE_SLOT)
+
+
+func _on_research_unlocked(_item_id: String) -> void:
+	_sfx(&"cheer")
+
+
+## Sejr/nederlag: pause (UI viser resultatet via sim.scenario_finished/scenario_status).
+func _on_scenario_finished(won: bool, _reason: String) -> void:
+	var s: ParkSim = current_sim()
+	if s != null:
+		s.clock.paused = true
+	_sfx(&"cheer" if won else &"error")
+
+
+func _sfx(id: StringName) -> void:
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am != null:
+		am.call("play_sfx", id, Vector3.INF)
 
 
 func _change(path: String) -> void:

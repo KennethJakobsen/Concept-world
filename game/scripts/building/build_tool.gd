@@ -21,7 +21,13 @@ const KEY_TOOLS: Dictionary = {
 const PREFIX_DECOR: String = "decor:"
 const PREFIX_STAFF: String = "staff:"
 const PREFIX_MOVE: String = "staff_move:"
+const PREFIX_COASTER: String = "coaster:"
 const GUEST_PICK_RADIUS: float = 0.5
+
+## Fejlkoder fra cmd_finish_coaster (eller "locked"/"no_station" m.fl.) – UI viser dem som toast.
+signal coaster_errors(codes: Array[String])
+## Banen blev færdig og åbnede.
+signal coaster_finished(coaster_id: int)
 
 @export var park_view_path: NodePath
 @export var camera_path: NodePath
@@ -38,6 +44,12 @@ var _dragging: int = 0  ## 0 = ingen, 1 = placér, 2 = fjern
 var _speed_idx: int = 1
 var _drag_staff: int = -1  ## personale der trækkes i vælg-værktøjet
 var grid_lines: GridLineFader  ## grid-linjer kun i byggetilstand (T-063)
+## T-070 rutsjebane-byggeri
+var coaster_id: int = -1          ## banen der bygges på (-1 = stationen er ikke placeret)
+var coaster_heading: int = 1      ## heading for stationen (R roterer)
+var coaster_piece: String = ""    ## valgt stykke (set_coaster_piece)
+var _ghost: CoasterTrackMesh
+var _piece_defs: Dictionary = {}
 
 
 func _ready() -> void:
@@ -64,11 +76,160 @@ func _ground_material() -> ShaderMaterial:
 	return ground.mesh.surface_get_material(0) as ShaderMaterial
 
 
-func set_tool(def_id: String) -> void:
+## Returnerer false (og spiller error-lyd), hvis id'et er låst.
+func set_tool(def_id: String) -> bool:
+	if is_tool_locked(def_id):
+		play_error()
+		return false
 	tool = def_id
 	_dragging = 0
+	if not def_id.begins_with(PREFIX_COASTER):
+		coaster_id = -1
+	elif coaster_id >= 0:
+		var a: Attraction = _view.sim.get_attraction(coaster_id) if _view != null and _view.sim != null else null
+		if a == null or a.def.id != def_id.substr(PREFIX_COASTER.length()):
+			coaster_id = -1
 	if grid_lines != null:
 		grid_lines.set_tool(def_id)
+	return true
+
+
+## Det id, værktøjet ville placere (bygning/dekoration/rutsjebane), eller "" for andre værktøjer.
+static func tool_content_id(t: String) -> String:
+	if t.begins_with(PREFIX_COASTER):
+		return t.substr(PREFIX_COASTER.length())
+	if t.begins_with(PREFIX_DECOR):
+		return t.substr(PREFIX_DECOR.length())
+	if t == TOOL_PATH or t == TOOL_REMOVE or t == TOOL_SELECT or t.contains(":"):
+		return ""
+	return t
+
+
+func is_tool_locked(t: String) -> bool:
+	var id: String = tool_content_id(t)
+	if id == "" or _view == null or _view.sim == null:
+		return false
+	return not _view.sim.is_unlocked(id)
+
+
+func play_error() -> void:
+	var am: Node = get_node_or_null("/root/AudioManager") if is_inside_tree() else null
+	if am != null:
+		am.call("play_sfx", &"error", Vector3.INF)
+
+
+# --- Rutsjebane (T-070, kontrakt §6) ---
+
+func is_coaster_tool() -> bool:
+	return tool.begins_with(PREFIX_COASTER)
+
+
+func is_building_coaster() -> bool:
+	if coaster_id < 0 or _view == null or _view.sim == null:
+		return false
+	var a: Attraction = _view.sim.get_attraction(coaster_id)
+	return a != null and a.building
+
+
+func rotate_coaster() -> void:
+	coaster_heading = posmod(coaster_heading + 1, 4)
+
+
+## Placerer stationen (første klik). Returnerer coaster-id eller -1.
+func place_coaster_station(cell: Vector2i, heading: int = coaster_heading) -> int:
+	var def_id: String = tool.substr(PREFIX_COASTER.length()) if is_coaster_tool() else ""
+	if def_id == "" or not _view.sim.is_unlocked(def_id):
+		play_error()
+		return -1
+	var id: int = _view.sim.cmd_start_coaster(def_id, cell, heading)
+	if id < 0:
+		play_error()
+		return -1
+	coaster_id = id
+	coaster_heading = heading
+	var a: Attraction = _view.sim.get_attraction(id)
+	_view.spawn_floating_text(ParkView.cell_center(cell), "-%d" % (a.build_value()), Color(1, 0.4, 0.4))
+	return id
+
+
+func set_coaster_piece(piece_id: String) -> void:
+	coaster_piece = piece_id
+
+
+## Placerer det valgte stykke for enden af banen.
+func place_coaster_piece() -> bool:
+	if coaster_id < 0 or coaster_piece == "":
+		return false
+	if not _view.sim.is_unlocked(coaster_piece) or not _view.sim.cmd_place_track_piece(coaster_id, coaster_piece):
+		play_error()
+		return false
+	return true
+
+
+func remove_last_coaster_piece() -> bool:
+	return coaster_id >= 0 and _view.sim.cmd_remove_last_piece(coaster_id)
+
+
+## "Færdig": validerer. Fejl udsendes via coaster_errors; ved succes skiftes til vælg-værktøjet.
+func finish_coaster() -> Array[String]:
+	if coaster_id < 0:
+		var none: Array[String] = ["no_station"]
+		coaster_errors.emit(none)
+		return none
+	var id: int = coaster_id
+	var errs: Array[String] = _view.sim.cmd_finish_coaster(id)
+	if not errs.is_empty():
+		play_error()
+		coaster_errors.emit(errs)
+		return errs
+	coaster_id = -1
+	_request_tool(TOOL_SELECT)
+	coaster_finished.emit(id)
+	return errs
+
+
+## "Fortsæt byg" på en ufærdig bane.
+func resume_coaster(id: int) -> bool:
+	var a: Attraction = _view.sim.get_attraction(id)
+	if a == null or a.track == null or not a.building:
+		return false
+	_request_tool(PREFIX_COASTER + a.def.id)
+	if tool != PREFIX_COASTER + a.def.id:
+		return false
+	coaster_id = id
+	return true
+
+
+func _ensure_ghost() -> void:
+	if _ghost != null:
+		return
+	_piece_defs = CoasterTrackMesh.load_defs()
+	_ghost = CoasterTrackMesh.new()
+	_ghost.name = "CoasterGhost"
+	_view.add_child(_ghost)
+
+
+func _update_coaster_preview() -> void:
+	if coaster_id < 0:
+		var cell: Vector2i = _picker.cell_under_mouse(_camera)
+		if cell == GridPicker.INVALID:
+			return
+		var w: ParkWorld = _view.sim.world
+		var ent: Vector2i = cell + TrackPiece.dir(coaster_heading + 3)
+		var def: AttractionDef = _view.sim.get_def(tool.substr(PREFIX_COASTER.length()))
+		var ok: bool = def != null and w.in_bounds(cell) and w.in_bounds(ent) and w.get_tile(cell) == ParkWorld.Tile.GRASS \
+			and _view.sim.economy.can_afford(def.build_cost)
+		_ensure_highlights(2)
+		_highlights[0].show_at(cell, ok)
+		_highlights[1].show_at(ent, ok)
+		return
+	if coaster_piece == "" or not is_building_coaster():
+		return
+	var pv: Dictionary = _view.sim.preview_track_piece(coaster_id, coaster_piece)
+	_ensure_ghost()
+	_ghost.build([{"def_id": coaster_piece, "cell": pv["cell"], "heading": pv["heading"], "level": pv["level"]}], _piece_defs)
+	_ghost.set_ghost(bool(pv["ok"]))
+	_ghost.visible = true
 
 
 func _building_def() -> AttractionDef:
@@ -117,6 +278,11 @@ func _process(delta: float) -> void:
 func _update_preview() -> void:
 	for h in _highlights:
 		h.hide_highlight()
+	if _ghost != null:
+		_ghost.visible = false
+	if is_coaster_tool():
+		_update_coaster_preview()
+		return
 	var w: ParkWorld = _view.sim.world
 	var def: AttractionDef = _building_def()
 	var fp: Vector2i = _footprint()
@@ -262,6 +428,11 @@ func _unhandled_input(event: InputEvent) -> void:
 				_apply_drag()
 			elif cell == GridPicker.INVALID:
 				return
+			elif is_coaster_tool():
+				if coaster_id < 0:
+					place_coaster_station(cell)
+				else:
+					place_coaster_piece()
 			elif tool == TOOL_SELECT:
 				_drag_staff = select_at(cell, _ground_under_mouse())
 			elif tool.begins_with(PREFIX_DECOR):
@@ -289,6 +460,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			handle_escape()
 			get_viewport().set_input_as_handled()
 			return
+		if is_coaster_tool() and _coaster_key(k.keycode):
+			get_viewport().set_input_as_handled()
+			return
 		if KEY_TOOLS.has(k.keycode):
 			var id: String = KEY_TOOLS[k.keycode]
 			_request_tool(id)
@@ -310,9 +484,24 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+func _coaster_key(code: Key) -> bool:
+	match code:
+		KEY_R:
+			if coaster_id < 0:
+				rotate_coaster()
+		KEY_ENTER, KEY_KP_ENTER:
+			place_coaster_piece()
+		KEY_BACKSPACE:
+			remove_last_coaster_piece()
+		_:
+			return false
+	return true
+
+
 ## Esc: værktøj ≠ select → select; ellers pause-menu.
 func handle_escape() -> void:
 	_drag_staff = -1
+	coaster_id = -1  # en ufærdig bane bliver stående (genoptages med resume_coaster)
 	if tool != TOOL_SELECT:
 		_request_tool(TOOL_SELECT)
 		if _selection != null:

@@ -52,6 +52,18 @@ var _repairing: Dictionary = {}    ## staff id -> attraction id
 var _coin_cd: float = 0.0
 var _rebuilding: bool = false      ## undertryk effekter/lyd mens scenen genopbygges
 var _root: Node3D                  ## alle visnings-noder (genskabes ved rebuild)
+var _coasters: Dictionary = {}     ## coaster id -> CoasterVis (T-070)
+var _piece_defs: Dictionary = {}
+
+
+## Visningsdata for én rutsjebane.
+class CoasterVis:
+	var mesh: CoasterTrackMesh
+	var train: CoasterTrain
+	var line: PackedVector3Array
+	var acc: PackedFloat32Array
+	var total: float = 0.0
+	var vis_t: float = 0.0  ## interpoleret ride_progress
 
 
 func _ready() -> void:
@@ -73,6 +85,14 @@ func _ready() -> void:
 			return
 		push_warning("ParkView: ugyldig save – starter ny park")
 	var s: int = int(session.get("seed")) if session != null else sim_seed
+	var scen_id: String = str(session.get("pending_scenario")) if session != null and session.get("pending_scenario") != null else ""
+	if scen_id != "":
+		session.set("pending_scenario", "")
+		var def: ScenarioDef = ScenarioDef.find(scen_id)
+		if def != null:
+			setup(ParkSim.new_from_scenario(def, s))
+			return
+		push_warning("ParkView: ukendt scenarie '%s' – starter fri leg" % scen_id)
 	setup(ParkSim.new(park_width, park_height, s))
 
 
@@ -97,6 +117,7 @@ func setup(p_sim: ParkSim) -> void:
 	sim.purchase_made.connect(_on_purchase_made)
 	sim.litter_swept.connect(_on_litter_swept)
 	sim.ride_cycle_started.connect(_on_ride_cycle_started)
+	sim.coaster_changed.connect(_on_coaster_changed)
 	_tod_vis = sim.time_of_day()
 	_on_phase_changed(sim.phase())
 	rebuild()
@@ -110,7 +131,8 @@ func _disconnect() -> void:
 			[sim.decor_placed, _on_decor_placed], [sim.decor_removed, _on_decor_removed],
 			[sim.attraction_broken, _on_attraction_broken], [sim.attraction_repaired, _on_attraction_repaired],
 			[sim.phase_changed, _on_phase_changed], [sim.purchase_made, _on_purchase_made],
-			[sim.litter_swept, _on_litter_swept], [sim.ride_cycle_started, _on_ride_cycle_started]]:
+			[sim.litter_swept, _on_litter_swept], [sim.ride_cycle_started, _on_ride_cycle_started],
+			[sim.coaster_changed, _on_coaster_changed]]:
 		var sig: Signal = pair[0]
 		if sig.is_connected(pair[1]):
 			sig.disconnect(pair[1])
@@ -137,6 +159,7 @@ func rebuild() -> void:
 	_sparks.clear()
 	_repairing.clear()
 	_running.clear()
+	_coasters.clear()
 	_night = -1.0
 	var w: ParkWorld = sim.world
 	for y in w.height:
@@ -150,6 +173,8 @@ func rebuild() -> void:
 	_rebuilding = true
 	for a in w.attractions:
 		_on_attraction_placed(a)
+		if a.track != null:
+			_on_coaster_changed(a.id)
 		if a.broken:
 			_on_attraction_broken(a)
 	for did: int in sim.decor:
@@ -173,6 +198,7 @@ func _process(delta: float) -> void:
 	sync_guests()
 	sync_staff()
 	sync_attractions()
+	update_coasters(delta)
 	update_bubbles(delta)
 	update_time_of_day(delta)
 
@@ -212,6 +238,9 @@ func _apply_night(force: bool) -> void:
 		_light_node(_decor[did], f)
 	for aid: int in _attractions:
 		_light_node(_attractions[aid], f)
+	for cid: int in _coasters:
+		if (_coasters[cid] as CoasterVis).train != null:
+			(_coasters[cid] as CoasterVis).train.set_lights(f)
 
 
 func _light_node(n: Node3D, f: float) -> void:
@@ -455,6 +484,12 @@ func _on_attraction_placed(a: Attraction) -> void:
 
 
 func _on_attraction_removed(attraction_id: int) -> void:
+	if _coasters.has(attraction_id):
+		var cv: CoasterVis = _coasters[attraction_id]
+		cv.mesh.queue_free()
+		if cv.train != null:
+			cv.train.queue_free()
+		_coasters.erase(attraction_id)
 	_free_in(_smoke, attraction_id)
 	_free_in(_sparks, attraction_id)
 	_running.erase(attraction_id)
@@ -707,3 +742,87 @@ static func thought_emote(thought: String) -> StringName:
 	if t.contains("kvalm") or t.contains("syg") or t.contains("ondt"):
 		return &"sick"
 	return &"angry"
+
+
+# --- Rutsjebaner (T-070) ---
+
+func coaster_count() -> int:
+	return _coasters.size()
+
+
+func coaster_mesh(coaster_id: int) -> CoasterTrackMesh:
+	return (_coasters[coaster_id] as CoasterVis).mesh if _coasters.has(coaster_id) else null
+
+
+func coaster_train(coaster_id: int) -> CoasterTrain:
+	return (_coasters[coaster_id] as CoasterVis).train if _coasters.has(coaster_id) else null
+
+
+## Genbygger mesh (og tog, når banen er åben) for én rutsjebane.
+func _on_coaster_changed(coaster_id: int) -> void:
+	var a: Attraction = sim.get_attraction(coaster_id)
+	if a == null or a.track == null:
+		return
+	if _piece_defs.is_empty():
+		_piece_defs = CoasterTrackMesh.load_defs()
+	var cv: CoasterVis = _coasters.get(coaster_id, null)
+	if cv == null:
+		cv = CoasterVis.new()
+		cv.mesh = CoasterTrackMesh.new()
+		cv.mesh.name = "Coaster%d" % coaster_id
+		_root.add_child(cv.mesh)
+		_coasters[coaster_id] = cv
+	var pieces: Array = a.track.to_dicts()
+	cv.mesh.build(pieces, _piece_defs)
+	cv.line = CoasterTrackMesh.full_centerline(pieces, _piece_defs)
+	cv.acc = CoasterTrackMesh.arc_lengths(cv.line)
+	cv.total = cv.acc[cv.acc.size() - 1] if cv.acc.size() > 0 else 0.0
+	if not pieces.is_empty():
+		var st: Node3D = _attractions.get(coaster_id, null)
+		if st != null:
+			st.rotation.y = -PI * 0.5 * int(pieces[0]["heading"])
+	var open: bool = not a.building and a.profile != null
+	if open and cv.train == null:
+		cv.train = CoasterTrain.new()
+		cv.train.name = "Train%d" % coaster_id
+		_root.add_child(cv.train)
+		cv.train.set_cars(int(CoasterContent.train(a.def.train if a.def.train != "" else "basic_train").get("cars", 3)))
+		if _night >= 0.0:
+			cv.train.set_lights(_night)
+	elif not open and cv.train != null:
+		cv.train.queue_free()
+		cv.train = null
+	if open:
+		_pose_train(cv, a, 0.0)
+
+
+## Toget følger ride_progress, interpoleret mellem ticks; står stille i stationen mellem ture.
+func update_coasters(delta: float) -> void:
+	for id: int in _coasters:
+		var cv: CoasterVis = _coasters[id]
+		var a: Attraction = sim.get_attraction(id)
+		if cv.train == null or a == null or a.profile == null:
+			continue
+		var p: float = a.ride_progress()
+		if p <= 0.0 or a.broken:
+			cv.vis_t = p
+		else:
+			var run_ticks: int = maxi(1, a.ride_ticks() - a.load_ticks)
+			var step: float = 0.0 if sim.clock.paused else delta * sim.clock.speed / (run_ticks * SimClock.TICK_DELTA)
+			var tick_t: float = 1.0 / run_ticks
+			# Fremskriv visningen, men højst én tick foran sim'en; spring hvis den halter.
+			cv.vis_t = clampf(cv.vis_t + step, p, minf(1.0, p + tick_t)) if absf(cv.vis_t - p) <= 2.0 * tick_t else p
+		_pose_train(cv, a, cv.vis_t)
+
+
+func _pose_train(cv: CoasterVis, a: Attraction, t: float) -> void:
+	if cv.total <= 0.0:
+		return
+	var n: int = cv.train.car_count()
+	var scale: float = cv.total / a.profile.length if a.profile.length > 0.0 else 1.0
+	# Forreste vogn ved stationens forkant, så toget står i stationen ved t = 0.
+	var head: float = a.profile.position_at(t) * scale + CoasterTrain.CAR_SPACING * (n - 1) * 0.5 + 0.5
+	var poses: Array[Transform3D] = []
+	for i in n:
+		poses.append(CoasterTrackMesh.pose_at(cv.line, cv.acc, head - i * CoasterTrain.CAR_SPACING))
+	cv.train.set_path_pose(poses)

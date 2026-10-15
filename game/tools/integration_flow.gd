@@ -139,6 +139,35 @@ func _run() -> void:
 	gs.call("go_to_main_menu")
 	await _frames(3)
 	_check(current_scene.scene_file_path.ends_with("main_menu.tscn"), "tilbage til hovedmenu")
+
+	# T-070: menu → scenarie → gem → indlæs
+	_check(ScenarioDef.list_all().size() >= 2, "scenarier listes via DirAccess (%d)" % ScenarioDef.list_all().size())
+	gs.call("start_scenario", "green_meadow", 77)
+	await _frames(5)
+	var v3: ParkView = _view()
+	_check(v3 != null and v3.sim != null and v3.sim.scenario != null, "scenarie startet via GameSession")
+	if v3 != null and v3.sim != null and v3.sim.scenario != null:
+		var ss: ParkSim = v3.sim
+		ss.clock.paused = true
+		_check(ss.world.width == 48 and ss.scenario.def_id == "green_meadow", "scenariets kort/id")
+		_check(bool(ss.research_status()["enabled"]), "forskning slået til i scenariet")
+		var cb: Array = [0]
+		ss.scenario_finished.connect(func(_w: bool, _r: String) -> void: cb[0] += 1)
+		ss.clock.paused = false
+		ss.scenario_finished.emit(true, "test")
+		_check(ss.clock.paused and cb[0] == 1, "scenario_finished pauser simulationen")
+		var sc_counts: Dictionary = v3.node_counts()
+		_check(UiSession.save_slot(SLOT, ss), "scenarie gemt")
+		_check(bool(gs.call("load_from", SLOT)), "scenarie indlæst")
+		await _frames(5)
+		var v4: ParkView = _view()
+		_check(v4 != null and v4.sim != null and v4.sim != ss and v4.sim.scenario != null \
+			and v4.sim.scenario.def_id == "green_meadow", "scenarie bevaret efter load")
+		if v4 != null and v4.sim != null:
+			v4.sim.clock.paused = true
+			_check(v4.node_counts() == sc_counts, "scenarie node_counts ens")
+	gs.call("go_to_main_menu")
+	await _frames(3)
 	UiSession.store().delete(SLOT)
 	print("Integration: %s (%d fejl)" % ["OK" if _fails == 0 else "FEJL", _fails])
 	quit(0 if _fails == 0 else 1)
