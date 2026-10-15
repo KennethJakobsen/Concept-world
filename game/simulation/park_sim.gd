@@ -22,6 +22,8 @@ signal ride_cycle_started(attraction_id: int)
 ## T-066 (M5)
 signal research_unlocked(item_id: String)
 signal scenario_finished(won: bool, reason: String)
+## T-068: banen er ændret (stykke lagt/fjernet, færdig).
+signal coaster_changed(coaster_id: int)
 
 const PHASE_DAWN: StringName = &"dawn"
 const PHASE_DAY: StringName = &"day"
@@ -140,7 +142,7 @@ func cmd_remove_path(cell: Vector2i) -> bool:
 
 func cmd_place_attraction(def_id: String, origin: Vector2i) -> Attraction:
 	var def: AttractionDef = get_def(def_id)
-	if def == null or not is_unlocked(def_id):
+	if def == null or not is_unlocked(def_id) or def.kind == "coaster":
 		return null
 	if not world.can_place_attraction(def, origin) or not economy.can_afford(def.build_cost):
 		return null
@@ -153,7 +155,7 @@ func cmd_remove_attraction(attraction_id: int) -> bool:
 	var a: Attraction = world.remove_attraction(attraction_id)
 	if a == null:
 		return false
-	economy.earn(a.def.build_cost / 2, "refund")
+	economy.earn(a.build_value() / 2, "refund")
 	return true
 
 
@@ -193,8 +195,8 @@ func attraction_score() -> float:
 	for a in attractions:
 		if not is_operating(a) or a.broken:  # T-043: ødelagte tæller ikke i tiltrækning (men i max_guests)
 			continue
-		if a.def.kind == "ride":
-			raw += a.def.excitement * balance.weight_ride
+		if a.is_ride():
+			raw += _excitement(a) * balance.weight_ride
 		else:
 			raw += balance.weight_facility
 	return sqrt(maxf(0.0, raw))
@@ -235,7 +237,7 @@ func _on_tile_changed(_cell: Vector2i, _tile: int) -> void:
 
 func _has_open_ride() -> bool:
 	for a in attractions:
-		if is_operating(a) and a.def.kind == "ride":
+		if is_operating(a) and a.is_ride():
 			return true
 	return false
 
@@ -298,8 +300,8 @@ const QUEUE_FULL_THOUGHT: String = "Køen er for lang!"
 func price_value(a: Attraction, g: Guest = null) -> float:
 	var happiness: float = g.happiness if g != null else balance.happiness_start
 	var v: float
-	if a.def.kind == "ride":
-		v = balance.ride_price_base + a.def.excitement * balance.ride_price_per_excitement
+	if a.is_ride():
+		v = balance.ride_price_base + _excitement(a) * balance.ride_price_per_excitement
 	else:
 		var need: float = 0.0
 		if g != null:
@@ -591,18 +593,18 @@ func _choose_goal(g: Guest) -> void:
 	if g.rides_left > 0:
 		var options: Array[Attraction] = []
 		for a in attractions:
-			if a.def.kind == "ride" and _usable(g, a) \
+			if a.is_ride() and _usable(g, a) \
 					and not path_finder.find_path(g.cell, a.entrance_cell).is_empty():
 				options.append(a)
 		if not options.is_empty():
 			# Vægtet efter excitement (min. vægt 1).
 			var total: int = 0
 			for o in options:
-				total += maxi(1, o.def.excitement)
+				total += maxi(1, _excitement(o))
 			var r: int = rng.randi_range(0, total - 1)
 			var a: Attraction = options[options.size() - 1]
 			for o in options:
-				r -= maxi(1, o.def.excitement)
+				r -= maxi(1, _excitement(o))
 				if r < 0:
 					a = o
 					break
@@ -630,6 +632,10 @@ func _leave_reason(g: Guest) -> String:
 ## Er prisen over betalingsviljen afvises bygningen (tanke "For dyrt!", glæde-straf).
 func _usable(g: Guest, a: Attraction) -> bool:
 	if not a.is_open or a.broken or g.rejected_ids.has(a.id) or a.price > g.money:
+		return false
+	if a.is_coaster() and _too_intense(g, a):
+		g.thought = TOO_INTENSE_THOUGHT
+		g.rejected_ids.append(a.id)
 		return false
 	if is_queue_full(a):
 		return false
@@ -750,6 +756,8 @@ func _try_enter(g: Guest, a: Attraction) -> String:
 		reason = balance.thought_broken
 	elif not a.is_open:
 		reason = "Den er lukket!"
+	elif a.is_coaster() and _too_intense(g, a):
+		reason = TOO_INTENSE_THOUGHT
 	elif a.price > price_value(a, g):
 		reason = TOO_EXPENSIVE_THOUGHT
 		g.happiness = maxf(0.0, g.happiness - balance.reject_happiness_penalty)
@@ -778,7 +786,7 @@ func _on_ride_started(a: Attraction) -> void:
 	for gid in a.riders:
 		if guests.has(gid):
 			(guests[gid] as Guest).state = Guest.State.RIDING
-	if a.def.kind == "ride":
+	if a.is_ride():
 		ride_cycle_started.emit(a.id)
 
 
@@ -790,11 +798,13 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 		_apply_visit(g, a)
 		if a.def.kind == "shop":
 			g.litter_steps_left = rng.randi_range(1, maxi(1, balance.litter_carry_cells))
-		if a.def.kind == "ride":
+		if a.is_ride():
 			g.rides_left -= 1
 		g.target_attraction_id = -1
 		_choose_goal(g)
-	if a.def.kind == "ride" and not guest_ids.is_empty() and a.def.reliability < 1.0 \
+		if a.is_coaster():
+			_maybe_sick(g, a)
+	if a.is_ride() and not guest_ids.is_empty() and a.def.reliability < 1.0 \
 			and rng.randf() >= a.effective_reliability():
 		_break(a)
 
@@ -804,12 +814,12 @@ func _apply_visit(g: Guest, a: Attraction) -> void:
 	for k: String in a.def.satisfies:
 		if g.needs.has(k):
 			g.needs[k] = clampf(g.needs[k] + float(a.def.satisfies[k]), 0.0, 100.0)
-	var gain: float = a.def.excitement + (balance.need_relief_happiness if relieved else 0.0)
+	var gain: float = _excitement(a) + (balance.need_relief_happiness if relieved else 0.0)
 	g.happiness = clampf(g.happiness + gain, 0.0, 100.0)
 	g.paid = 0
 	g.seeking_need = ""
 	g.rejected_ids.clear()
-	g.thought = "Det var godt!" if relieved else ("Sjovt!" if a.def.kind == "ride" else "")
+	g.thought = "Det var godt!" if relieved else ("Sjovt!" if a.is_ride() else "")
 
 
 # --- Personale, nedbrud, affald, dekoration (T-037) ---
@@ -883,7 +893,7 @@ func can_place_decor(def: DecorDef, cell: Vector2i) -> bool:
 		return false
 	if def.on_path:
 		return world.get_tile(cell) == ParkWorld.Tile.PATH and _decor_ids_at(cell).is_empty()
-	return world.get_tile(cell) == ParkWorld.Tile.GRASS
+	return world.get_tile(cell) == ParkWorld.Tile.GRASS and not world.has_low_track(cell)
 
 
 ## Returnerer decor-id eller -1 (ugyldig celle / ikke råd).
@@ -1106,7 +1116,7 @@ static func new_from_scenario(def: ScenarioDef, p_seed: int, p_balance: Balance 
 func park_value() -> int:
 	var built: int = 0
 	for a in attractions:
-		built += a.def.build_cost
+		built += a.build_value()
 	for did in _sorted_decor_ids():
 		built += (decor[did] as Decor).def.build_cost
 	return int(floor(built * 0.8)) + economy.money
@@ -1174,6 +1184,194 @@ func _scenario_day() -> void:
 		scenario_finished.emit(true, scenario.reason)
 	elif res != "":
 		scenario_finished.emit(false, res)
+
+
+# --- Rutsjebane (T-068) ---
+
+const TOO_INTENSE_THOUGHT: String = "Den er for vild for mig!"
+const SICK_THOUGHT: String = "Jeg har kvalme!"
+
+
+## Excitement på 0..100-skala (rutsjebane: ratings × excitement_scale fra data).
+func _excitement(a: Attraction) -> int:
+	return a.excitement_value(float(CoasterContent.ratings().get("excitement_scale", 10.0)))
+
+
+## Gæstens maks-intensitet: deterministisk ud fra id inden for guest_tolerance (ingen RNG-træk).
+func guest_intensity_max(g: Guest) -> float:
+	var tol: Dictionary = CoasterContent.ratings().get("guest_tolerance", {})
+	var lo: float = float(tol.get("intensity_pref_min", 3.0))
+	var hi: float = float(tol.get("intensity_pref_max", 8.0))
+	return lo + (hi - lo) * fposmod(float(g.id) * 0.6180339887, 1.0)
+
+
+func _too_intense(g: Guest, a: Attraction) -> bool:
+	return float(a.ratings.get("intensity", 0.0)) > guest_intensity_max(g)
+
+
+func _maybe_sick(g: Guest, a: Attraction) -> void:
+	var r: Dictionary = CoasterContent.ratings()
+	var chance: float = float(a.ratings.get("nausea", 0.0)) * float(r.get("sick_chance_per_nausea", 0.0))
+	if chance > 0.0 and rng.randf() < chance:
+		g.thought = SICK_THOUGHT
+		g.happiness = clampf(g.happiness - float(r.get("sick_happiness_penalty", 10.0)), 0.0, 100.0)
+
+
+func _train_of(a: Attraction) -> Dictionary:
+	return CoasterContent.train(a.def.train if a.def.train != "" else "basic_train")
+
+
+## Starter en rutsjebane med stationen i station_cell. Indgangen er cellen til venstre for stationen
+## (set i kørselsretningen), så en oval med højresving kan lukkes rundt om stationen.
+func cmd_start_coaster(def_id: String, station_cell: Vector2i, heading: int) -> int:
+	var def: AttractionDef = get_def(def_id)
+	var sid: String = CoasterContent.station_id()
+	var st: TrackPieceDef = CoasterContent.piece(sid)
+	if def == null or def.kind != "coaster" or st == null or not is_unlocked(def_id) or not is_unlocked(sid):
+		return -1
+	var cost: int = def.build_cost + st.cost
+	if not economy.can_afford(cost):
+		return -1
+	if world.blocks_track(station_cell, 0) or _track_collides(station_cell, 0, -1):
+		return -1
+	var ent: Vector2i = station_cell + TrackPiece.dir(heading + 3)
+	var et: int = world.get_tile(ent)
+	if (et != ParkWorld.Tile.GRASS and et != ParkWorld.Tile.PATH) or world.has_low_track(ent) \
+			or world.get_attraction_by_entrance(ent) != null or world.get_attraction_at(ent) != null:
+		return -1
+	economy.spend(cost, "build")
+	var a: Attraction = world.place_coaster(def, station_cell, ent)
+	a.track = CoasterTrack.new(CoasterContent.pieces(), def.max_height)
+	a.track.pieces.append(TrackPiece.new(sid, station_cell, heading, 0))
+	world.add_track_cell(station_cell, 0, a.id)
+	a.building = true
+	a.is_open = false
+	coaster_changed.emit(a.id)
+	return a.id
+
+
+func _coaster(coaster_id: int) -> Attraction:
+	var a: Attraction = get_attraction(coaster_id)
+	return a if a != null and a.track != null else null
+
+
+func _track_collides(cell: Vector2i, low: int, _self_id: int) -> bool:
+	for lv in world.occupied_by_track(cell):
+		if absi(lv - low) < 2:
+			return true
+	return false
+
+
+## Ghost-preview for næste stykke: {cell, heading, level, ok, reason}.
+func preview_track_piece(coaster_id: int, piece_id: String) -> Dictionary:
+	var a: Attraction = _coaster(coaster_id)
+	if a == null:
+		return {"cell": Vector2i.ZERO, "heading": 0, "level": 0, "ok": false, "reason": "no_coaster"}
+	var e: Dictionary = a.track.next_entry()
+	var out: Dictionary = {"cell": e["cell"], "heading": e["heading"], "level": e["level"], "ok": false, "reason": ""}
+	var d: TrackPieceDef = a.track.defs.get(piece_id, null)
+	if d == null:
+		out["reason"] = "unknown_piece"
+	elif not a.building:
+		out["reason"] = "not_building"
+	elif a.track.is_closed():
+		out["reason"] = "closed"
+	elif not is_unlocked(piece_id):
+		out["reason"] = "locked"
+	elif not economy.can_afford(d.cost):
+		out["reason"] = "no_money"
+	elif not world.in_bounds(e["cell"]):
+		out["reason"] = "out_of_bounds"
+	else:
+		var lvl: int = e["level"]
+		var low: int = mini(lvl, lvl + d.rise)
+		if maxi(lvl, lvl + d.rise) > a.def.max_height:
+			out["reason"] = "too_high"
+		elif low < 0:
+			out["reason"] = "below_ground"
+		elif world.blocks_track(e["cell"], low) or _track_collides(e["cell"], low, a.id):
+			out["reason"] = "collision"
+		else:
+			out["ok"] = true
+	return out
+
+
+func can_place_track_piece(coaster_id: int, piece_id: String) -> bool:
+	return bool(preview_track_piece(coaster_id, piece_id)["ok"])
+
+
+func cmd_place_track_piece(coaster_id: int, piece_id: String) -> bool:
+	var pv: Dictionary = preview_track_piece(coaster_id, piece_id)
+	if not pv["ok"]:
+		return false
+	var a: Attraction = _coaster(coaster_id)
+	var d: TrackPieceDef = a.track.defs[piece_id]
+	economy.spend(d.cost, "build")
+	var p := TrackPiece.new(piece_id, pv["cell"], pv["heading"], pv["level"])
+	a.track.pieces.append(p)
+	world.add_track_cell(p.cell, a.track.low_level(p), a.id)
+	_sync_cells(a)
+	coaster_changed.emit(a.id)
+	return true
+
+
+## Fjerner sidste stykke (ikke stationen) under bygning; 100 % refusion.
+func cmd_remove_last_piece(coaster_id: int) -> bool:
+	var a: Attraction = _coaster(coaster_id)
+	if a == null or not a.building or a.track.pieces.size() <= 1:
+		return false
+	var p: TrackPiece = a.track.pieces[a.track.pieces.size() - 1]
+	var low: int = a.track.low_level(p)
+	var d: TrackPieceDef = a.track.def_of(p)
+	a.track.pieces.pop_back()
+	world.remove_track_cell(p.cell, low, a.id)
+	if d != null:
+		economy.earn(d.cost, "refund")
+	_sync_cells(a)
+	coaster_changed.emit(a.id)
+	return true
+
+
+## Validerer; ved succes beregnes fysik/ratings og banen åbner. Returnerer fejlkoder (tom = ok).
+func cmd_finish_coaster(coaster_id: int) -> Array[String]:
+	var a: Attraction = _coaster(coaster_id)
+	if a == null:
+		return ["no_coaster"] as Array[String]
+	var errs: Array[String] = a.track.validate(_world_blocked.bind(a), _train_of(a))
+	if not errs.is_empty():
+		return errs
+	a.building = false
+	_apply_profile(a)
+	a.is_open = true
+	for g: Guest in guests.values():
+		g.rejected_ids.erase(a.id)
+	coaster_changed.emit(a.id)
+	return errs
+
+
+func _world_blocked(i: int, a: Attraction) -> bool:
+	var p: TrackPiece = a.track.pieces[i]
+	return world.blocks_track(p.cell, a.track.low_level(p))
+
+
+func _sync_cells(a: Attraction) -> void:
+	a.cells = a.track.cells()
+
+
+## Profil, ratings og ride_ticks ud fra banen (deterministisk; også ved load).
+func _apply_profile(a: Attraction) -> void:
+	var r: Dictionary = CoasterContent.ratings()
+	a.profile = CoasterPhysics.simulate(a.track, _train_of(a), a.track.defs)
+	a.ratings = CoasterRatings.rate(a.profile, r)
+	a.load_ticks = int(r.get("load_ticks", 0))
+	a.ride_ticks_override = int(ceil(a.profile.duration_s * SimClock.TICKS_PER_SECOND)) + a.load_ticks
+
+
+func _restore_coaster(a: Attraction) -> void:
+	for p in a.track.pieces:
+		world.add_track_cell(p.cell, a.track.low_level(p), a.id)
+	if not a.building and a.track.is_closed():
+		_apply_profile(a)
 
 
 # --- Save/load (T-036) ---
@@ -1276,6 +1474,8 @@ func _park_load(park: Dictionary) -> void:
 		var a := Attraction.from_save(ad, def)
 		world.restore_attraction(a)
 		_on_attraction_placed(a)  # forbinder signaler + tilføjer til attractions
+		if a.track != null:
+			_restore_coaster(a)
 	for gd: Variant in SaveCodec.arr(park, "guests"):
 		if gd is Dictionary:
 			var g := Guest.from_save(gd)

@@ -19,6 +19,11 @@ var _tiles: PackedInt32Array = PackedInt32Array()
 var _next_attraction_id: int = 1
 ## Affald pr. sti-celle (kun celler med > 0).
 var litter: Dictionary = {}  ## Vector2i -> int
+## T-068: banestykker pr. celle: Vector2i -> Array af [level, attraction_id]. Afledt; gemmes ikke.
+var _track: Dictionary = {}
+
+## Over dette niveau (>=) må banen ligge over stier/bygninger/decor.
+const TRACK_CLEARANCE: int = 2
 
 
 func _init(p_width: int, p_height: int) -> void:
@@ -66,7 +71,77 @@ func _set_tile(cell: Vector2i, tile: int) -> void:
 
 
 func can_place_path(cell: Vector2i) -> bool:
-	return get_tile(cell) == Tile.GRASS
+	return get_tile(cell) == Tile.GRASS and not has_low_track(cell)
+
+
+# --- Rutsjebanespor (T-068) ---
+
+## Niveauer (laveste niveau pr. stykke) som banestykker optager i cellen.
+func occupied_by_track(cell: Vector2i) -> Array[int]:
+	var out: Array[int] = []
+	for e: Array in _track.get(cell, []):
+		out.append(int(e[0]))
+	return out
+
+
+## Ligger der et stykke under TRACK_CLEARANCE i cellen?
+func has_low_track(cell: Vector2i) -> bool:
+	for lv in occupied_by_track(cell):
+		if lv < TRACK_CLEARANCE:
+			return true
+	return false
+
+
+func add_track_cell(cell: Vector2i, level: int, attraction_id: int) -> void:
+	var l: Array = _track.get(cell, [])
+	l.append([level, attraction_id])
+	_track[cell] = l
+
+
+func remove_track_cell(cell: Vector2i, level: int, attraction_id: int) -> void:
+	var l: Array = _track.get(cell, [])
+	for i in l.size():
+		if int(l[i][0]) == level and int(l[i][1]) == attraction_id:
+			l.remove_at(i)
+			break
+	if l.is_empty():
+		_track.erase(cell)
+
+
+func clear_track(attraction_id: int) -> void:
+	for c: Vector2i in _track.keys():
+		var l: Array = (_track[c] as Array).filter(func(e: Array) -> bool: return int(e[1]) != attraction_id)
+		if l.is_empty():
+			_track.erase(c)
+		else:
+			_track[c] = l
+
+
+## Er cellen blokeret af jordobjekter (sti, bygning, decor, indgang) for et stykke på niveau level?
+func blocks_track(cell: Vector2i, level: int) -> bool:
+	if not in_bounds(cell):
+		return true
+	if level >= TRACK_CLEARANCE:
+		return false
+	if get_tile(cell) != Tile.GRASS:
+		return true
+	for a in attractions:
+		if a.track == null and a.occupies(cell):
+			return true
+	return false
+
+
+## Placerer en rutsjebane-attraktion (stationen lægges af kalderen). Indgangen bliver sti.
+func place_coaster(def: AttractionDef, station: Vector2i, entrance_cell: Vector2i) -> Attraction:
+	var a := Attraction.new(_next_attraction_id, def, station)
+	_next_attraction_id += 1
+	a.entrance_cell = entrance_cell
+	a.cells = [station]
+	attractions.append(a)
+	if get_tile(entrance_cell) != Tile.PATH:
+		_set_tile(entrance_cell, Tile.PATH)
+	attraction_placed.emit(a)
+	return a
 
 
 func place_path(cell: Vector2i) -> bool:
@@ -90,11 +165,12 @@ func can_place_attraction(def: AttractionDef, origin: Vector2i) -> bool:
 		return false
 	for y in def.footprint.y:
 		for x in def.footprint.x:
-			if get_tile(origin + Vector2i(x, y)) != Tile.GRASS:
+			if get_tile(origin + Vector2i(x, y)) != Tile.GRASS or has_low_track(origin + Vector2i(x, y)):
 				return false
 	var ent := Vector2i(origin.x + def.footprint.x / 2, origin.y + def.footprint.y)
 	var et: int = get_tile(ent)
-	return (et == Tile.GRASS or et == Tile.PATH) and get_attraction_by_entrance(ent) == null
+	return (et == Tile.GRASS or et == Tile.PATH) and get_attraction_by_entrance(ent) == null \
+		and not has_low_track(ent)
 
 
 func place_attraction(def: AttractionDef, origin: Vector2i) -> Attraction:
@@ -133,9 +209,12 @@ func remove_attraction(attraction_id: int) -> Attraction:
 		if a.id != attraction_id:
 			continue
 		attractions.remove_at(i)
-		for y in a.def.footprint.y:
-			for x in a.def.footprint.x:
-				_set_tile(a.origin + Vector2i(x, y), Tile.GRASS)
+		if a.track != null:
+			clear_track(a.id)
+		else:
+			for y in a.def.footprint.y:
+				for x in a.def.footprint.x:
+					_set_tile(a.origin + Vector2i(x, y), Tile.GRASS)
 		attraction_removed.emit(a)
 		return a
 	return null
@@ -205,7 +284,7 @@ func _litter_to_save() -> Array:
 
 ## Placering af græs-dekoration (sætter DECOR-tile).
 func place_decor_tile(cell: Vector2i) -> bool:
-	if get_tile(cell) != Tile.GRASS:
+	if get_tile(cell) != Tile.GRASS or has_low_track(cell):
 		return false
 	_set_tile(cell, Tile.DECOR)
 	return true

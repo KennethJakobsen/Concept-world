@@ -38,6 +38,54 @@ var status: int:
 
 ## Rutsjebane-ratings {excitement, intensity, nausea} (T-068 udfylder; tom for andre).
 var ratings: Dictionary = {}
+## T-068: celler banen optager (tom = brug footprint).
+var cells: Array[Vector2i] = []
+## T-068: banen (null for andre attraktioner).
+var track: CoasterTrack = null
+## T-068: banen er under bygning (ikke færdig/valideret).
+var building: bool = false
+## T-068: fysikprofil (genberegnes, gemmes ikke).
+var profile: CoasterProfile = null
+## T-068: ride_ticks fra profilen (0 = def.ride_ticks) og ilæsningstid i starten af turen.
+var ride_ticks_override: int = 0
+var load_ticks: int = 0
+
+
+func is_coaster() -> bool:
+	return def.kind == "coaster"
+
+
+## Forlystelse (ride eller rutsjebane).
+func is_ride() -> bool:
+	return def.kind == "ride" or def.kind == "coaster"
+
+
+func ride_ticks() -> int:
+	return ride_ticks_override if ride_ticks_override > 0 else def.ride_ticks
+
+
+## Excitement på 0..100-skalaen (rutsjebane: ratings × scale).
+func excitement_value(scale: float = 10.0) -> int:
+	if is_coaster():
+		return int(round(float(ratings.get("excitement", 0.0)) * scale))
+	return def.excitement
+
+
+## Byggepris inkl. banestykker.
+func build_value() -> int:
+	return def.build_cost + (track.total_cost() if track != null else 0)
+
+
+## 0..1 for den igangværende tur (0 = station/ilæsning).
+func ride_progress() -> float:
+	if not is_running():
+		return 0.0
+	var total: int = ride_ticks()
+	var run: int = total - load_ticks
+	if run <= 0:
+		return 0.0
+	var elapsed: int = total - ticks_left - load_ticks
+	return clampf(float(elapsed) / float(run), 0.0, 1.0)
 
 func effective_reliability() -> float:
 	return minf(1.0, def.reliability + reliability_bonus)
@@ -61,6 +109,8 @@ func is_running() -> bool:
 
 
 func occupies(cell: Vector2i) -> bool:
+	if not cells.is_empty():
+		return cells.has(cell)
 	return cell.x >= origin.x and cell.y >= origin.y \
 		and cell.x < origin.x + def.footprint.x and cell.y < origin.y + def.footprint.y
 
@@ -84,7 +134,7 @@ func tick() -> void:
 	var n: int = mini(def.capacity, queue.size())
 	for i in n:
 		riders.append(queue.pop_front())
-	ticks_left = def.ride_ticks
+	ticks_left = ride_ticks()
 	ride_started.emit()
 
 
@@ -98,6 +148,9 @@ func to_save() -> Dictionary:
 		"total_revenue": total_revenue, "broken": broken,
 		"reliability_bonus": SaveCodec.f(reliability_bonus), "mechanic_id": mechanic_id,
 		"last_inspect_tick": last_inspect_tick, "self_repair_elapsed": self_repair_elapsed,
+		"cells": SaveCodec.v2i_array(cells), "track": track.to_save() if track != null else null,
+		"ratings": SaveCodec.float_dict(ratings), "building": building,
+		"entrance_cell": SaveCodec.v2i(entrance_cell),
 	}
 
 
@@ -116,4 +169,12 @@ static func from_save(d: Dictionary, p_def: AttractionDef) -> Attraction:
 	a.mechanic_id = int(d.get("mechanic_id", -1))
 	a.last_inspect_tick = int(d.get("last_inspect_tick", -1))
 	a.self_repair_elapsed = int(d.get("self_repair_elapsed", 0))
+	a.cells = SaveCodec.to_v2i_array(d.get("cells", []))
+	if d.has("entrance_cell"):
+		a.entrance_cell = SaveCodec.to_v2i(d.get("entrance_cell"), a.entrance_cell)
+	var tr: Variant = d.get("track")
+	if tr is Array:
+		a.track = CoasterTrack.from_save(tr, {}, p_def.max_height)
+	a.ratings = SaveCodec.to_float_dict(d.get("ratings", {}))
+	a.building = bool(d.get("building", false))
 	return a

@@ -125,7 +125,7 @@ func test_obj_coaster_excitement() -> void:
 		var cd := AttractionDef.from_dict({"id": "fake_coaster", "kind": "coaster", "footprint": [1, 1], "build_cost": 0})
 		s.register_def(cd)
 		s.economy.money = 0
-		var a: Attraction = s.cmd_place_attraction("fake_coaster", Vector2i(3, 3))
+		var a: Attraction = s.world.place_coaster(cd, Vector2i(3, 3), Vector2i(3, 4))
 		a.ratings = {"excitement": 5.5})
 
 

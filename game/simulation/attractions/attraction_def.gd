@@ -17,6 +17,9 @@ extends Resource
 ## Sandsynlighed for IKKE at bryde ned pr. tur (1 = aldrig; shops/toiletter).
 @export var reliability: float = 1.0
 @export var repair_ticks: int = 150
+## Rutsjebane (T-068): tog-id og maks højde i niveauer.
+@export var train: String = ""
+@export var max_height: int = 8
 
 
 static func from_dict(d: Dictionary) -> AttractionDef:
@@ -39,6 +42,8 @@ static func from_dict(d: Dictionary) -> AttractionDef:
 	def.model = str(d.get("model", ""))
 	def.reliability = clampf(float(d.get("reliability", 1.0)), 0.0, 1.0)
 	def.repair_ticks = int(d.get("repair_ticks", 150))
+	def.train = str(d.get("train", ""))
+	def.max_height = int(d.get("max_height", 8))
 	return def
 
 
@@ -59,4 +64,5 @@ func to_dict() -> Dictionary:
 		"capacity": capacity, "ride_ticks": ride_ticks, "ticket_price": ticket_price,
 		"excitement": excitement, "satisfies": satisfies.duplicate(), "model": model,
 		"reliability": reliability, "repair_ticks": repair_ticks,
+		"train": train, "max_height": max_height,
 	}
