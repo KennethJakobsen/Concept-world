@@ -64,3 +64,8 @@
 ## Kommende milepæle
 - **M4 Grafikløft:** lys, dag/nat, partikler, animation, lyd
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger
+
+## Åbne punkter / backlog
+- T-009, T-027: afventer brugerens visuelle bekræftelse.
+- Startpark "dør", hvis dens eneste forlystelse går i stykker uden mekaniker (QA T-041/T-044). Kræver kode (fx langsom selv-reparation eller tydelig advarsel) – ikke oprettet som task endnu.
+- Pariserhjulets gondoler hænger ikke lodret (T-021) – M4.
