@@ -1,6 +1,6 @@
 # T-077: Bug: test_ui_m5 bruger ferris_wheel som låst, men det er låst op i Grøn eng
 
-- **Status:** todo
+- **Status:** review
 - **Milepæl:** M5
 - **Agent:** ui
 - **Afhænger af:** T-071, T-075
