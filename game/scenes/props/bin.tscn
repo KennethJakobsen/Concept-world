@@ -1,11 +1,9 @@
 [gd_scene format=3]
 
+[ext_resource type="Material" path="res://assets/materials/metal.tres" id="mat_metal"]
+
 [sub_resource type="StandardMaterial3D" id="m_dkgreen"]
 albedo_color = Color(0.25, 0.52, 0.3, 1)
-roughness = 0.75
-
-[sub_resource type="StandardMaterial3D" id="m_grey"]
-albedo_color = Color(0.55, 0.57, 0.6, 1)
 roughness = 0.75
 
 [sub_resource type="CylinderMesh" id="mesh1"]
@@ -17,7 +15,7 @@ radial_segments = 10
 rings = 1
 
 [sub_resource type="CylinderMesh" id="mesh2"]
-material = SubResource("m_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.13
 bottom_radius = 0.13
 height = 0.04
@@ -26,10 +24,6 @@ rings = 1
 
 [sub_resource type="StandardMaterial3D" id="dm_dark"]
 albedo_color = Color(0.200, 0.200, 0.240, 1)
-roughness = 0.75
-
-[sub_resource type="StandardMaterial3D" id="dm_grey"]
-albedo_color = Color(0.550, 0.570, 0.600, 1)
 roughness = 0.75
 
 [sub_resource type="StandardMaterial3D" id="dm_cream"]
@@ -41,7 +35,7 @@ albedo_color = Color(0.080, 0.080, 0.100, 1)
 roughness = 0.75
 
 [sub_resource type="CylinderMesh" id="dmesh_cyl_dm_grey_0_118_0_115_0_03_10"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.118
 bottom_radius = 0.115
 height = 0.03
@@ -57,7 +51,7 @@ radial_segments = 8
 rings = 1
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_grey_0_06_0_02_0_02"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 size = Vector3(0.06, 0.02, 0.02)
 
 [sub_resource type="CylinderMesh" id="dmesh_cyl_dm_dark_0_11_0_11_0_02_10"]

@@ -1,0 +1,13 @@
+[gd_resource type="StandardMaterial3D" format=3]
+
+[ext_resource type="Texture2D" path="res://assets/textures/plaster.png" id="1"]
+
+[resource]
+resource_name = "plaster_teal"
+albedo_color = Color(0.32, 0.7, 0.7, 1)
+albedo_texture = ExtResource("1")
+roughness = 0.85
+metallic = 0.0
+uv1_scale = Vector3(1.5, 1.5, 1.5)
+uv1_triplanar = true
+texture_filter = 5

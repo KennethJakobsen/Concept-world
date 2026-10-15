@@ -77,6 +77,7 @@
 | T-056 | Bug: tankebobler passer ikke til teksten | graphics | ✅ done |
 | T-057 | Bug: spøgelseshusets tag vender forkert | graphics | 🔍 review |
 | T-058 | Flere detaljer på modellerne | graphics | 🔍 review |
+| T-059 | Teksturer på terræn, stier og modeller | graphics | 🔍 review |
 
 ## Kommende milepæle
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger

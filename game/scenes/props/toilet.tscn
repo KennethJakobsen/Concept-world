@@ -1,5 +1,13 @@
 [gd_scene format=3]
 
+[ext_resource type="Material" path="res://assets/materials/metal.tres" id="mat_metal"]
+
+[ext_resource type="Material" path="res://assets/materials/plaster_teal.tres" id="mat_plaster_teal"]
+
+[ext_resource type="Material" path="res://assets/materials/roof_tiles.tres" id="mat_roof_tiles"]
+
+[ext_resource type="Material" path="res://assets/materials/wood_dark.tres" id="mat_wood_dark"]
+
 [sub_resource type="StandardMaterial3D" id="m_wood"]
 albedo_color = Color(0.62, 0.38, 0.24, 1)
 roughness = 0.75
@@ -92,16 +100,8 @@ roughness = 0.75
 albedo_color = Color(0.550, 0.750, 0.850, 1)
 roughness = 0.75
 
-[sub_resource type="StandardMaterial3D" id="dm_grey"]
-albedo_color = Color(0.550, 0.570, 0.600, 1)
-roughness = 0.75
-
 [sub_resource type="StandardMaterial3D" id="dm_green"]
 albedo_color = Color(0.400, 0.720, 0.420, 1)
-roughness = 0.75
-
-[sub_resource type="StandardMaterial3D" id="dm_brown"]
-albedo_color = Color(0.450, 0.270, 0.160, 1)
 roughness = 0.75
 
 [sub_resource type="StandardMaterial3D" id="dm_blue"]
@@ -133,7 +133,7 @@ material = SubResource("dm_glass")
 size = Vector3(0.02, 0.16, 0.24)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_grey_0_74_0_06_0_74"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 size = Vector3(0.74, 0.06, 0.74)
 
 [sub_resource type="SphereMesh" id="dmesh_sph_dm_white_0_025_6_0"]
@@ -148,7 +148,7 @@ material = SubResource("dm_white")
 size = Vector3(0.05, 0.08, 0.01)
 
 [sub_resource type="CylinderMesh" id="dmesh_cyl_dm_brown_0_07_0_05_0_1_8"]
-material = SubResource("dm_brown")
+material = ExtResource("mat_wood_dark")
 top_radius = 0.07
 bottom_radius = 0.05
 height = 0.1
@@ -167,10 +167,12 @@ rings = 4
 [node name="Hut" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.5000, 0.0000)
 mesh = SubResource("mesh1")
+material_override = ExtResource("mat_plaster_teal")
 
 [node name="Roof" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 1.0400, 0.0000)
 mesh = SubResource("mesh2")
+material_override = ExtResource("mat_roof_tiles")
 
 [node name="Door" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.4000, 0.3600)

@@ -1,5 +1,9 @@
 [gd_scene format=3]
 
+[ext_resource type="Material" path="res://assets/materials/metal.tres" id="mat_metal"]
+
+[ext_resource type="Material" path="res://assets/materials/roof_tiles.tres" id="mat_roof_tiles"]
+
 [ext_resource type="Script" path="res://scripts/rendering/ride_visual.gd" id="rv"]
 
 [ext_resource type="Script" path="res://scripts/rendering/spinner.gd" id="1"]
@@ -121,10 +125,6 @@ roughness = 0.75
 albedo_color = Color(0.080, 0.080, 0.100, 1)
 roughness = 0.75
 
-[sub_resource type="StandardMaterial3D" id="dm_grey"]
-albedo_color = Color(0.550, 0.570, 0.600, 1)
-roughness = 0.75
-
 [sub_resource type="StandardMaterial3D" id="dm_yellow"]
 albedo_color = Color(0.980, 0.850, 0.350, 1)
 roughness = 0.75
@@ -178,7 +178,7 @@ rings = 4
 is_hemisphere = true
 
 [sub_resource type="CylinderMesh" id="dmesh_cyl_dm_grey_0_03_0_03_0_6_6"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.03
 bottom_radius = 0.03
 height = 0.6
@@ -448,6 +448,7 @@ mesh = SubResource("dmesh_box_dm_blue_0_5_0_3_0_3")
 [node name="HutRoof" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.6000, 0.4400, 0.0000)
 mesh = SubResource("dmesh_box_dm_orange_0_58_0_04_0_38")
+material_override = ExtResource("mat_roof_tiles")
 
 [node name="Flag" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.2000, 0.3700, 0.0000)

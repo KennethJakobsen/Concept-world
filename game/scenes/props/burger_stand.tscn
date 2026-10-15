@@ -1,8 +1,10 @@
 [gd_scene format=3]
 
-[sub_resource type="StandardMaterial3D" id="m_wood"]
-albedo_color = Color(0.62, 0.38, 0.24, 1)
-roughness = 0.75
+[ext_resource type="Material" path="res://assets/materials/metal.tres" id="mat_metal"]
+
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="mat_wood"]
+
+[ext_resource type="Material" path="res://assets/materials/wood_dark.tres" id="mat_wood_dark"]
 
 [sub_resource type="StandardMaterial3D" id="m_red"]
 albedo_color = Color(0.86, 0.3, 0.28, 1)
@@ -36,10 +38,6 @@ roughness = 0.75
 albedo_color = Color(0.4, 0.72, 0.42, 1)
 roughness = 0.75
 
-[sub_resource type="StandardMaterial3D" id="m_brown"]
-albedo_color = Color(0.45, 0.27, 0.16, 1)
-roughness = 0.75
-
 [sub_resource type="StandardMaterial3D" id="m_dark"]
 albedo_color = Color(0.2, 0.2, 0.24, 1)
 roughness = 0.75
@@ -49,7 +47,7 @@ albedo_color = Color(0.98, 0.85, 0.35, 1)
 roughness = 0.75
 
 [sub_resource type="BoxMesh" id="mesh1"]
-material = SubResource("m_wood")
+material = ExtResource("mat_wood")
 size = Vector3(0.8, 0.5, 0.6)
 
 [sub_resource type="BoxMesh" id="mesh2"]
@@ -57,7 +55,7 @@ material = SubResource("m_red")
 size = Vector3(0.82, 0.12, 0.62)
 
 [sub_resource type="BoxMesh" id="mesh3"]
-material = SubResource("m_wood")
+material = ExtResource("mat_wood")
 size = Vector3(0.8, 0.5, 0.1)
 
 [sub_resource type="CylinderMesh" id="mesh4"]
@@ -93,7 +91,7 @@ radial_segments = 10
 rings = 1
 
 [sub_resource type="CylinderMesh" id="mesh9"]
-material = SubResource("m_brown")
+material = ExtResource("mat_wood_dark")
 top_radius = 0.18
 bottom_radius = 0.18
 height = 0.06
@@ -198,12 +196,8 @@ size = Vector3(0.26, 0.2, 0.02)
 material = SubResource("dm_white")
 size = Vector3(0.18, 0.02, 0.01)
 
-[sub_resource type="StandardMaterial3D" id="dm_grey"]
-albedo_color = Color(0.550, 0.570, 0.600, 1)
-roughness = 0.75
-
 [sub_resource type="BoxMesh" id="dmesh_box_dm_grey_0_12_0_08_0_1"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 size = Vector3(0.12, 0.08, 0.1)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_dark_0_1_0_04_0_02"]

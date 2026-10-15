@@ -1,10 +1,12 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/rendering/ride_visual.gd" id="rv"]
+[ext_resource type="Material" path="res://assets/materials/brick_purple.tres" id="mat_brick_purple"]
 
-[sub_resource type="StandardMaterial3D" id="m_brown"]
-albedo_color = Color(0.45, 0.27, 0.16, 1)
-roughness = 0.75
+[ext_resource type="Material" path="res://assets/materials/roof_shingles_dark.tres" id="mat_roof_shingles_dark"]
+
+[ext_resource type="Material" path="res://assets/materials/wood_dark.tres" id="mat_wood_dark"]
+
+[ext_resource type="Script" path="res://scripts/rendering/ride_visual.gd" id="rv"]
 
 [sub_resource type="StandardMaterial3D" id="m_dark"]
 albedo_color = Color(0.2, 0.2, 0.24, 1)
@@ -51,7 +53,7 @@ radial_segments = 4
 rings = 1
 
 [sub_resource type="BoxMesh" id="mesh7"]
-material = SubResource("m_brown")
+material = ExtResource("mat_wood_dark")
 size = Vector3(0.45, 0.75, 0.05)
 
 [sub_resource type="BoxMesh" id="mesh8"]
@@ -71,10 +73,6 @@ rings = 5
 
 [sub_resource type="StandardMaterial3D" id="dm_dark"]
 albedo_color = Color(0.200, 0.200, 0.240, 1)
-roughness = 0.75
-
-[sub_resource type="StandardMaterial3D" id="dm_brown"]
-albedo_color = Color(0.450, 0.270, 0.160, 1)
 roughness = 0.75
 
 [sub_resource type="StandardMaterial3D" id="dm_purple"]
@@ -106,7 +104,7 @@ albedo_color = Color(0.950, 0.950, 0.950, 1)
 roughness = 0.75
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_brown_2_66_0_08_1_66"]
-material = SubResource("dm_brown")
+material = ExtResource("mat_wood_dark")
 size = Vector3(2.66, 0.08, 1.66)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_dark_2_66_0_12_1_66"]
@@ -126,7 +124,7 @@ material = SubResource("dm_dark")
 size = Vector3(0.9, 0.04, 0.32)
 
 [sub_resource type="CylinderMesh" id="dmesh_cyl_dm_brown_0_025_0_025_0_85_6"]
-material = SubResource("dm_brown")
+material = ExtResource("mat_wood_dark")
 top_radius = 0.025
 bottom_radius = 0.025
 height = 0.85
@@ -142,7 +140,7 @@ material = SubResource("dm_dark")
 size = Vector3(0.32, 0.03, 0.02)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_brown_0_1_0_34_0_03"]
-material = SubResource("dm_brown")
+material = ExtResource("mat_wood_dark")
 size = Vector3(0.1, 0.34, 0.03)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_yellow_0_16_0_22_0_03"]
@@ -204,18 +202,22 @@ mesh = SubResource("mesh1")
 [node name="Walls" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.8500, 0.0000)
 mesh = SubResource("mesh2")
+material_override = ExtResource("mat_brick_purple")
 
 [node name="Roof0" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.7317, 0.6816, 0.0000, -0.6816, 0.7317, 0.0000, 1.8500, -0.4200)
 mesh = SubResource("mesh3")
+material_override = ExtResource("mat_roof_shingles_dark")
 
 [node name="Roof2" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.7317, -0.6816, 0.0000, 0.6816, 0.7317, 0.0000, 1.8500, 0.4200)
 mesh = SubResource("mesh4")
+material_override = ExtResource("mat_roof_shingles_dark")
 
 [node name="Tower" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.9000, 2.1000, -0.3000)
 mesh = SubResource("mesh5")
+material_override = ExtResource("mat_brick_purple")
 
 [node name="Spire" type="MeshInstance3D" parent="."]
 transform = Transform3D(0.7071, 0.0000, 0.7071, 0.0000, 1.0000, 0.0000, -0.7071, 0.0000, 0.7071, -0.9000, 3.0500, -0.3000)
@@ -256,6 +258,7 @@ mesh = SubResource("dmesh_box_dm_stone_0_7_0_06_0_14")
 [node name="PorchRoof" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.9781, -0.2079, 0.0000, 0.2079, 0.9781, 0.0000, 1.0300, 0.9200)
 mesh = SubResource("dmesh_box_dm_dark_0_9_0_04_0_32")
+material_override = ExtResource("mat_roof_shingles_dark")
 
 [node name="PorchPostL" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.4000, 0.5800, 0.9400)

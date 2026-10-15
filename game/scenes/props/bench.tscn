@@ -1,19 +1,19 @@
 [gd_scene format=3]
 
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="mat_wood"]
+
+[ext_resource type="Material" path="res://assets/materials/wood_dark.tres" id="mat_wood_dark"]
+
 [sub_resource type="StandardMaterial3D" id="m_dark"]
 albedo_color = Color(0.2, 0.2, 0.24, 1)
 roughness = 0.75
 
-[sub_resource type="StandardMaterial3D" id="m_wood"]
-albedo_color = Color(0.62, 0.38, 0.24, 1)
-roughness = 0.75
-
 [sub_resource type="BoxMesh" id="mesh1"]
-material = SubResource("m_wood")
+material = ExtResource("mat_wood")
 size = Vector3(0.7, 0.05, 0.18)
 
 [sub_resource type="BoxMesh" id="mesh2"]
-material = SubResource("m_wood")
+material = ExtResource("mat_wood")
 size = Vector3(0.7, 0.18, 0.04)
 
 [sub_resource type="BoxMesh" id="mesh3"]
@@ -32,16 +32,12 @@ roughness = 0.75
 albedo_color = Color(0.200, 0.200, 0.240, 1)
 roughness = 0.75
 
-[sub_resource type="StandardMaterial3D" id="dm_brown"]
-albedo_color = Color(0.450, 0.270, 0.160, 1)
-roughness = 0.75
-
 [sub_resource type="BoxMesh" id="dmesh_box_dm_brown_0_72_0_04_0_03"]
-material = SubResource("dm_brown")
+material = ExtResource("mat_wood_dark")
 size = Vector3(0.72, 0.04, 0.03)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_brown_0_7_0_012_0_015"]
-material = SubResource("dm_brown")
+material = ExtResource("mat_wood_dark")
 size = Vector3(0.7, 0.012, 0.015)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_dark_0_04_0_03_0_2"]

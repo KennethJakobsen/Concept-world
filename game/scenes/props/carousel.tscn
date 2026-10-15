@@ -1,12 +1,12 @@
 [gd_scene format=3]
 
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="mat_wood"]
+
+[ext_resource type="Material" path="res://assets/materials/wood_dark.tres" id="mat_wood_dark"]
+
 [ext_resource type="Script" path="res://scripts/rendering/ride_visual.gd" id="rv"]
 
 [ext_resource type="Script" path="res://scripts/rendering/spinner.gd" id="1"]
-
-[sub_resource type="StandardMaterial3D" id="m_wood"]
-albedo_color = Color(0.62, 0.38, 0.24, 1)
-roughness = 0.75
 
 [sub_resource type="StandardMaterial3D" id="m_red"]
 albedo_color = Color(0.86, 0.3, 0.28, 1)
@@ -29,7 +29,7 @@ albedo_color = Color(0.94, 0.6, 0.62, 1)
 roughness = 0.75
 
 [sub_resource type="CylinderMesh" id="base"]
-material = SubResource("m_wood")
+material = ExtResource("mat_wood")
 top_radius = 1.45
 bottom_radius = 1.5
 height = 0.2
@@ -128,10 +128,6 @@ roughness = 0.75
 
 [sub_resource type="StandardMaterial3D" id="dm_dark"]
 albedo_color = Color(0.200, 0.200, 0.240, 1)
-roughness = 0.75
-
-[sub_resource type="StandardMaterial3D" id="dm_brown"]
-albedo_color = Color(0.450, 0.270, 0.160, 1)
 roughness = 0.75
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_cream_0_13_0_2_0_04"]
@@ -240,7 +236,7 @@ material = SubResource("dm_gold")
 size = Vector3(0.08, 0.08, 0.02)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_brown_0_5_0_1_0_18"]
-material = SubResource("dm_brown")
+material = ExtResource("mat_wood_dark")
 size = Vector3(0.5, 0.1, 0.18)
 
 [node name="Carousel" type="Node3D"]

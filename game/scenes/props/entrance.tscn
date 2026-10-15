@@ -1,8 +1,10 @@
 [gd_scene format=3]
 
-[sub_resource type="StandardMaterial3D" id="m_wood"]
-albedo_color = Color(0.62, 0.38, 0.24, 1)
-roughness = 0.75
+[ext_resource type="Material" path="res://assets/materials/metal.tres" id="mat_metal"]
+
+[ext_resource type="Material" path="res://assets/materials/roof_tiles.tres" id="mat_roof_tiles"]
+
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="mat_wood"]
 
 [sub_resource type="StandardMaterial3D" id="m_red"]
 albedo_color = Color(0.86, 0.3, 0.28, 1)
@@ -29,7 +31,7 @@ radial_segments = 6
 rings = 1
 
 [sub_resource type="BoxMesh" id="beam"]
-material = SubResource("m_wood")
+material = ExtResource("mat_wood")
 size = Vector3(2.6, 0.2, 0.25)
 
 [sub_resource type="BoxMesh" id="sign"]
@@ -60,10 +62,6 @@ roughness = 0.75
 albedo_color = Color(0.200, 0.200, 0.240, 1)
 roughness = 0.75
 
-[sub_resource type="StandardMaterial3D" id="dm_grey"]
-albedo_color = Color(0.550, 0.570, 0.600, 1)
-roughness = 0.75
-
 [sub_resource type="StandardMaterial3D" id="dm_yellow"]
 albedo_color = Color(0.980, 0.850, 0.350, 1)
 roughness = 0.75
@@ -77,7 +75,7 @@ albedo_color = Color(0.400, 0.720, 0.420, 1)
 roughness = 0.75
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_grey_0_45_0_2_0_45"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 size = Vector3(0.45, 0.2, 0.45)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_gold_0_38_0_06_0_38"]
@@ -133,7 +131,7 @@ material = SubResource("dm_dark")
 size = Vector3(0.26, 0.16, 0.02)
 
 [sub_resource type="CylinderMesh" id="dmesh_cyl_dm_grey_0_04_0_04_0_5_8"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.04
 bottom_radius = 0.04
 height = 0.5
@@ -141,7 +139,7 @@ radial_segments = 8
 rings = 1
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_grey_0_3_0_025_0_025"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 size = Vector3(0.3, 0.025, 0.025)
 
 [node name="Entrance" type="Node3D"]
@@ -273,6 +271,7 @@ mesh = SubResource("dmesh_box_dm_red_0_4_0_6_0_4")
 [node name="BoothRoof" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.6000, 0.6250, -0.3500)
 mesh = SubResource("dmesh_box_dm_cream_0_48_0_05_0_48")
+material_override = ExtResource("mat_roof_tiles")
 
 [node name="BoothWindow" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.6000, 0.4200, -0.1400)

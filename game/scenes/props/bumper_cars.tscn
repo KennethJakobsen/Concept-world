@@ -1,5 +1,9 @@
 [gd_scene format=3]
 
+[ext_resource type="Material" path="res://assets/materials/metal.tres" id="mat_metal"]
+
+[ext_resource type="Material" path="res://assets/materials/wood.tres" id="mat_wood"]
+
 [ext_resource type="Script" path="res://scripts/rendering/ride_visual.gd" id="rv"]
 
 [ext_resource type="Script" path="res://scripts/rendering/spinner.gd" id="1"]
@@ -26,10 +30,6 @@ roughness = 0.75
 
 [sub_resource type="StandardMaterial3D" id="m_pink"]
 albedo_color = Color(0.94, 0.6, 0.62, 1)
-roughness = 0.75
-
-[sub_resource type="StandardMaterial3D" id="m_grey"]
-albedo_color = Color(0.55, 0.57, 0.6, 1)
 roughness = 0.75
 
 [sub_resource type="StandardMaterial3D" id="m_blue"]
@@ -77,7 +77,7 @@ material = SubResource("m_yellow")
 size = Vector3(0.1, 0.25, 3.8)
 
 [sub_resource type="CylinderMesh" id="mesh7"]
-material = SubResource("m_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.05
 bottom_radius = 0.05
 height = 1.8
@@ -85,7 +85,7 @@ radial_segments = 6
 rings = 1
 
 [sub_resource type="CylinderMesh" id="mesh8"]
-material = SubResource("m_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.05
 bottom_radius = 0.05
 height = 1.8
@@ -93,7 +93,7 @@ radial_segments = 6
 rings = 1
 
 [sub_resource type="CylinderMesh" id="mesh9"]
-material = SubResource("m_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.05
 bottom_radius = 0.05
 height = 1.8
@@ -101,7 +101,7 @@ radial_segments = 6
 rings = 1
 
 [sub_resource type="CylinderMesh" id="mesh10"]
-material = SubResource("m_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.05
 bottom_radius = 0.05
 height = 1.8
@@ -129,7 +129,7 @@ material = SubResource("m_dark")
 size = Vector3(0.22, 0.18, 0.12)
 
 [sub_resource type="CylinderMesh" id="mesh15"]
-material = SubResource("m_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.015
 bottom_radius = 0.015
 height = 1.5
@@ -149,7 +149,7 @@ material = SubResource("m_dark")
 size = Vector3(0.22, 0.18, 0.12)
 
 [sub_resource type="CylinderMesh" id="mesh18"]
-material = SubResource("m_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.015
 bottom_radius = 0.015
 height = 1.5
@@ -169,7 +169,7 @@ material = SubResource("m_dark")
 size = Vector3(0.22, 0.18, 0.12)
 
 [sub_resource type="CylinderMesh" id="mesh21"]
-material = SubResource("m_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.015
 bottom_radius = 0.015
 height = 1.5
@@ -189,7 +189,7 @@ material = SubResource("m_dark")
 size = Vector3(0.22, 0.18, 0.12)
 
 [sub_resource type="CylinderMesh" id="mesh24"]
-material = SubResource("m_grey")
+material = ExtResource("mat_metal")
 top_radius = 0.015
 bottom_radius = 0.015
 height = 1.5
@@ -212,20 +212,12 @@ roughness = 0.75
 albedo_color = Color(0.200, 0.200, 0.240, 1)
 roughness = 0.75
 
-[sub_resource type="StandardMaterial3D" id="dm_grey"]
-albedo_color = Color(0.550, 0.570, 0.600, 1)
-roughness = 0.75
-
 [sub_resource type="StandardMaterial3D" id="dm_yellow"]
 albedo_color = Color(0.980, 0.850, 0.350, 1)
 roughness = 0.75
 
 [sub_resource type="StandardMaterial3D" id="dm_blue"]
 albedo_color = Color(0.350, 0.500, 0.850, 1)
-roughness = 0.75
-
-[sub_resource type="StandardMaterial3D" id="dm_wood"]
-albedo_color = Color(0.620, 0.380, 0.240, 1)
 roughness = 0.75
 
 [sub_resource type="StandardMaterial3D" id="dm_black"]
@@ -240,7 +232,7 @@ rings = 16
 ring_segments = 4
 
 [sub_resource type="TorusMesh" id="dmesh_tor_dm_grey_0_04_0_06_10"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 inner_radius = 0.04
 outer_radius = 0.06
 rings = 10
@@ -285,11 +277,11 @@ radial_segments = 8
 rings = 4
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_wood_0_9_0_08_0_14"]
-material = SubResource("dm_wood")
+material = ExtResource("mat_wood")
 size = Vector3(0.9, 0.08, 0.14)
 
 [sub_resource type="BoxMesh" id="dmesh_box_dm_grey_3_6_0_02_3_6"]
-material = SubResource("dm_grey")
+material = ExtResource("mat_metal")
 size = Vector3(3.6, 0.02, 3.6)
 
 [node name="BumperCars" type="Node3D"]

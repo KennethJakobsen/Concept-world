@@ -1,4 +1,8 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3]
+
+[ext_resource type="Material" path="res://assets/materials/path_inlay.tres" id="mat_path_inlay"]
+
+[ext_resource type="Material" path="res://assets/materials/path_stone.tres" id="mat_path_stone"]
 
 [sub_resource type="StandardMaterial3D" id="stone"]
 albedo_color = Color(0.86, 0.78, 0.64, 1)
@@ -21,7 +25,9 @@ size = Vector3(0.8, 0.065, 0.8)
 [node name="Tile" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
 mesh = SubResource("tile")
+material_override = ExtResource("mat_path_stone")
 
 [node name="Inlay" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.031, 0)
 mesh = SubResource("inner")
+material_override = ExtResource("mat_path_inlay")
