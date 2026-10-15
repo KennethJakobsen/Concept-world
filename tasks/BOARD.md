@@ -13,8 +13,18 @@
 | T-008 | Agent-definitioner | architect | ✅ done |
 | T-009 | Hello park – 3D-scene på web | graphics | 🔍 review |
 
+## M1 – Gråboks
+| Task | Titel | Agent | Status |
+|---|---|---|---|
+| T-010 | ParkWorld grid og stier | simulation | 🔍 review |
+| T-011 | Pathfinding | simulation | 🔍 review |
+| T-012 | Attraktion (karrusel) | simulation | 🔍 review |
+| T-013 | Gæster + ParkSim | simulation | 🔍 review |
+| T-014 | Terræn, picking, props | graphics | 🔍 review |
+| T-015 | Bridge og byggeværktøjer | gameplay | ⬜ todo |
+| T-016 | M1 verifikation | qa | ⬜ todo |
+
 ## Kommende milepæle
-- **M1 Gråboks:** grid/terræn, sti-placering, én forlystelse, gæster der går
 - **M2 Kernesimulation:** behov, køer, priser, økonomi
 - **M3 Spilbar loop:** 5–8 forlystelser, butikker, personale, save/load, UI
 - **M4 Grafikløft:** lys, dag/nat, partikler, animation, lyd

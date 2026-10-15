@@ -1,0 +1,71 @@
+[gd_scene format=3]
+
+[sub_resource type="StandardMaterial3D" id="m_wood"]
+albedo_color = Color(0.62, 0.38, 0.24, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="m_red"]
+albedo_color = Color(0.86, 0.3, 0.28, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="m_cream"]
+albedo_color = Color(0.98, 0.92, 0.78, 1)
+roughness = 0.75
+
+[sub_resource type="StandardMaterial3D" id="m_gold"]
+albedo_color = Color(0.93, 0.74, 0.3, 1)
+roughness = 0.75
+
+[sub_resource type="BoxMesh" id="pillar"]
+material = SubResource("m_cream")
+size = Vector3(0.35, 2.2, 0.35)
+
+[sub_resource type="CylinderMesh" id="cap"]
+material = SubResource("m_red")
+top_radius = 0.02
+bottom_radius = 0.3
+height = 0.45
+radial_segments = 6
+rings = 1
+
+[sub_resource type="BoxMesh" id="beam"]
+material = SubResource("m_wood")
+size = Vector3(2.6, 0.2, 0.25)
+
+[sub_resource type="BoxMesh" id="sign"]
+material = SubResource("m_red")
+size = Vector3(1.6, 0.45, 0.1)
+
+[sub_resource type="BoxMesh" id="trim"]
+material = SubResource("m_gold")
+size = Vector3(1.7, 0.08, 0.12)
+
+[node name="Entrance" type="Node3D"]
+
+[node name="PillarL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1, 1.1, 0)
+mesh = SubResource("pillar")
+
+[node name="CapL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.1, 2.42, 0)
+mesh = SubResource("cap")
+
+[node name="PillarR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 1.1, 0)
+mesh = SubResource("pillar")
+
+[node name="CapR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.1, 2.42, 0)
+mesh = SubResource("cap")
+
+[node name="Beam" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.0, 0)
+mesh = SubResource("beam")
+
+[node name="Sign" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.35, 0)
+mesh = SubResource("sign")
+
+[node name="Trim" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.6, 0)
+mesh = SubResource("trim")

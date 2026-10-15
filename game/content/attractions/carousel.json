@@ -1,0 +1,1 @@
+{ "id": "carousel", "name": "Karrusel", "footprint": [3, 3], "capacity": 8, "ride_ticks": 200, "ticket_price": 5 }
