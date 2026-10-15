@@ -103,6 +103,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-076 | Bug: rengøringsfolk løber i flok (opgavereservation) | simulation | review |
 | T-077 | Bug: test_ui_m5 forældet efter T-075-data | ui | review |
 | T-078 | Balance: Floddalen/Bjergtoppen kan ikke vindes | designer | todo |
+| T-079 | Design: forslag til flere forlystelser og butikker | designer | in-progress |
 
 ## Kommende milepæle
 - Ingen planlagt efter M5.
