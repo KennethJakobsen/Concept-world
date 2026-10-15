@@ -1,6 +1,6 @@
 # T-069: Grafik – procedurel bane, tog og station
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M5
 - **Agent:** graphics
 - **Afhænger af:** – (kan bruge hårdkodede stykke-defs indtil T-065)
@@ -24,3 +24,4 @@ Ejer: `game/scripts/rendering/`, `game/scenes/props|effects|rendering/`, `game/s
 ## Log
 - 2026-10-15 – architect: oprettet
 - 2026-10-15 – graphics: implementeret. `scripts/rendering/coaster/` (CoasterTrackMesh, CoasterTrain, demo), `scenes/props/coaster_train.tscn`, `coaster_station.tscn`, `scenes/rendering/coaster_demo.tscn`, `tests/test_coaster_mesh.gd`. Defs læses fra `content/coaster/pieces.json` (liste eller `{pieces: [...]}`) med fallback til `DEFAULT_DEFS`. Ekstra statiske hjælpere til bridge: `full_centerline(pieces, defs)` (glatte hældningsovergange via Hermite, samme endepunkter), `arc_lengths`, `pose_at(line, acc, s)`, `CoasterTrain.CAR_SPACING`. Stationen har origin i cellemidten og sporet langs z (rotation.y = -heading·90°). Demo-oval (16 stykker) = 3150 trekanter, og 60 stykker ligger under 20k (test). Materialer: StandardMaterial3D (Compatibility). Venter på brugerens visuelle godkendelse.
+- 2026-10-15 – orkestrator: brugeren har godkendt visuelt → done

@@ -1,6 +1,6 @@
 # T-073: Bug – rutsjebanestationens tag er galt
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M5
 - **Agent:** graphics
 - **Afhænger af:** T-069
@@ -21,3 +21,4 @@ Ejer: `game/scenes/props/coaster_station.tscn`, `game/tests/test_coaster_station
 
 ## Log
 - 2026-10-15 – graphics: oprettet og løst. Årsag: samme fejl som T-057. Tag-rotationerne i `.tscn` var skrevet som kolonner, men Transform3D er række-major, så hældningen var spejlet. Tagfladerne dannede en "V"-dal (yderkanter højest), og yderkanterne svævede ca. 8 cm over søjletoppene. Fortegnene på Z-rotationen er byttet om for RoofL/RoofR. Nu ligger rygningen ved x=0 langs sporet, og tagfoden hviler på søjlerne. Placering, størrelse og perron er uændret. Screenshots før/efter (opengl3) er bekræftet. Afventer brugerens øjne.
+- 2026-10-15 – orkestrator: brugeren har godkendt visuelt → done
