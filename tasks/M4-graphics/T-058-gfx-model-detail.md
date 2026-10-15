@@ -23,3 +23,4 @@ Ejer: `game/scenes/props/*.tscn`, `game/tests/test_props.gd`. Må ikke røre sim
 
 ## Log
 - 2026-10-15 – graphics: oprettet og udført. Detaljer tilføjet som nye noder/sub-resources (ingen eksisterende noder flyttet/omdøbt). Mesh-antal (før→efter): carousel 24→130, swing 20→116, ferris 24→81, bumper 24→77, go_karts 15→53, haunted 10→45, stande ~10→30-36, toilet 5→17, entrance 7→35, guest 2→4, staff 5→16-19, bænk 4→10, spand 2→7, lampe 3→8, træer +1-6. Meshes deles inden for hver scene (fx én saddel-mesh til alle heste). Tjekket med offscreen-rendering i Compatibility (opengl3) – taget-ribber, gondoltage og markise-striber flugter. test.sh 152/0, integration OK, smoke uden fejl. Afventer brugerens øjne (bemærk: forlystelserne har nu 50-130 draw calls hver; hvis web-performance bliver et problem, kan hegn/vimpler slås sammen til MultiMesh).
+- 2026-10-15 – orkestrator: brugeren har godkendt visuelt/lyd. Status: done.

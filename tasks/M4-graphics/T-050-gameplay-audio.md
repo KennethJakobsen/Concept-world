@@ -24,3 +24,4 @@ Ejer: `game/scripts/audio/`, `game/assets/audio/`, `game/default_bus_layout.tres
 - 2026-10-15 – architect: oprettet
 - 2026-10-15 – gameplay: `scripts/audio/audio_manager.gd` (autoload) + `audio_synth.gd` (alle 17 id'er procedurelt, deterministisk WAV), `default_bus_layout.tres`, `tests/test_audio.gd`. Læser valgfrit `content/audio.json` (id → file/volume_db/bus). Web: musik/ambience i kø til første input. Headless: no-ops. Indstillinger i `user://settings.cfg` [audio]. test.sh: mine tests grønne; eneste fejl er `test_ui_m4` (UI-agentens igangværende T-052). Smoke OK. Lyden selv kræver brugerens ører → bliver på review.
 - 2026-10-15 – qa (T-053): headless OK (test_audio grøn, headless no-ops uden warnings, alle lyde procedurelle – ingen licensbehov). Lyd kræver brugerens ører. Bliver på review.
+- 2026-10-15 – orkestrator: brugeren har godkendt visuelt/lyd. Status: done.

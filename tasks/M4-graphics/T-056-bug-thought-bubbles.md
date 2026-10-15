@@ -22,3 +22,4 @@ Ejer: `game/scripts/rendering/thought_bubble.gd`, `game/scenes/props/thought_bub
 ## Log
 - 2026-10-15 – graphics: oprettet og løst. Før: bredde gættet som `0.09 * længde + 0.2`, højde fast 0.3 m. Nu: statiske `ThoughtBubble.text_size()`/`bubble_size()` måler teksten (fallback-font, 40 px, 0.004 m/px), padding 0.08/0.05 m, min. bredde 0.3 m; quad skaleres i x og y. test.sh 149/0. Afventer brugerens øjne.
 - 2026-10-15 – orkestrator: brugeren: stadig ikke fixet. Root cause: baggrundsmaterialet har billboard_mode=1 uden billboard_keep_scale, så nodens scale ignoreres. Sat billboard_keep_scale = true.
+- 2026-10-15 – orkestrator: brugeren har godkendt visuelt/lyd. Status: done.

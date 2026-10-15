@@ -24,3 +24,4 @@ Ejer: `game/assets/`, `game/shaders/ground_grid.gdshader`, `game/scenes/props/*.
 
 ## Log
 - 2026-10-15 – graphics: oprettet og udført. Teksturer genereres af `tools/gen_textures.gd` (periodisk value-noise/Worley, lyse gråtoner, så materialets farve tinter). `tools/apply_textures.py` (idempotent) erstatter m_/dm_ wood/brown/grey sub-materialer med delte .tres og sætter overrides på tag/vægge/sti. Kontrolrender i Compatibility (opengl3) via `tools/render_preview.gd`: brosten, mursten, tagspån og græs ser stiliserede ud; træplanker gjort længere (uv1_scale 1/2.2/1). Grid-linjer er stadig synlige altid (der findes ingen byggetilstands-toggle i shaderen; `line_strength` kan styres fra bridge senere). test.sh 152/0, integration OK, smoke uden fejl, web-pck +100 KB.
+- 2026-10-15 – orkestrator: brugeren har godkendt visuelt/lyd. Status: done.

@@ -22,3 +22,4 @@ Ejer: `game/content/`, `docs/gdd.md`. Må ikke røre kode.
 - 2026-10-15 – architect: oprettet
 - 2026-10-15 – designer: daynight.json, audio.json (17 id'er), staff_rules self_repair 1200/250, GDD-afsnit M4. Bør valideres med balance.sh efter T-047.
 - 2026-10-15 – qa (T-053): verificeret – daynight.json/audio.json/staff_rules gyldige og indlæses; balance.sh: ingen seed kollapser uden personale (ødelagt-dage maks 1.5), personale giver bedre snit (4309 vs 3619 penge, 75.4 vs 59.6 omdømme). → done
+- 2026-10-15 – orkestrator: brugeren har godkendt visuelt/lyd. Status: done.

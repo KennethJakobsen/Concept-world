@@ -21,3 +21,4 @@ Ejer: `game/scenes/props/haunted_house.tscn`, `game/tests/test_haunted_roof.gd`.
 
 ## Log
 - 2026-10-15 – graphics: oprettet og løst. Årsag: `Transform3D` i .tscn er række-major, men tag-rotationerne var skrevet som kolonner → hældningen var spejlet, så fladerne dannede en "V"-dal i stedet for et sadeltag. Fortegn på X-rotationen byttet om for Roof0/Roof2. Spiret (CylinderMesh med 4 segmenter = pyramide med hjørner på akserne) stod som diamant på det firkantede tårn → roteret 45° om Y. Andre props: bumper_cars/carousel/toilet-tage er urotérede (OK); de øvrige små hældninger er bænkeryglæn o.l. (uændret). test.sh 150/0. Afventer brugerens øjne.
+- 2026-10-15 – orkestrator: brugeren har godkendt visuelt/lyd. Status: done.

@@ -66,24 +66,27 @@
 |---|---|---|---|
 | T-046 | Dag/nat, lydkatalog, nedbrud uden mekaniker (data) | designer | ✅ done |
 | T-047 | Tid på dagen, selv-reparation, nye signaler (sim) | simulation | ✅ done |
-| T-048 | Lys og dag/nat-rig | graphics | 🔍 review |
-| T-049 | Animation og partikler | graphics | 🔍 review |
-| T-050 | AudioManager, busser, procedurelle lyde | gameplay | 🔍 review |
-| T-051 | Bridge: dag/nat, effekter og lyd i scenen | gameplay | 🔍 review |
-| T-052 | Ur, lydindstillinger, advarsler | ui | 🔍 review |
-| T-053 | M4 verifikation | qa | 🔍 review |
-| T-055 | Bug: pling for voldsomt, musik monoton | gameplay | 🔍 review |
+| T-048 | Lys og dag/nat-rig | graphics | ✅ done |
+| T-049 | Animation og partikler | graphics | ✅ done |
+| T-050 | AudioManager, busser, procedurelle lyde | gameplay | ✅ done |
+| T-051 | Bridge: dag/nat, effekter og lyd i scenen | gameplay | ✅ done |
+| T-052 | Ur, lydindstillinger, advarsler | ui | ✅ done |
+| T-053 | M4 verifikation | qa | ✅ done |
+| T-055 | Bug: pling for voldsomt, musik monoton | gameplay | ✅ done |
 | T-054 | Bug: lange "spyd" (strakte kugle-meshes), nedbrudseffekt | graphics | ✅ done |
 | T-056 | Bug: tankebobler passer ikke til teksten | graphics | ✅ done |
-| T-057 | Bug: spøgelseshusets tag vender forkert | graphics | 🔍 review |
-| T-058 | Flere detaljer på modellerne | graphics | 🔍 review |
-| T-059 | Teksturer på terræn, stier og modeller | graphics | 🔍 review |
+| T-057 | Bug: spøgelseshusets tag vender forkert | graphics | ✅ done |
+| T-058 | Flere detaljer på modellerne | graphics | ✅ done |
+| T-059 | Teksturer på terræn, stier og modeller | graphics | ✅ done |
+
+M4 afsluttet 2026-10-15.
 
 ## Kommende milepæle
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger
 
 ## Åbne punkter / backlog
 - T-009, T-027: afventer brugerens visuelle bekræftelse.
-- T-048..T-053: afventer brugerens visuelle/lyd-tjek (tjekliste i T-053) og grøn CI efter commit.
 - ~~Startpark "dør" ved nedbrud uden mekaniker~~ → løst i T-046/T-047 (verificeret T-053).
-- Pariserhjulets gondoler hænger ikke lodret → T-049 (afventer visuelt tjek).
+- Lyskæde-pærer svæver lidt fra gokart/spøgelseshus (set i T-058).
+- Grid-linjer altid synlige – kunne kun vises i byggetilstand (T-059).
+- Udviklingsværktøjer i game/tools/ kommer med i web-build (exclude_filter).

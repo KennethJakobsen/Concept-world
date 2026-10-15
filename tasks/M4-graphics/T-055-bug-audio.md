@@ -22,3 +22,4 @@ Ejer: `game/scripts/audio/`, `game/content/audio.json`, lyd-kald i `game/scripts
 
 ## Log
 - 2026-10-15 – gameplay: oprettet og løst. AudioSynth: `_soft_pling` til cash; ny `_compose` (8-takters sektioner A/A'/B/A'', I-vi-IV-V m.fl., seedet motiv + variation, B løftet en kvart oktav op, oom-pah bas, pad, percussion i park) – menu ~43 s vals, park ~35 s. AudioManager: `min_interval_s`-throttle pr. id. audio.json: lavere volumener + intervaller. ParkView: COIN_INTERVAL 0.25→2.5, cash/sweep kun ved `_camera_near`. test.sh 147/0. Afventer brugerens ører.
+- 2026-10-15 – orkestrator: brugeren har godkendt visuelt/lyd. Status: done.
