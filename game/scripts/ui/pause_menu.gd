@@ -11,6 +11,7 @@ var _name_edit: LineEdit
 var _status: Label
 var _slots: SaveSlotList
 var _load_box: VBoxContainer
+var settings: SettingsPanel
 
 
 func build() -> void:
@@ -50,10 +51,14 @@ func build() -> void:
 	_load_box.add_child(_slots)
 	_slots.build(140.0)
 	_slots.slot_chosen.connect(load_slot)
+	_btn(v, "Indstillinger", open_settings)
 	_btn(v, "Hovedmenu", to_main_menu)
 	_status = Label.new()
 	_status.name = "Status"
 	v.add_child(_status)
+	settings = SettingsPanel.new()
+	add_child(settings)
+	settings.build()
 
 
 func _btn(parent: Control, text: String, cb: Callable) -> Button:
@@ -76,6 +81,8 @@ func layout(vp: Vector2) -> void:
 	var m: Vector2 = _panel.get_combined_minimum_size()
 	_panel.size = m
 	_panel.position = ((vp - m) * 0.5).max(Vector2.ZERO)
+	if settings != null:
+		settings.layout(vp)
 
 
 func panel_rect() -> Rect2:
@@ -90,9 +97,14 @@ func open() -> void:
 	layout(vp)
 
 
+func open_settings() -> void:
+	settings.open()
+
+
 func close() -> void:
 	if not visible:
 		return
+	settings.visible = false
 	visible = false
 	closed.emit()
 
@@ -132,6 +144,6 @@ func to_main_menu() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	if visible and event.is_action_pressed("ui_cancel"):
+	if visible and not settings.visible and event.is_action_pressed("ui_cancel"):
 		close()
 		get_viewport().set_input_as_handled()

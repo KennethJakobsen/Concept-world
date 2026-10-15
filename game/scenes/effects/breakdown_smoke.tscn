@@ -1,5 +1,7 @@
 [gd_scene format=3]
 
+[ext_resource type="Script" path="res://scripts/rendering/particle_fx.gd" id="fx"]
+
 [sub_resource type="StandardMaterial3D" id="m_smoke"]
 shading_mode = 0
 transparency = 1
@@ -20,6 +22,9 @@ _data = [Vector2(0, 0.4), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
 point_count = 2
 
 [node name="BreakdownSmoke" type="Node3D"]
+script = ExtResource("fx")
+one_shot = false
+autoplay = true
 
 [node name="Smoke" type="CPUParticles3D" parent="."]
 amount = 24

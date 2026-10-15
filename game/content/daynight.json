@@ -1,0 +1,7 @@
+{
+ "day_start_time": 0.25,
+ "dawn": 0.22,
+ "day": 0.3,
+ "dusk": 0.78,
+ "night": 0.86
+}

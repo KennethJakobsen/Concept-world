@@ -13,6 +13,18 @@ signal decor_placed(d: Decor)
 signal decor_removed(decor_id: int)
 signal attraction_broken(a: Attraction)
 signal attraction_repaired(a: Attraction)
+## T-047 (M4)
+signal phase_changed(phase: StringName)
+signal warning(code: StringName, data: Dictionary)
+signal purchase_made(guest_id: int, building_id: int, amount: int)
+signal litter_swept(cell: Vector2i)
+signal ride_cycle_started(attraction_id: int)
+
+const PHASE_DAWN: StringName = &"dawn"
+const PHASE_DAY: StringName = &"day"
+const PHASE_DUSK: StringName = &"dusk"
+const PHASE_NIGHT: StringName = &"night"
+const WARN_BROKEN_NO_MECHANIC: StringName = &"broken_no_mechanic"
 
 const NEED_THOUGHTS: Dictionary = {
 	"hunger": "Jeg er sulten!",
@@ -68,6 +80,7 @@ var _staff_def_cache: Dictionary = {}
 var _decor_def_cache: Dictionary = {}
 var _aura: Dictionary = {}  ## celle -> glæde/tick fra dekoration (cache)
 var _aura_dirty: bool = true
+var _phase: StringName = &""  ## afledt af day_tick, gemmes ikke
 
 
 ## p_balance = null → indlæs content/economy.json + guests.json (defaults ved mangler).
@@ -89,6 +102,7 @@ func _init(width: int, height: int, p_seed: int, p_balance: Balance = null) -> v
 	world.attraction_placed.connect(_on_attraction_placed)
 	world.tile_changed.connect(_on_tile_changed)
 	world.attraction_removed.connect(_on_attraction_removed)
+	_phase = phase()
 
 
 func update(delta: float) -> void:
@@ -308,6 +322,64 @@ func get_attraction(attraction_id: int) -> Attraction:
 	return null
 
 
+# --- Tid på dagen (T-047) ---
+
+## 0 = midnat, 0.5 = middag. day_tick 0 = balance.day_start_time.
+func time_of_day() -> float:
+	return fposmod(balance.day_start_time + float(day_tick) / float(maxi(1, balance.day_ticks)), 1.0)
+
+
+## Sand når time_of_day ∉ [dawn, dusk).
+func is_night() -> bool:
+	var t: float = time_of_day()
+	return t < balance.dawn or t >= balance.dusk
+
+
+func phase() -> StringName:
+	var t: float = time_of_day()
+	if t >= balance.night or t < balance.dawn:
+		return PHASE_NIGHT
+	if t < balance.day_phase:
+		return PHASE_DAWN
+	if t < balance.dusk:
+		return PHASE_DAY
+	return PHASE_DUSK
+
+
+## "HH:MM" (ASCII).
+func clock_text() -> String:
+	var minutes: int = int(floor(time_of_day() * 1440.0 + 1e-6)) % 1440
+	return "%02d:%02d" % [minutes / 60, minutes % 60]
+
+
+func _update_phase() -> void:
+	var p: StringName = phase()
+	if p != _phase:
+		_phase = p
+		phase_changed.emit(p)
+
+
+func has_mechanic() -> bool:
+	for sid in staff:
+		if (staff[sid] as Staff).def.id == StaffAI.MECHANIC:
+			return true
+	return false
+
+
+## Ekstern service: kun når ingen mekaniker er ansat.
+func _tick_self_repair() -> void:
+	if balance.self_repair_ticks <= 0 or has_mechanic():
+		return
+	for a in attractions.duplicate():
+		if not a.broken:
+			continue
+		a.self_repair_elapsed += 1
+		if a.self_repair_elapsed >= balance.self_repair_ticks:
+			if balance.self_repair_cost > 0:
+				economy.charge(balance.self_repair_cost, "repairs")
+			_repair(a)
+
+
 # --- Tick ---
 
 func _on_attraction_placed(a: Attraction) -> void:
@@ -356,6 +428,8 @@ func _on_tick(_tick: int) -> void:
 			if _update_needs(g):
 				_tick_guest(g)
 	StaffAI.tick_all(self)
+	_tick_self_repair()
+	_update_phase()
 
 
 func _end_day() -> void:
@@ -677,6 +751,7 @@ func _try_enter(g: Guest, a: Attraction) -> String:
 	g.money -= a.price
 	g.paid = a.price
 	economy.earn(a.price, "tickets")
+	purchase_made.emit(g.id, a.id, a.price)
 	a.total_revenue += a.price
 	a.total_visitors += 1
 	g.state = Guest.State.QUEUING
@@ -688,6 +763,8 @@ func _on_ride_started(a: Attraction) -> void:
 	for gid in a.riders:
 		if guests.has(gid):
 			(guests[gid] as Guest).state = Guest.State.RIDING
+	if a.def.kind == "ride":
+		ride_cycle_started.emit(a.id)
 
 
 func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
@@ -924,12 +1001,16 @@ func _break(a: Attraction) -> void:
 		g.target_attraction_id = -1
 		_choose_goal(g)
 		g.thought = balance.thought_broken
+	a.self_repair_elapsed = 0
 	attraction_broken.emit(a)
+	if not has_mechanic():
+		warning.emit(WARN_BROKEN_NO_MECHANIC, {"attraction_id": a.id})
 
 
 func _repair(a: Attraction) -> void:
 	a.broken = false
 	a.mechanic_id = -1
+	a.self_repair_elapsed = 0
 	for g: Guest in guests.values():
 		g.rejected_ids.erase(a.id)
 	attraction_repaired.emit(a)
@@ -1079,6 +1160,7 @@ func _park_load(park: Dictionary) -> void:
 	_next_decor_id = int(park.get("next_decor_id", 1))
 	_aura_dirty = true
 	_reachable_dirty = true
+	_phase = phase()
 
 
 func _staff_to_save() -> Array:

@@ -26,6 +26,8 @@ var reliability_bonus: float = 0.0
 var mechanic_id: int = -1
 ## Tick for seneste inspektion (-1 = aldrig).
 var last_inspect_tick: int = -1
+## T-047: ticks i stykker uden mekaniker (ekstern service).
+var self_repair_elapsed: int = 0
 ## OPERATING | BROKEN | CLOSED (BROKEN vinder over CLOSED).
 var status: int:
 	get:
@@ -92,7 +94,7 @@ func to_save() -> Dictionary:
 		"is_open": is_open, "price": price, "total_visitors": total_visitors,
 		"total_revenue": total_revenue, "broken": broken,
 		"reliability_bonus": SaveCodec.f(reliability_bonus), "mechanic_id": mechanic_id,
-		"last_inspect_tick": last_inspect_tick,
+		"last_inspect_tick": last_inspect_tick, "self_repair_elapsed": self_repair_elapsed,
 	}
 
 
@@ -110,4 +112,5 @@ static func from_save(d: Dictionary, p_def: AttractionDef) -> Attraction:
 	a.reliability_bonus = SaveCodec.to_f(d.get("reliability_bonus"), 0.0)
 	a.mechanic_id = int(d.get("mechanic_id", -1))
 	a.last_inspect_tick = int(d.get("last_inspect_tick", -1))
+	a.self_repair_elapsed = int(d.get("self_repair_elapsed", 0))
 	return a

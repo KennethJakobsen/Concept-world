@@ -1,5 +1,7 @@
 [gd_scene format=3]
 
+[ext_resource type="Script" path="res://scripts/rendering/ride_visual.gd" id="rv"]
+
 [sub_resource type="StandardMaterial3D" id="m_brown"]
 albedo_color = Color(0.45, 0.27, 0.16, 1)
 roughness = 0.75
@@ -68,6 +70,7 @@ radial_segments = 10
 rings = 5
 
 [node name="HauntedHouse" type="Node3D"]
+script = ExtResource("rv")
 
 [node name="Base" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0750, 0.0000)

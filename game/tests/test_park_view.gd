@@ -181,3 +181,35 @@ func test_build_tool_starts_in_select() -> void:
 	var bt := BuildTool.new()
 	assert_eq(bt.tool, BuildTool.TOOL_SELECT)
 	bt.free()
+
+
+func test_fx_events_place_break_repair() -> void:
+	var view := ParkView.new()
+	var s := ParkSim.new(30, 30, 5)
+	s.economy.earn(1000000, "test")
+	view.setup(s)
+	var kinds: Array[StringName] = []
+	view.fx_event.connect(func(k: StringName, _p: Vector3) -> void: kinds.append(k))
+	var a: Attraction = s.cmd_place_attraction("carousel", Vector2i(5, 5))
+	assert_true(a != null)
+	assert_true(kinds.has(&"build_dust"), "build_dust ved placering")
+	assert_true(kinds.has(&"confetti"), "confetti for ride")
+	kinds.clear()
+	s._break(a)
+	assert_true(kinds.has(&"breakdown_smoke"), "røg ved nedbrud")
+	assert_eq(view.smoke_node_count(), 1)
+	kinds.clear()
+	s._repair(a)
+	assert_true(kinds.has(&"repaired"), "repaired-event")
+	assert_eq(view.smoke_node_count(), 0)
+	kinds.clear()
+	assert_true(s.cmd_remove_attraction(a.id))
+	assert_true(kinds.has(&"build_dust"), "build_dust ved fjernelse")
+	view.free()
+
+
+func test_thought_emotes() -> void:
+	assert_eq(ParkView.thought_emote("Sjovt!"), &"happy")
+	assert_eq(ParkView.thought_emote("Jeg er sulten!"), &"")
+	assert_eq(ParkView.thought_emote("Jeg har kvalme"), &"sick")
+	assert_eq(ParkView.thought_emote("For dyrt!"), &"angry")

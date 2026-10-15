@@ -159,3 +159,32 @@ Startpark + mekaniker + rengøring: dagsnetto ≈ 754 − 140 − ~2 % nedbrudst
 | Uden personale | 982 | 58.3 | 204 | 71.8 | 0.8 | 3.97 |
 | Med mek.+reng.+2 spande | 4309 | 75.4 | 373 | 83.2 | 1.0 | 0.06 |
 Med personale (løn 105/dag): kumuleret −1594 / −994 / −445 / +238 → break-even dag 4. Selv uden nedbrud (seed 12345) koster personalet nu kun ~830 på 7 dage, og omdømmet er +16 højere.
+
+## M4 – Grafik og lyd (T-046)
+
+### Dag/nat (`daynight.json`)
+- En spildag = `day_ticks` 2400 (2 min). `day_tick 0` = 06:00 (`day_start_time` 0.25).
+- Faser (time_of_day): daggry 0.22–0.30 (05:17–07:12), dag 0.30–0.78 (07:12–18:43), skumring 0.78–0.86 (18:43–20:38), nat 0.86–0.22 (20:38–05:17).
+- Nat = 36 % af døgnet, men daggry+skumring (16 %) blødgør overgangene, så "rigtig" mørke kun er ~1/3 af tiden (~43 s pr. dag). Det er nok til at lamper og forlystelseslys giver stemning, men ikke så langt, at det føles som en pause.
+- Natten må aldrig være så mørk, at man ikke kan bygge: ambient-lys min. ~35 % af dagniveau, månelys blåligt; grid/stier skal altid være læsbare.
+- Ingen gameplay-effekt i M4 (kommer evt. i M5).
+
+### Farvepalet
+| Fase | Sollys | Himmel (top/horisont) | Ambient |
+|---|---|---|---|
+| Daggry | varm fersken #FFC79A | #6E8FC4 / #F6B48A | 0.6 |
+| Dag | varm hvid #FFF4E0 | #4A90E2 / #BFE3FF | 1.0 |
+| Skumring | orange-rosa #FF9A6B | #3B3F7A / #FF8C69 | 0.6 |
+| Nat | måne, kold blå #8FA8FF (energi ~0.25) | #0E1430 / #263A6B | 0.35 |
+Lamper: varm gul #FFD27A. Forlystelseslys: mættede tivolifarver (rød, gul, cyan, magenta).
+
+### Stemning og lyd (`audio.json`)
+- Hyggeligt, legende tivoli – aldrig skingert. Alt er procedurelt genereret (sinus/trekant/firkant/stoej + envelopes), beskrevet pr. id i `audio.json`.
+- Busser: Music, SFX, Ambience, UI. Ambience skifter dag (fugle + brus) ↔ nat (fårekyllinger + vind) ved `phase_changed` (dusk/night → night, dawn/day → day).
+- `cash` throttles (maks 4/s); `ride_start` kun når kameraet er tæt på (`max_distance`).
+
+### Nedbrud uden mekaniker (`staff_rules.json`)
+- `self_repair_ticks` = 1200 (en halv dag), `self_repair_cost` = 250.
+- Rationale (T-041-tal): uden reparation forblev karrusellen nede og startparken endte på -16 til -990 kr. Med ekstern service er en nedbrudt forlystelse nede ~½ dag og koster 250 + tabt billetsalg (~200–300) ≈ 500 pr. nedbrud – overlevelig med startkapital 2200.
+- En mekaniker koster 60/dag (420 pr. uge) og reparerer på ~150–220 ticks. Allerede ét nedbrud om ugen gør mekanikeren rentabel; med flere forlystelser er han klart nødvendig.
+- UI-advarsel `broken_no_mechanic` lærer spilleren at ansætte en mekaniker.

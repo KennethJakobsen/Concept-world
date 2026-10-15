@@ -11,9 +11,11 @@ var _quit_btn: Button
 var _load_box: VBoxContainer
 var _slots: SaveSlotList
 var _status: Label
+var settings: SettingsPanel
 
 
 func _ready() -> void:
+	UiSound.install(get_tree())
 	build()
 	layout(get_viewport().get_visible_rect().size)
 	get_viewport().size_changed.connect(func() -> void: layout(get_viewport().get_visible_rect().size))
@@ -53,11 +55,19 @@ func build() -> void:
 	_load_box.add_child(_slots)
 	_slots.build(160.0)
 	_slots.slot_chosen.connect(load_slot)
+	_btn(v, "Indstillinger", open_settings)
 	_quit_btn = _btn(v, "Afslut", func() -> void: get_tree().quit())
 	_quit_btn.visible = show_quit()
 	_status = Label.new()
 	v.add_child(_status)
+	settings = SettingsPanel.new()
+	add_child(settings)
+	settings.build()
 	refresh()
+
+
+func open_settings() -> void:
+	settings.open()
 
 
 func _btn(parent: Control, text: String, cb: Callable) -> Button:
@@ -84,6 +94,8 @@ func layout(vp: Vector2) -> void:
 	var m: Vector2 = _panel.get_combined_minimum_size()
 	_panel.size = m
 	_panel.position = ((vp - m) * 0.5).max(Vector2.ZERO)
+	if settings != null:
+		settings.layout(vp)
 
 
 func panel_rect() -> Rect2:

@@ -61,11 +61,23 @@
 | T-045 | Start i vælg-værktøj | gameplay | ✅ done |
 | T-041 | M3 verifikation | qa | ✅ done |
 
+## M4 – Grafikløft  ([kontrakt](M4-graphics/_CONTRACT.md))
+| Task | Titel | Agent | Status |
+|---|---|---|---|
+| T-046 | Dag/nat, lydkatalog, nedbrud uden mekaniker (data) | designer | ✅ done |
+| T-047 | Tid på dagen, selv-reparation, nye signaler (sim) | simulation | ✅ done |
+| T-048 | Lys og dag/nat-rig | graphics | 🔍 review |
+| T-049 | Animation og partikler | graphics | 🔍 review |
+| T-050 | AudioManager, busser, procedurelle lyde | gameplay | 🔍 review |
+| T-051 | Bridge: dag/nat, effekter og lyd i scenen | gameplay | 🔍 review |
+| T-052 | Ur, lydindstillinger, advarsler | ui | 🔍 review |
+| T-053 | M4 verifikation | qa | 🔍 review |
+
 ## Kommende milepæle
-- **M4 Grafikløft:** lys, dag/nat, partikler, animation, lyd
 - **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger
 
 ## Åbne punkter / backlog
 - T-009, T-027: afventer brugerens visuelle bekræftelse.
-- Startpark "dør", hvis dens eneste forlystelse går i stykker uden mekaniker (QA T-041/T-044). Kræver kode (fx langsom selv-reparation eller tydelig advarsel) – ikke oprettet som task endnu.
-- Pariserhjulets gondoler hænger ikke lodret (T-021) – M4.
+- T-048..T-053: afventer brugerens visuelle/lyd-tjek (tjekliste i T-053) og grøn CI efter commit.
+- ~~Startpark "dør" ved nedbrud uden mekaniker~~ → løst i T-046/T-047 (verificeret T-053).
+- Pariserhjulets gondoler hænger ikke lodret → T-049 (afventer visuelt tjek).

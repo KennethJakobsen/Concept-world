@@ -1,0 +1,113 @@
+{
+ "_note": "id -> bus, volumen (dB), beskrivelse til procedurel generering. Alt genereres i kode (ingen eksterne filer).",
+ "sounds": {
+  "build": {
+   "bus": "SFX",
+   "volume_db": -6,
+   "generator": "procedural",
+   "description": "Kort traeklonk: to daempede slag (180 Hz + 120 Hz sinus med hurtig decay, 0.25 s) med lidt stoej-transient."
+  },
+  "demolish": {
+   "bus": "SFX",
+   "volume_db": -6,
+   "generator": "procedural",
+   "description": "Knasende fald: hvid stoej lavpasfiltreret, nedadgaende pitch 300->80 Hz, 0.4 s."
+  },
+  "cash": {
+   "bus": "SFX",
+   "volume_db": -10,
+   "generator": "procedural",
+   "description": "Kasseapparat-pling: to hurtige sinustoner 1320 Hz og 1760 Hz, 0.15 s hver, blid decay.",
+   "throttle_per_s": 4
+  },
+  "breakdown": {
+   "bus": "SFX",
+   "volume_db": -4,
+   "generator": "procedural",
+   "description": "Mekanisk klank + hvaesen: firkantbolge 90 Hz 0.2 s efterfulgt af faldende stoej-hvaes 0.6 s."
+  },
+  "repair": {
+   "bus": "SFX",
+   "volume_db": -8,
+   "generator": "procedural",
+   "description": "Skruenoegle-tik: 3 korte metalliske klik (2.5 kHz trekant, 40 ms) med 120 ms mellemrum."
+  },
+  "sweep": {
+   "bus": "SFX",
+   "volume_db": -14,
+   "generator": "procedural",
+   "description": "Kostestrog: baandpasfiltreret stoej (2-5 kHz) med svulmende envelope, 0.3 s."
+  },
+  "ride_start": {
+   "bus": "SFX",
+   "volume_db": -10,
+   "generator": "procedural",
+   "description": "Glad klokke: tre stigende toner (C5-E5-G5) i trekantbolge, 0.12 s hver.",
+   "max_distance": 25
+  },
+  "cheer": {
+   "bus": "SFX",
+   "volume_db": -8,
+   "generator": "procedural",
+   "description": "Kort jubel: lagdelt filtreret stoej med vibrato + stigende tone, 0.8 s."
+  },
+  "error": {
+   "bus": "SFX",
+   "volume_db": -8,
+   "generator": "procedural",
+   "description": "Dobbelt lav buzz: firkantbolge 150 Hz, 2 x 0.1 s."
+  },
+  "click": {
+   "bus": "UI",
+   "volume_db": -12,
+   "generator": "procedural",
+   "description": "Blodt klik: sinus 900 Hz, 30 ms, hurtig decay."
+  },
+  "hover": {
+   "bus": "UI",
+   "volume_db": -20,
+   "generator": "procedural",
+   "description": "Meget svagt tik: sinus 1400 Hz, 15 ms."
+  },
+  "open": {
+   "bus": "UI",
+   "volume_db": -12,
+   "generator": "procedural",
+   "description": "Stigende swish: sinus-sweep 500->900 Hz, 0.12 s."
+  },
+  "close": {
+   "bus": "UI",
+   "volume_db": -12,
+   "generator": "procedural",
+   "description": "Faldende swish: sinus-sweep 900->500 Hz, 0.12 s."
+  },
+  "day": {
+   "bus": "Ambience",
+   "volume_db": -18,
+   "generator": "procedural",
+   "description": "Loop (8 s): blid stoej-brus (fjern menneskemaengde, lavpas 800 Hz) + tilfaeldige fuglekvidder (korte sinus-chirps 3-5 kHz).",
+   "loop": true
+  },
+  "night": {
+   "bus": "Ambience",
+   "volume_db": -20,
+   "generator": "procedural",
+   "description": "Loop (8 s): svag vind (lavpas stoej 300 Hz) + faarekyllinger (pulserende 4.5 kHz sinus, 12 Hz tremolo).",
+   "loop": true
+  },
+  "menu": {
+   "bus": "Music",
+   "volume_db": -14,
+   "generator": "procedural",
+   "description": "Loop (16 s, 90 BPM): rolig valseagtig melodi i C-dur, trekantbolge lead + bloed sinus-bas, spilledaase-stemning.",
+   "loop": true
+  },
+  "park": {
+   "bus": "Music",
+   "volume_db": -16,
+   "generator": "procedural",
+   "description": "Loop (32 s, 110 BPM): munter tivoli-orgel-stemning i G-dur, firkant/trekant lead, oom-pah bas, let percussion af stoej-hits.",
+   "loop": true
+  }
+ }
+}

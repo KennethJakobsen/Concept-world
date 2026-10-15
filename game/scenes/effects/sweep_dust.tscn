@@ -1,0 +1,37 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/particle_fx.gd" id="1"]
+
+[sub_resource type="StandardMaterial3D" id="mat"]
+shading_mode = 0
+vertex_color_use_as_albedo = true
+transparency = 1
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+
+
+[sub_resource type="QuadMesh" id="mesh"]
+material = SubResource("mat")
+size = Vector2(0.25, 0.25)
+
+[node name="SweepDust" type="Node3D"]
+script = ExtResource("1")
+one_shot = true
+
+[node name="Particles" type="CPUParticles3D" parent="."]
+emitting = false
+amount = 10
+lifetime = 0.7
+explosiveness = 0.85
+mesh = SubResource("mesh")
+emission_shape = 1
+emission_sphere_radius = 0.3
+direction = Vector3(0, 1, 0)
+spread = 70.0
+gravity = Vector3(0, -0.5, 0)
+initial_velocity_min = 0.48
+initial_velocity_max = 0.8
+scale_amount_min = 0.6
+scale_amount_max = 1.2
+color = Color(0.75, 0.7, 0.6, 0.6)

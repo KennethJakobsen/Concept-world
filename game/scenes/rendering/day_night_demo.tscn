@@ -1,0 +1,134 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/day_night_demo.gd" id="s"]
+[ext_resource type="PackedScene" path="res://scenes/rendering/day_night_rig.tscn" id="rig"]
+[ext_resource type="PackedScene" path="res://scenes/props/lamp.tscn" id="lamp"]
+[ext_resource type="PackedScene" path="res://scenes/props/guest.tscn" id="guest"]
+[ext_resource type="PackedScene" path="res://scenes/props/mechanic.tscn" id="mech"]
+[ext_resource type="PackedScene" path="res://scenes/props/carousel.tscn" id="carousel"]
+[ext_resource type="PackedScene" path="res://scenes/props/ferris_wheel.tscn" id="ferris_wheel"]
+[ext_resource type="PackedScene" path="res://scenes/props/bumper_cars.tscn" id="bumper_cars"]
+[ext_resource type="PackedScene" path="res://scenes/props/swing_ride.tscn" id="swing_ride"]
+[ext_resource type="PackedScene" path="res://scenes/props/haunted_house.tscn" id="haunted_house"]
+[ext_resource type="PackedScene" path="res://scenes/props/go_karts.tscn" id="go_karts"]
+
+[sub_resource type="PlaneMesh" id="ground"]
+size = Vector2(40, 40)
+
+[sub_resource type="StandardMaterial3D" id="gm"]
+albedo_color = Color(0.35, 0.6, 0.3, 1)
+
+[node name="Demo" type="Node3D"]
+script = ExtResource("s")
+
+[node name="DayNightRig" parent="." instance=ExtResource("rig")]
+debug_day_seconds = 120.0
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("ground")
+surface_material_override/0 = SubResource("gm")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.766, 0.643, 0, -0.643, 0.766, 0, 12, 16)
+
+[node name="Rides" type="Node3D" parent="."]
+
+[node name="carousel" parent="Rides" instance=ExtResource("carousel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, -3)
+groups = ["demo_lit"]
+
+[node name="ferris_wheel" parent="Rides" instance=ExtResource("ferris_wheel")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, -3)
+groups = ["demo_lit"]
+
+[node name="bumper_cars" parent="Rides" instance=ExtResource("bumper_cars")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 0, -3)
+groups = ["demo_lit"]
+
+[node name="swing_ride" parent="Rides" instance=ExtResource("swing_ride")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -3)
+groups = ["demo_lit"]
+
+[node name="haunted_house" parent="Rides" instance=ExtResource("haunted_house")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6, 0, -3)
+groups = ["demo_lit"]
+
+[node name="go_karts" parent="Rides" instance=ExtResource("go_karts")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0, -3)
+groups = ["demo_lit"]
+
+[node name="Lamps" type="Node3D" parent="."]
+
+[node name="Lamp0" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp1" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp2" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp3" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp4" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp5" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp6" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp7" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp8" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp9" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp10" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Lamp11" parent="Lamps" instance=ExtResource("lamp")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11, 0, 1.5)
+groups = ["demo_lit"]
+
+[node name="Guests" type="Node3D" parent="."]
+
+[node name="G0" parent="Guests" instance=ExtResource("guest")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7, 0, 3)
+
+[node name="G1" parent="Guests" instance=ExtResource("guest")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5, 0, 3)
+
+[node name="G2" parent="Guests" instance=ExtResource("guest")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3, 0, 3)
+
+[node name="G3" parent="Guests" instance=ExtResource("guest")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 3)
+
+[node name="G4" parent="Guests" instance=ExtResource("guest")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 3)
+
+[node name="G5" parent="Guests" instance=ExtResource("guest")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, 0, 3)
+
+[node name="G6" parent="Guests" instance=ExtResource("guest")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, 3)
+
+[node name="G7" parent="Guests" instance=ExtResource("mech")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0, 3)

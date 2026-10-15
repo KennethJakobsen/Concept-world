@@ -6,6 +6,7 @@ const ECONOMY_PATH: String = "res://content/economy.json"
 const GUESTS_PATH: String = "res://content/guests.json"
 const PARK_PATH: String = "res://content/park.json"
 const STAFF_RULES_PATH: String = "res://content/staff_rules.json"
+const DAYNIGHT_PATH: String = "res://content/daynight.json"
 
 # Økonomi
 var start_money: int = 2500
@@ -94,12 +95,28 @@ var mechanic_inspect_interval_ticks: int = 1200
 var inspection_reliability_bonus: float = 0.01
 var inspection_ticks: int = 40
 var thought_broken: String = "Den er i stykker!"
+## T-047: selv-reparation uden mekaniker (0 = slået fra).
+var self_repair_ticks: int = 2400
+var self_repair_cost: int = 200
+## T-047: dag/nat (daynight.json). Grænser i time_of_day ∈ [0,1).
+var day_start_time: float = 0.25
+var dawn: float = 0.22
+var day_phase: float = 0.30
+var dusk: float = 0.78
+var night: float = 0.86
 
 
 ## park tom → legacy-spawn (spawn_interval_ticks/max_guests fra guests).
 static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary = {},
-		staff_rules: Dictionary = {}) -> Balance:
+		staff_rules: Dictionary = {}, daynight: Dictionary = {}) -> Balance:
 	var b := Balance.new()
+	b.self_repair_ticks = maxi(0, int(staff_rules.get("self_repair_ticks", b.self_repair_ticks)))
+	b.self_repair_cost = maxi(0, int(staff_rules.get("self_repair_cost", b.self_repair_cost)))
+	b.day_start_time = fposmod(float(daynight.get("day_start_time", b.day_start_time)), 1.0)
+	b.dawn = float(daynight.get("dawn", b.dawn))
+	b.day_phase = float(daynight.get("day", b.day_phase))
+	b.dusk = float(daynight.get("dusk", b.dusk))
+	b.night = float(daynight.get("night", b.night))
 	b.litter_chance_after_shop = float(staff_rules.get("litter_chance_after_shop", b.litter_chance_after_shop))
 	b.litter_chance_with_bin = float(staff_rules.get("litter_chance_with_bin", b.litter_chance_with_bin))
 	b.bin_radius = int(staff_rules.get("bin_radius", b.bin_radius))
@@ -172,7 +189,8 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 
 
 static func load_default() -> Balance:
-	return from_dicts(_read(ECONOMY_PATH), _read(GUESTS_PATH), _read(PARK_PATH), _read(STAFF_RULES_PATH))
+	return from_dicts(_read(ECONOMY_PATH), _read(GUESTS_PATH), _read(PARK_PATH), _read(STAFF_RULES_PATH),
+		_read(DAYNIGHT_PATH))
 
 
 static func _read(path: String) -> Dictionary:

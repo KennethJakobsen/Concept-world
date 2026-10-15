@@ -1,5 +1,7 @@
 [gd_scene format=3]
 
+[ext_resource type="Script" path="res://scripts/rendering/ride_visual.gd" id="rv"]
+
 [ext_resource type="Script" path="res://scripts/rendering/spinner.gd" id="1"]
 
 [sub_resource type="StandardMaterial3D" id="m_wood"]
@@ -195,6 +197,7 @@ radial_segments = 4
 rings = 1
 
 [node name="BumperCars" type="Node3D"]
+script = ExtResource("rv")
 
 [node name="Floor" type="MeshInstance3D" parent="."]
 transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0500, 0.0000)

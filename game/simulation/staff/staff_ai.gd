@@ -155,7 +155,10 @@ static func _finish(sim: ParkSim, s: Staff) -> void:
 				a.last_inspect_tick = sim.clock.tick
 			s.since_inspect = 0
 		Staff.TASK_SWEEP:
+			var had: bool = sim.world.get_litter(s.cell) > 0
 			sim.world.set_litter(s.cell, 0)
+			if had:
+				sim.litter_swept.emit(s.cell)
 		Staff.TASK_EMPTY_BIN:
 			var d: Decor = sim.decor.get(s.task_target_id, null)
 			if d != null:

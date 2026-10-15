@@ -1,0 +1,35 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/particle_fx.gd" id="1"]
+
+[sub_resource type="StandardMaterial3D" id="mat"]
+shading_mode = 0
+vertex_color_use_as_albedo = true
+
+
+[sub_resource type="BoxMesh" id="mesh"]
+material = SubResource("mat")
+size = Vector3(0.04, 0.04, 0.04)
+
+[node name="RepairSparks" type="Node3D"]
+script = ExtResource("1")
+one_shot = false
+
+[node name="Particles" type="CPUParticles3D" parent="."]
+emitting = false
+amount = 16
+lifetime = 0.5
+explosiveness = 0.0
+mesh = SubResource("mesh")
+emission_shape = 1
+emission_sphere_radius = 0.3
+direction = Vector3(0, 1, 0)
+spread = 60.0
+gravity = Vector3(0, -6.0, 0)
+initial_velocity_min = 1.5
+initial_velocity_max = 2.5
+angular_velocity_min = -180.0
+angular_velocity_max = 180.0
+scale_amount_min = 0.6
+scale_amount_max = 1.2
+color = Color(1, 0.8, 0.3, 1)

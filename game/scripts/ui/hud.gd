@@ -20,6 +20,10 @@ var sim: ParkSim
 var selection: Node
 
 var _top_label: Label
+var _clock_icon: ClockIcon
+var _clock_label: Label
+var _toast: Toast
+var _warn_sim: ParkSim  ## sim, hvis warning-signal er forbundet
 var _stars: StarRating
 var _pause_btn: Button
 var _build_buttons: Dictionary = {}  ## def_id -> Button
@@ -46,6 +50,7 @@ var _sel_guest: int = -1
 
 
 func _ready() -> void:
+	UiSound.install(get_tree())
 	fit_window_to_screen()
 	_build_ui()
 	_connect_scene()
@@ -108,6 +113,10 @@ func layout(vp: Vector2) -> void:
 	# Personale-listen scroller inden for den plads der er mellem top- og byggebjælke.
 	var scroll: ScrollContainer = _staff_list_panel.get_node("V/Scroll")
 	scroll.custom_minimum_size.y = clampf(max_h - 90.0, 40.0, 260.0)
+	if _toast != null:
+		var tw: float = minf(420.0, w)
+		_toast.size = Vector2(tw, 0)
+		_toast.position = Vector2((vp.x - tw) * 0.5, top_h + 2.0 * MARGIN)
 	if _pause_menu != null:
 		_pause_menu.layout(vp)
 
@@ -195,6 +204,16 @@ func _build_ui() -> void:
 	var th := HFlowContainer.new()
 	th.add_theme_constant_override("h_separation", 12)
 	top.add_child(th)
+	var clock := HBoxContainer.new()
+	clock.name = "Clock"
+	clock.visible = false
+	th.add_child(clock)
+	_clock_icon = ClockIcon.new()
+	_clock_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	clock.add_child(_clock_icon)
+	_clock_label = Label.new()
+	_clock_label.name = "ClockLabel"
+	clock.add_child(_clock_label)
 	_top_label = Label.new()
 	th.add_child(_top_label)
 	_stars = StarRating.new()
@@ -305,6 +324,9 @@ func _build_ui() -> void:
 	_pause_menu.build()
 	_pause_menu.closed.connect(_on_pause_menu_closed)
 	_pause_menu.sim_provider = func() -> ParkSim: return sim
+
+	_toast = Toast.new()
+	root.add_child(_toast)
 	if is_inside_tree():
 		layout.call_deferred(get_viewport().get_visible_rect().size)
 
@@ -423,6 +445,8 @@ func refresh() -> void:
 	if sim == null:
 		_top_label.text = "Indlæser park..."
 		return
+	_connect_warnings()
+	_refresh_clock()
 	var st: Dictionary = sim.get_stats()
 	var old_len: int = _top_label.text.length()
 	_top_label.text = top_text(st)
@@ -438,6 +462,36 @@ func refresh() -> void:
 	_refresh_guest()
 	_refresh_staff()
 	_refresh_staff_list()
+
+
+func _connect_warnings() -> void:
+	if sim == _warn_sim:
+		return
+	if _warn_sim != null and _warn_sim.has_signal("warning") and _warn_sim.is_connected("warning", show_warning):
+		_warn_sim.disconnect("warning", show_warning)
+	_warn_sim = sim
+	if sim != null and sim.has_signal("warning"):
+		sim.connect("warning", show_warning)
+
+
+func show_warning(code: StringName, data: Dictionary = {}) -> void:
+	if _toast != null:
+		_toast.show_warning(code, data)
+
+
+func toast() -> Toast:
+	return _toast
+
+
+func _refresh_clock() -> void:
+	var clock: Control = _clock_label.get_parent()
+	var has: bool = sim.has_method("clock_text")
+	clock.visible = has
+	if not has:
+		return
+	_clock_label.text = String(sim.call("clock_text"))
+	if sim.has_method("is_night"):
+		_clock_icon.night = bool(sim.call("is_night"))
 
 
 ## Topbar-tekst. Robust over for get_stats() før/efter T-030 (reputation/max_guests valgfri).

@@ -8,6 +8,7 @@
 | `game/scripts/bridge/` | Sim → scene-synk | simulation |
 | `game/scripts/building/` | Byggeværktøjer | simulation, bridge |
 | `game/scripts/rendering/` | Kamera, lys, effekter | – |
+| `game/scripts/audio/` | `AudioManager` (autoload), procedurelle lyde (`AudioSynth`), busser i `default_bus_layout.tres` | – (kaldes fra bridge/ui via id'er) |
 | `game/scripts/ui/` | HUD, menuer | simulation (læs + kommandoer) |
 
 ## Kode

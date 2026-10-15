@@ -9,9 +9,11 @@ var pending_save: Dictionary = {}
 var seed: int = 1
 var store: SaveStore = SaveStore.new()
 var _hooked_sim: ParkSim
+var _music_scene: Node  ## scenen der sidst valgte musik
 
 
 func _process(_delta: float) -> void:
+	_sync_music()
 	# Kobl autosave til den aktuelle sim (ParkView kan skifte sim ved load).
 	var s: ParkSim = current_sim()
 	if s != _hooked_sim:
@@ -66,3 +68,15 @@ func _change(path: String) -> void:
 	_hooked_sim = null
 	get_tree().paused = false
 	get_tree().change_scene_to_file.call_deferred(path)
+
+
+## Musik følger scenen: park (main.tscn) → "park", ellers (hovedmenu) → "menu".
+func _sync_music() -> void:
+	var cur: Node = get_tree().current_scene if is_inside_tree() else null
+	if cur == null or cur == _music_scene:
+		return
+	_music_scene = cur
+	var am: Node = get_node_or_null("/root/AudioManager")
+	if am == null:
+		return
+	am.call("play_music", &"park" if cur.scene_file_path == MAIN_SCENE else &"menu")
