@@ -37,6 +37,10 @@
 | T-025 | Afstem simulation med GDD | simulation | ✅ done |
 | T-027 | Bug: byggemenu uden for skærm | ui | 🔍 review |
 | T-028 | Test-runner tæller crash som bestået | qa | ✅ done |
+| T-029 | Design: tiltrækning og omdømme | designer | ⬜ todo |
+| T-030 | Sim: tiltrækning og omdømme | simulation | ⬜ todo |
+| T-031 | UI: omdømme og entré | ui | ⬜ todo |
+| T-032 | QA: tiltrækning og balance | qa | ⬜ todo |
 | T-024 | M2 verifikation | qa | ✅ done |
 | T-026 | Balance-justering | designer | ✅ done |
 
