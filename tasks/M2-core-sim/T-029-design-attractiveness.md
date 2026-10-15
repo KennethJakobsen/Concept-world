@@ -1,6 +1,6 @@
 # T-029: Design – Tiltrækning, omdømme og gæstestrøm
 
-- **Status:** todo
+- **Status:** done
 - **Milepæl:** M2
 - **Agent:** designer
 - **Afhænger af:** T-026
@@ -18,7 +18,9 @@ Antal besøgende skal afhænge af parkens kvalitet. Design model + tal i `game/c
 - Alle konstanter i park.json. Formler i GDD med eksempeltabel: 1 karrusel / 3 rides+boder / 7 bygninger × omdømme 30/60/90.
 
 ## Acceptkriterier
-- [ ] park.json + GDD-sektion
-- [ ] Startpark (karrusel + 2 boder + toilet) giver omtrent samme gæstestrøm som nu (~50/dag), så T-026-balancen holder; fuld park giver tydeligt flere
+- [x] park.json + GDD-sektion
+- [x] Startpark (karrusel + 2 boder + toilet) giver omtrent samme gæstestrøm som nu (~50/dag), så T-026-balancen holder; fuld park giver tydeligt flere
 ## Log
 - 2026-10-15 – architect: oprettet efter brugerønske
+- 2026-10-15 – designer: park.json + GDD-sektion med formler og eksempeltabel. Startpark 51/dag @ omdømme 50, max_guests 48; fuld park 89/dag. → review
+- 2026-10-15 – qa: godkendt i T-032 (balance 3 scenarier, startpark 51/dag, fuld 89/dag). Se balanceforslag i T-032. → done

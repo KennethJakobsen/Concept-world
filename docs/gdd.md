@@ -79,3 +79,25 @@ Balance-sim (`tools/balance.sh`, seed 12345, startpark):
 | drinks_stand | shop | 1×1 | 250 | 60 | 2 | 30 | 3 | 0 | thirst -70, toilet +20 |
 | ice_cream_stand | shop | 1×1 | 280 | 60 | 2 | 30 | 3 | 5 | hunger -25, thirst -20, toilet +10 |
 | toilet | toilet | 1×1 | 200 | 50 | 2 | 60 | 0 | 0 | toilet -90 |
+
+## Tiltrækning, omdømme og gæstestrøm (T-029)
+Konstanter i `game/content/park.json`. Kun **åbne** bygninger tæller.
+
+- `raw = Σ_rides excitement × weight_ride + antal(shops+toilets) × weight_facility`
+- `attraction_score = sqrt(raw)` (faldende merværdi)
+- `reputation` ∈ [0,100], start `reputation_start` (50). Når en gæst forlader parken: `reputation += (guest.happiness − reputation) × reputation_learn_rate` (0.02).
+- `expected_fee = expected_entry_fee_per_score × attraction_score`
+- `price_penalty = clamp((entry_fee − expected_fee) / expected_fee × price_penalty_factor, 0, price_penalty_max)` (kun straf ved for høj entré; 0 hvis score = 0)
+- `rep_mult = reputation_mult_base + reputation/100` (0.5..1.5; 1.0 ved start)
+- `spawn_per_day = clamp(spawn_per_score × attraction_score × rep_mult × (1 − price_penalty), spawn_min_per_day, spawn_max_per_day)` hvis entré er forbundet til sti og ≥1 åben ride; ellers 0.
+- `max_guests = max_guests_base + Σ capacity(åbne bygninger) × max_guests_per_capacity` (afrundet ned)
+- Ankomst: hver tick spawnes en gæst med sandsynlighed `spawn_per_day / day_ticks` (seedet RNG), hvis `guests < max_guests`. Erstatter `spawn_interval_ticks`/`max_guests` i guests.json.
+
+### Eksempeltabel (entré 6, gæster/dag)
+| Park | score | forventet entré | straf | max_guests | omd. 30 | omd. 50 (start) | omd. 60 | omd. 90 |
+|---|---|---|---|---|---|---|---|---|
+| Kun karrusel | 5.00 | 5.0 | 0.20 | 36 | 26 | 32 | 35 | 45 |
+| Startpark (karrusel+burger+drikke+toilet) | 6.32 | 6.3 | 0 | 48 | 40 | **51** | 56 | 71 |
+| Alle 7 bygninger (3 rides + 4 faciliteter) | 11.18 | 11.2 | 0 | 96 | 72 | 89 | 98 | 125 |
+
+Startparken giver ~50/dag og max ~48 samtidige gæster – samme som før (spawn hver 40. tick, max 50), så T-026-balancen holder.

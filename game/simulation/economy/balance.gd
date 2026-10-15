@@ -4,6 +4,7 @@ extends RefCounted
 
 const ECONOMY_PATH: String = "res://content/economy.json"
 const GUESTS_PATH: String = "res://content/guests.json"
+const PARK_PATH: String = "res://content/park.json"
 
 # Økonomi
 var start_money: int = 2500
@@ -49,8 +50,40 @@ var reject_happiness_penalty: float = 2.0
 var need_relief_happiness: float = 5.0
 
 
-static func from_dicts(economy: Dictionary, guests: Dictionary) -> Balance:
+# Tiltrækning/omdømme (park.json, T-029). has_park = false → fast spawn-interval (legacy).
+var has_park: bool = false
+var weight_ride: float = 1.0
+var weight_facility: float = 5.0
+var reputation_start: float = 50.0
+var reputation_learn_rate: float = 0.02
+var expected_entry_fee_per_score: float = 1.0
+var price_penalty_factor: float = 1.0
+var price_penalty_max: float = 0.9
+var spawn_per_score: float = 8.0
+var reputation_mult_base: float = 0.5
+var spawn_min_per_day: float = 10.0
+var spawn_max_per_day: float = 400.0
+var max_guests_base: int = 20
+var max_guests_per_capacity: float = 2.0
+
+
+## park tom → legacy-spawn (spawn_interval_ticks/max_guests fra guests).
+static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary = {}) -> Balance:
 	var b := Balance.new()
+	b.has_park = not park.is_empty()
+	b.weight_ride = float(park.get("weight_ride", b.weight_ride))
+	b.weight_facility = float(park.get("weight_facility", b.weight_facility))
+	b.reputation_start = float(park.get("reputation_start", b.reputation_start))
+	b.reputation_learn_rate = float(park.get("reputation_learn_rate", b.reputation_learn_rate))
+	b.expected_entry_fee_per_score = float(park.get("expected_entry_fee_per_score", b.expected_entry_fee_per_score))
+	b.price_penalty_factor = float(park.get("price_penalty_factor", b.price_penalty_factor))
+	b.price_penalty_max = float(park.get("price_penalty_max", b.price_penalty_max))
+	b.spawn_per_score = float(park.get("spawn_per_score", b.spawn_per_score))
+	b.reputation_mult_base = float(park.get("reputation_mult_base", b.reputation_mult_base))
+	b.spawn_min_per_day = float(park.get("spawn_min_per_day", b.spawn_min_per_day))
+	b.spawn_max_per_day = float(park.get("spawn_max_per_day", b.spawn_max_per_day))
+	b.max_guests_base = int(park.get("max_guests_base", b.max_guests_base))
+	b.max_guests_per_capacity = float(park.get("max_guests_per_capacity", b.max_guests_per_capacity))
 	b.start_money = int(economy.get("start_money", b.start_money))
 	b.entry_fee = int(economy.get("entry_fee", b.entry_fee))
 	b.path_cost = int(economy.get("path_cost", b.path_cost))
@@ -86,7 +119,7 @@ static func from_dicts(economy: Dictionary, guests: Dictionary) -> Balance:
 
 
 static func load_default() -> Balance:
-	return from_dicts(_read(ECONOMY_PATH), _read(GUESTS_PATH))
+	return from_dicts(_read(ECONOMY_PATH), _read(GUESTS_PATH), _read(PARK_PATH))
 
 
 static func _read(path: String) -> Dictionary:

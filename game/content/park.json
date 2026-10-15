@@ -1,0 +1,1 @@
+{"weight_ride": 1.0, "weight_facility": 5.0, "reputation_start": 50, "reputation_learn_rate": 0.02, "expected_entry_fee_per_score": 1.0, "price_penalty_factor": 1.0, "price_penalty_max": 0.9, "spawn_per_score": 8.0, "reputation_mult_base": 0.5, "spawn_min_per_day": 10, "spawn_max_per_day": 400, "max_guests_base": 20, "max_guests_per_capacity": 2.0}

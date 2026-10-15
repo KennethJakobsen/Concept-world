@@ -21,6 +21,8 @@ var _attr_label: Label
 var _attr_open_btn: Button
 var _guest_panel: PanelContainer
 var _guest_label: Label
+var _park_panel: PanelContainer
+var _park_label: Label
 var _sel_attraction: int = -1
 var _sel_guest: int = -1
 
@@ -79,7 +81,7 @@ func layout(vp: Vector2) -> void:
 	bottom.size = Vector2(w, bottom_h)
 	for p: Control in [top, bottom]:
 		_sort_tree(p)
-	for p: Control in [_attr_panel, _guest_panel]:
+	for p: Control in [_attr_panel, _guest_panel, _park_panel]:
 		p.position = Vector2(maxf(MARGIN, vp.x - MARGIN - p.custom_minimum_size.x), top_h + 2.0 * MARGIN)
 
 
@@ -153,6 +155,7 @@ func _build_ui() -> void:
 	top.add_child(th)
 	_top_label = Label.new()
 	th.add_child(_top_label)
+	_button(th, "Park", toggle_park_panel)
 	_pause_btn = _button(th, "Pause", _on_pause)
 	for s: float in SPEEDS:
 		_button(th, "%dx" % int(s), _on_speed.bind(s))
@@ -193,6 +196,19 @@ func _build_ui() -> void:
 	gv.add_child(_guest_label)
 	_button(gv, "Luk panel", clear_selection)
 	_guest_panel.visible = false
+
+	_park_panel = _panel(root, "ParkPanel")
+	_place_right(_park_panel)
+	var pv := VBoxContainer.new()
+	_park_panel.add_child(pv)
+	_park_label = Label.new()
+	pv.add_child(_park_label)
+	var eh := HBoxContainer.new()
+	pv.add_child(eh)
+	_button(eh, "Entré -", change_entry_fee.bind(-1))
+	_button(eh, "Entré +", change_entry_fee.bind(1))
+	_button(pv, "Luk panel", toggle_park_panel)
+	_park_panel.visible = false
 	if is_inside_tree():
 		layout.call_deferred(get_viewport().get_visible_rect().size)
 
@@ -270,13 +286,75 @@ func refresh() -> void:
 		_top_label.text = "Indlæser park…"
 		return
 	var st: Dictionary = sim.get_stats()
-	_top_label.text = "$%d   Dag %d   Gæster: %d   Glæde: %d%%" % [
-		st.money, st.day, st.guests, roundi(st.avg_happiness)]
+	var old_len: int = _top_label.text.length()
+	_top_label.text = top_text(st)
+	if _top_label.text.length() != old_len and is_inside_tree():
+		layout(get_viewport().get_visible_rect().size)  # topbar kan ombrydes anderledes
+	_refresh_park(st)
 	_pause_btn.text = "Fortsæt" if sim.clock.paused else "Pause"
 	for id: String in _build_buttons:
 		(_build_buttons[id] as Button).disabled = not sim.economy.can_afford(_build_costs[id])
 	_refresh_attraction()
 	_refresh_guest()
+
+
+## Topbar-tekst. Robust over for get_stats() før/efter T-030 (reputation/max_guests valgfri).
+static func top_text(st: Dictionary) -> String:
+	var t: String = "$%d   Dag %d   " % [int(st.get("money", 0)), int(st.get("day", 1))]
+	if st.has("max_guests"):
+		t += "Gæster: %d/%d   " % [int(st.get("guests", 0)), int(st.max_guests)]
+	else:
+		t += "Gæster: %d   " % int(st.get("guests", 0))
+	t += "Glæde: %d%%" % roundi(float(st.get("avg_happiness", 0.0)))
+	if st.has("reputation"):
+		t += "   Omdømme: %s %d%%" % [stars(float(st.reputation)), roundi(float(st.reputation))]
+	return t
+
+
+## 0..100 → fem stjerner (afrundet til hele).
+static func stars(rep: float) -> String:
+	var n: int = clampi(roundi(rep / 20.0), 0, 5)
+	return "★".repeat(n) + "☆".repeat(5 - n)
+
+
+func _refresh_park(st: Dictionary) -> void:
+	if not _park_panel.visible:
+		return
+	var income: int = 0
+	var expense: int = 0
+	for k: Variant in sim.economy.today:
+		var v: int = int(sim.economy.today[k])
+		if v > 0:
+			income += v
+		else:
+			expense -= v
+	var lines: Array[String] = ["Parken", "Entré: $%d" % sim.entry_fee]
+	if st.has("reputation"):
+		lines.append("Omdømme: %d%%" % roundi(float(st.reputation)))
+	if st.has("attraction_score"):
+		lines.append("Tiltrækning: %.1f" % float(st.attraction_score))
+	elif sim.has_method("attraction_score"):
+		lines.append("Tiltrækning: %.1f" % float(sim.call("attraction_score")))
+	if st.has("guests_per_day"):
+		lines.append("Forventede gæster/dag: %d" % roundi(float(st.guests_per_day)))
+	elif sim.has_method("expected_guests_per_day"):
+		lines.append("Forventede gæster/dag: %d" % roundi(float(sim.call("expected_guests_per_day"))))
+	lines.append("I dag: +$%d / -$%d" % [income, expense])
+	lines.append("  Entré: $%d  Billetter: $%d" % [sim.economy.get_today_total("entry"), sim.economy.get_today_total("tickets")])
+	_park_label.text = "\n".join(lines)
+
+
+func toggle_park_panel() -> void:
+	var show: bool = not _park_panel.visible
+	if show:
+		clear_selection()
+	_park_panel.visible = show
+	refresh()
+
+
+func change_entry_fee(delta: int) -> void:
+	if sim != null:
+		sim.cmd_set_entry_fee(maxi(0, sim.entry_fee + delta))
 
 
 func _refresh_attraction() -> void:
@@ -316,12 +394,14 @@ func _refresh_guest() -> void:
 # --- Selection ---
 
 func show_attraction(id: int) -> void:
+	_park_panel.visible = false
 	_sel_guest = -1
 	_sel_attraction = id
 	refresh()
 
 
 func show_guest(id: int) -> void:
+	_park_panel.visible = false
 	_sel_attraction = -1
 	_sel_guest = id
 	refresh()

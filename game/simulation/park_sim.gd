@@ -5,6 +5,7 @@ extends RefCounted
 signal guest_spawned(guest: Guest)
 signal guest_removed(guest_id: int)
 signal day_passed(day: int)
+signal reputation_changed(value: float)
 signal attraction_removed(attraction_id: int)
 
 const NEED_THOUGHTS: Dictionary = {
@@ -30,8 +31,17 @@ var entry_fee: int = 0
 var day_tick: int = 0  ## ticks ind i nuværende dag
 
 ## Konfiguration
-var spawn_interval_ticks: int = 40
+## Fast spawn-interval (legacy/tests). At sætte feltet slår fast_spawn til.
+var spawn_interval_ticks: int = 40:
+	set(v):
+		spawn_interval_ticks = v
+		fixed_spawn = true
+## Loft i fast_spawn-tilstand (ellers bruges current_max_guests()-formlen).
 var max_guests: int = 50
+## true → spawn hver spawn_interval_ticks op til max_guests; false → park.json-model.
+var fixed_spawn: bool = false
+## Omdømme 0..100 (T-029/T-030).
+var reputation: float = 50.0
 var guest_speed: float = 0.1  ## celler pr. tick
 var rides_per_guest_min: int = 1
 var rides_per_guest_max: int = 3
@@ -49,6 +59,8 @@ func _init(width: int, height: int, p_seed: int, p_balance: Balance = null) -> v
 	entry_fee = balance.entry_fee
 	spawn_interval_ticks = balance.spawn_interval_ticks
 	max_guests = balance.max_guests
+	fixed_spawn = not balance.has_park
+	reputation = balance.reputation_start
 	guest_speed = balance.speed
 	world = ParkWorld.new(width, height)
 	clock = SimClock.new()
@@ -127,6 +139,56 @@ func register_def(def: AttractionDef) -> void:
 	_def_cache[def.id] = def
 
 
+## sqrt(Σ åbne rides excitement × weight_ride + antal åbne shops/toilets × weight_facility).
+func attraction_score() -> float:
+	var raw: float = 0.0
+	for a in attractions:
+		if not a.is_open:
+			continue
+		if a.def.kind == "ride":
+			raw += a.def.excitement * balance.weight_ride
+		else:
+			raw += balance.weight_facility
+	return sqrt(maxf(0.0, raw))
+
+
+func _has_open_ride() -> bool:
+	for a in attractions:
+		if a.is_open and a.def.kind == "ride":
+			return true
+	return false
+
+
+## Straf 0..price_penalty_max for entré over forventet.
+func price_penalty() -> float:
+	var expected: float = balance.expected_entry_fee_per_score * attraction_score()
+	if expected <= 0.0:
+		return 0.0
+	return clampf((entry_fee - expected) / expected * balance.price_penalty_factor, 0.0, balance.price_penalty_max)
+
+
+## Gæster pr. dag (park.json-model). 0 uden sti ved indgangen eller uden åben forlystelse.
+## I fast_spawn-tilstand: day_ticks / spawn_interval_ticks.
+func expected_guests_per_day() -> float:
+	if not _entrance_connected() or not _has_open_ride():
+		return 0.0
+	if fixed_spawn:
+		return float(balance.day_ticks) / maxi(1, spawn_interval_ticks)
+	var rep_mult: float = balance.reputation_mult_base + reputation / 100.0
+	var rate: float = balance.spawn_per_score * attraction_score() * rep_mult * (1.0 - price_penalty())
+	return clampf(rate, balance.spawn_min_per_day, balance.spawn_max_per_day)
+
+
+func current_max_guests() -> int:
+	if fixed_spawn:
+		return max_guests
+	var cap: int = 0
+	for a in attractions:
+		if a.is_open:
+			cap += a.def.capacity
+	return balance.max_guests_base + int(floor(cap * balance.max_guests_per_capacity))
+
+
 func get_stats() -> Dictionary:
 	var total: float = 0.0
 	for g: Guest in guests.values():
@@ -136,6 +198,10 @@ func get_stats() -> Dictionary:
 		"avg_happiness": total / guests.size() if not guests.is_empty() else 0.0,
 		"money": economy.money,
 		"day": day,
+		"reputation": reputation,
+		"attraction_score": attraction_score(),
+		"guests_per_day": expected_guests_per_day(),
+		"max_guests": current_max_guests(),
 	}
 
 
@@ -213,10 +279,15 @@ func _on_tick(_tick: int) -> void:
 	if day_tick >= balance.day_ticks:
 		day_tick = 0
 		_end_day()
-	_spawn_counter += 1
-	if _spawn_counter >= spawn_interval_ticks:
-		_spawn_counter = 0
-		_try_spawn()
+	if fixed_spawn:
+		_spawn_counter += 1
+		if _spawn_counter >= spawn_interval_ticks:
+			_spawn_counter = 0
+			_try_spawn()
+	elif guests.size() < current_max_guests():
+		var rate: float = expected_guests_per_day()
+		if rate > 0.0 and rng.randf() < rate / balance.day_ticks:
+			_try_spawn()
 	for a in attractions:
 		a.tick()
 	var ids: Array = guests.keys()
@@ -270,7 +341,7 @@ func _entrance_connected() -> bool:
 
 
 func _try_spawn() -> void:
-	if guests.size() >= max_guests or not _entrance_connected():
+	if guests.size() >= current_max_guests() or not _entrance_connected():
 		return
 	var g := Guest.new(_next_guest_id, world.entrance)
 	_next_guest_id += 1
@@ -414,6 +485,10 @@ func _start_leaving(g: Guest) -> void:
 
 func _remove_guest(g: Guest) -> void:
 	guests.erase(g.id)
+	var before: float = reputation
+	reputation = clampf(reputation + (g.happiness - reputation) * balance.reputation_learn_rate, 0.0, 100.0)
+	if reputation != before:
+		reputation_changed.emit(reputation)
 	guest_removed.emit(g.id)
 
 
