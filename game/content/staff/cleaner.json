@@ -1,1 +1,1 @@
-{"id": "cleaner", "name": "Rengøring", "wage_per_day": 60, "speed": 0.1, "work_radius": 12, "model": "res://scenes/props/cleaner.tscn"}
+{"id": "cleaner", "name": "Rengøring", "wage_per_day": 45, "speed": 0.1, "work_radius": 12, "model": "res://scenes/props/cleaner.tscn"}

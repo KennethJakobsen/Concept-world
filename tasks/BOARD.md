@@ -57,6 +57,8 @@
 | T-040 | Hovedmenu, gem/indlæs, personale-panel | ui | ✅ done |
 | T-042 | Bug: omdømme-stjerner som firkanter | ui | ✅ done |
 | T-043 | Affald spredes langs rute | simulation | ✅ done |
+| T-044 | Personale-balance | designer | ✅ done |
+| T-045 | Start i vælg-værktøj | gameplay | ✅ done |
 | T-041 | M3 verifikation | qa | ✅ done |
 
 ## Kommende milepæle

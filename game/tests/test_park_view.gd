@@ -175,3 +175,9 @@ func test_litter_pool_and_smoke() -> void:
 	s.attraction_repaired.emit(a)
 	assert_eq(view.smoke_node_count(), 0)
 	view.free()
+
+
+func test_build_tool_starts_in_select() -> void:
+	var bt := BuildTool.new()
+	assert_eq(bt.tool, BuildTool.TOOL_SELECT)
+	bt.free()

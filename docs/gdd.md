@@ -108,14 +108,14 @@ Konstanter: `game/content/staff_rules.json`. Personale: `game/content/staff/`, d
 ### Personale
 | Type | Løn/dag | Fart (celler/tick) | Radius | Rolle |
 |---|---|---|---|---|
-| Mekaniker | 80 | 0.12 | 0 (hele parken) | reparerer + inspicerer hver 1200. tick (40 ticks) |
-| Rengøring | 60 | 0.10 | 12 | fejer en celle på 20 ticks, tømmer skraldespand på 30 |
+| Mekaniker | 60 | 0.12 | 0 (hele parken) | reparerer + inspicerer hver 2400. tick (40 ticks) |
+| Rengøring | 45 | 0.10 | 12 | fejer en celle på 20 ticks, tømmer skraldespand på 30 |
 | Underholder | 70 | 0.08 | 8 | +0.03 glæde/tick for gæster inden for radius |
 
 Rationale: startparken tjener ca. +700/dag. En mekaniker + en rengøring (140/dag) koster ca. 20 % af det, så det mærkes, men kan betale sig. En underholder (70) svarer til ca. 12 karruselture.
 
 ### Nedbrud
-Efter hver tur: nedbrud med sandsynligheden `1 − reliability`. Shops og toiletter går ikke i stykker (reliability = 1, når feltet mangler). En inspektion giver +0.01 midlertidig pålidelighed (`inspection_reliability_bonus`, højst 1.0) indtil næste nedbrud.
+Efter hver tur: nedbrud med sandsynligheden `1 − reliability`. Shops og toiletter går ikke i stykker (reliability = 1, når feltet mangler). En inspektion giver +0.002 akkumuleret pålidelighed (`inspection_reliability_bonus`, højst 1.0) indtil næste nedbrud.
 | Forlystelse | reliability | repair_ticks | ture/dag (2400/ride_ticks) | forventede nedbrud/dag |
 |---|---|---|---|---|
 | Karrusel | 0.985 | 150 | 12 | 0.18 |
@@ -128,7 +128,7 @@ Uden mekaniker står karrusellen typisk i stykker fra dag 4–6 (1/0.18 ≈ 5,5 
 
 ### Affald
 - Efter køb i shop: affald med sandsynligheden `litter_chance_after_shop` 0.5, eller 0.1 hvis der er en skraldespand inden for `bin_radius` 4 celler. En spand rummer 20 stk. og kræver derefter tømning.
-- Op til 5 stk. pr. sti-celle. Celle med ≥ `dirty_threshold` 2 er beskidt: gæster der går der, mister 0.05 glæde/tick og får tanken "Her er beskidt!".
+- Op til 5 stk. pr. sti-celle. Celle med ≥ `dirty_threshold` 2 er beskidt: gæster der går der, mister 0.15 glæde/tick og får tanken "Her er beskidt!".
 - Forventning i startparken: ~50 gæster × ~2 køb = 100 køb/dag → ~50 affald/dag uden spande, ~10 med. En rengøring fjerner ~120 stk./dag (20 ticks pr. celle inkl. gang ⇒ rigeligt). Uden rengøring bliver stierne nær boderne beskidte på dag 1–2.
 
 ### Dekoration
@@ -151,3 +151,11 @@ Gokart har høj excitement og lav pålidelighed, så det trækker gæster men kr
 
 ### Balance-forventning (beregnet, ikke målt)
 Startpark + mekaniker + rengøring: dagsnetto ≈ 754 − 140 − ~2 % nedbrudstab ≈ +600. Kumuleret fra T-034-målingen: dag 1 ≈ −1585, dag 2 ≈ −1107, dag 3 ≈ −560, dag 4 ≈ +87 ⇒ **break-even dag 4**. Ansættes personalet først på dag 2, kommer break-even på dag 3–4.
+
+### Personale-balance (T-044)
+Ændringer: løn mekaniker 80→60, rengøring 60→45. `inspection_reliability_bonus` 0.01→0.002 og `mechanic_inspect_interval_ticks` 1200→2400. Før akkumulerede bonussen til 1.0 på 1 dag, så der var 0 nedbrud; nu er den højst ca. +0.014 på 7 dage. `happiness_penalty_dirty_per_tick` 0.05→0.15. Startpark 7 dage, snit af 5 seeds (balance.sh):
+| | Penge d7 | Omdømme | Gæster | Glæde | Nedbrud | Ødelagt-dage |
+|---|---|---|---|---|---|---|
+| Uden personale | 982 | 58.3 | 204 | 71.8 | 0.8 | 3.97 |
+| Med mek.+reng.+2 spande | 4309 | 75.4 | 373 | 83.2 | 1.0 | 0.06 |
+Med personale (løn 105/dag): kumuleret −1594 / −994 / −445 / +238 → break-even dag 4. Selv uden nedbrud (seed 12345) koster personalet nu kun ~830 på 7 dage, og omdømmet er +16 højere.

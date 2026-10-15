@@ -106,6 +106,7 @@ func _run() -> void:
 	var pm_count: Array = [0]
 	sel.connect("pause_menu_requested", func() -> void: pm_count[0] += 1)
 	# Esc-routing: værktøj → select; select → pause-menu; Esc igen lukker (ikke dobbelt-håndteret)
+	_check(bt.get("tool") == "select", "ny park starter i select-værktøj")
 	bt.call("set_tool", "path")
 	await _esc()
 	_check(bt.get("tool") == "select" and not hud.call("is_pause_menu_open"), "Esc med værktøj → select, ingen pause-menu")

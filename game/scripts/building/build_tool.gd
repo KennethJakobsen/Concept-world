@@ -27,7 +27,7 @@ const GUEST_PICK_RADIUS: float = 0.5
 @export var camera_path: NodePath
 @export var selection_path: NodePath
 
-var tool: String = TOOL_PATH
+var tool: String = TOOL_SELECT
 var _view: ParkView
 var _camera: Camera3D
 var _selection: Selection
