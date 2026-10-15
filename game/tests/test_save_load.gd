@@ -105,7 +105,7 @@ func test_migration_v0_to_v1() -> void:
 			g["needs_" + k] = g["needs"][k]
 		g.erase("needs")
 	var m: Dictionary = SaveMigrations.migrate(v0)
-	assert_eq(m["save_version"], 1)
+	assert_eq(m["save_version"], SaveMigrations.CURRENT)
 	assert_true(m.has("park"))
 	var b := ParkSim.from_save(v0)
 	assert_true(b != null)

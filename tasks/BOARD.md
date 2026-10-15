@@ -90,7 +90,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | Task | Titel | Agent | Status |
 |---|---|---|---|
 | T-065 | Data: forskning, scenarier, rutsjebane | designer | review |
-| T-066 | Sim: forskning + save v2 | simulation | todo |
+| T-066 | Sim: forskning + save v2 | simulation | review |
 | T-067 | Sim: scenarier, mål, sejr/nederlag | simulation | todo |
 | T-068 | Sim: rutsjebane (bane, fysik, ratings) | simulation | todo |
 | T-069 | Grafik: procedurel bane, tog, station | graphics | todo |

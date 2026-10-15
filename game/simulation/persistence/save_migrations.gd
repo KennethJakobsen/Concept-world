@@ -3,7 +3,7 @@ extends RefCounted
 ## Versionstrin for savefiler. Tilføj et trin pr. ny save_version:
 ##   1) hæv CURRENT, 2) tilføj `static func _v<N>_to_v<N+1>(d) -> Dictionary`, 3) registrér i _step().
 
-const CURRENT: int = 1
+const CURRENT: int = 2
 
 
 ## Migrerer en (evt. ældre) save til CURRENT. Returnerer {} hvis versionen er ukendt/nyere.
@@ -25,6 +25,8 @@ static func _step(from_version: int, d: Dictionary) -> Dictionary:
 	match from_version:
 		0:
 			return _v0_to_v1(d)
+		1:
+			return _v1_to_v2(d)
 	push_error("SaveMigrations: intet trin fra v%d" % from_version)
 	return {}
 
@@ -47,3 +49,25 @@ static func _v0_to_v1(d: Dictionary) -> Dictionary:
 					gd.erase(k)
 			gd["needs"] = needs
 	return {"save_version": 0, "game_version": "0.2", "created": "", "park": park}
+
+
+## v1 → v2 (M5): forskning (tom = slået fra, alt låst op), scenarie (null = sandbox),
+## rutsjebanefelter på attraktioner.
+static func _v1_to_v2(d: Dictionary) -> Dictionary:
+	var out: Dictionary = d.duplicate(true)
+	var park: Dictionary = SaveCodec.dict(out, "park")
+	if not park.has("research"):
+		park["research"] = {}
+	if not park.has("scenario"):
+		park["scenario"] = null
+	for a: Variant in SaveCodec.arr(park, "attractions"):
+		if a is Dictionary:
+			var ad: Dictionary = a
+			if not ad.has("cells"):
+				ad["cells"] = []
+			if not ad.has("track"):
+				ad["track"] = null
+			if not ad.has("ratings"):
+				ad["ratings"] = {}
+	out["park"] = park
+	return out

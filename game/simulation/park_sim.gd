@@ -19,12 +19,15 @@ signal warning(code: StringName, data: Dictionary)
 signal purchase_made(guest_id: int, building_id: int, amount: int)
 signal litter_swept(cell: Vector2i)
 signal ride_cycle_started(attraction_id: int)
+## T-066 (M5)
+signal research_unlocked(item_id: String)
 
 const PHASE_DAWN: StringName = &"dawn"
 const PHASE_DAY: StringName = &"day"
 const PHASE_DUSK: StringName = &"dusk"
 const PHASE_NIGHT: StringName = &"night"
 const WARN_BROKEN_NO_MECHANIC: StringName = &"broken_no_mechanic"
+const WARN_RESEARCH_DONE: StringName = &"research_done"
 
 const NEED_THOUGHTS: Dictionary = {
 	"hunger": "Jeg er sulten!",
@@ -51,6 +54,8 @@ var entry_fee: int = 0
 var day_tick: int = 0  ## ticks ind i nuværende dag
 var staff: Dictionary = {}  ## id -> Staff
 var decor: Dictionary = {}  ## id -> Decor
+## Forskning (T-066). Slået fra som default (alt låst op); scenarier slår den til.
+var research: Research
 
 ## Konfiguration
 ## Fast spawn-interval (legacy/tests). At sætte feltet slår fast_spawn til.
@@ -102,6 +107,8 @@ func _init(width: int, height: int, p_seed: int, p_balance: Balance = null) -> v
 	world.attraction_placed.connect(_on_attraction_placed)
 	world.tile_changed.connect(_on_tile_changed)
 	world.attraction_removed.connect(_on_attraction_removed)
+	research = Research.new()
+	research.setup(false)
 	_phase = phase()
 
 
@@ -129,6 +136,8 @@ func cmd_remove_path(cell: Vector2i) -> bool:
 
 func cmd_place_attraction(def_id: String, origin: Vector2i) -> Attraction:
 	var def: AttractionDef = get_def(def_id)
+	if def == null or not is_unlocked(def_id):
+		return null
 	if not world.can_place_attraction(def, origin) or not economy.can_afford(def.build_cost):
 		return null
 	economy.spend(def.build_cost, "build")
@@ -442,6 +451,7 @@ func _end_day() -> void:
 		var w: int = (staff[sid] as Staff).def.wage_per_day
 		if w > 0:
 			economy.charge(w, "wages")
+	_research_day()
 	economy.close_day(day)
 	day += 1
 	day_passed.emit(day)
@@ -874,6 +884,8 @@ func can_place_decor(def: DecorDef, cell: Vector2i) -> bool:
 ## Returnerer decor-id eller -1 (ugyldig celle / ikke råd).
 func cmd_place_decor(def_id: String, cell: Vector2i) -> int:
 	var def: DecorDef = get_decor_def(def_id)
+	if not is_unlocked(def_id):
+		return -1
 	if not can_place_decor(def, cell) or not economy.can_afford(def.build_cost):
 		return -1
 	economy.spend(def.build_cost, "decor")
@@ -1024,6 +1036,35 @@ func broken_count() -> int:
 	return n
 
 
+# --- Forskning (T-066) ---
+
+## Altid true når forskning er slået fra.
+func is_unlocked(id: String) -> bool:
+	return research.is_unlocked(id)
+
+
+func cmd_set_research_funding(level: int) -> bool:
+	return research.set_funding(level)
+
+
+## "" = ingen prioritet.
+func cmd_set_research_priority(topic_id: String) -> bool:
+	return research.set_priority(topic_id)
+
+
+func research_status() -> Dictionary:
+	return research.status()
+
+
+func _research_day() -> void:
+	var cost: int = research.daily_cost()
+	if cost > 0:
+		economy.charge(cost, "research")
+	for id in research.advance_day():
+		research_unlocked.emit(id)
+		warning.emit(WARN_RESEARCH_DONE, {"item_id": id})
+
+
 # --- Save/load (T-036) ---
 # Udvidelse (T-037+): tilføj en nøgle i _park_to_save() og læs den i _park_load()
 # (med default hvis den mangler). Kræver det en formatændring der ikke er bagudkompatibel,
@@ -1093,6 +1134,7 @@ func _park_to_save() -> Dictionary:
 		"decor": _decor_to_save(),
 		"next_staff_id": _next_staff_id,
 		"next_decor_id": _next_decor_id,
+		"research": research.to_save(),
 		"config": {
 			"spawn_interval_ticks": spawn_interval_ticks, "max_guests": max_guests,
 			"fixed_spawn": fixed_spawn, "guest_speed": SaveCodec.f(guest_speed),
@@ -1158,6 +1200,7 @@ func _park_load(park: Dictionary) -> void:
 		decor[dc.id] = dc
 	_next_staff_id = int(park.get("next_staff_id", 1))
 	_next_decor_id = int(park.get("next_decor_id", 1))
+	research.load_save(SaveCodec.dict(park, "research"))
 	_aura_dirty = true
 	_reachable_dirty = true
 	_phase = phase()
