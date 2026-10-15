@@ -111,7 +111,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-080 | M6 kontrakt, ADR-004 og tasks | architect | ✅ done |
 | T-081 | Data: 14 bygninger, intensity/nausea, præmier, bærbare ting | designer | todo |
 | T-082 | Data: spor til tømmerrende, minitog og svævebane | designer | todo |
-| T-083 | Grafik: props med tema-elementer til 14 bygninger | graphics | todo |
+| T-083 | Grafik: props med tema-elementer til 14 bygninger | graphics | review |
 | T-084 | Sim: intensity, kvalme, opkast + save v3 | simulation | todo |
 | T-085 | Sim: sideshows og præmier | simulation | todo |
 | T-086 | Sim: bærbare ting (ballon, souvenir, præmier) | simulation | todo |

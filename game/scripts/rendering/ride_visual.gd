@@ -103,6 +103,14 @@ const BULB_ANCHORS: Dictionary = {
 	"GoKarts": ["Banner", "Wall0", "Wall1", "Wall2", "Wall3", "Wall4"],
 	"HauntedHouse": ["Eaves"],
 	"SwingRide": ["Top/Canopy"],
+	# T-083 (M6)
+	"BouncyCastle": ["Castle/WallBack", "Castle/WallL", "Castle/WallR"],
+	"Teacups": ["Platter/Disc"],
+	"SkyRings": ["Beam"],
+	"PirateShip": ["Base"],
+	"SpaceRocket": ["Base"],
+	"DropTower": ["Pad"],
+	"SouvenirShop": ["Hut"],
 }
 const BULB_SPACING: float = 0.35
 const BULB_MIN: int = 8

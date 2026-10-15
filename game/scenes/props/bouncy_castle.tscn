@@ -1,0 +1,372 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/rendering/ride_visual.gd" id="1_p4ts7"]
+[ext_resource type="Texture2D" path="res://assets/textures/plaster.png" id="2_wq2dd"]
+[ext_resource type="Script" path="res://scripts/rendering/oscillator.gd" id="3_4da3y"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ot2nm"]
+resource_name = "green"
+albedo_color = Color(0.38, 0.72, 0.4, 1)
+albedo_texture = ExtResource("2_wq2dd")
+roughness = 0.75
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+texture_filter = 5
+
+[sub_resource type="BoxMesh" id="BoxMesh_myt16"]
+material = SubResource("StandardMaterial3D_ot2nm")
+size = Vector3(1.9, 0.1, 1.9)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pgj4u"]
+resource_name = "blue"
+albedo_color = Color(0.3, 0.5, 0.88, 1)
+albedo_texture = ExtResource("2_wq2dd")
+roughness = 0.75
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+texture_filter = 5
+
+[sub_resource type="BoxMesh" id="BoxMesh_dtvw7"]
+material = SubResource("StandardMaterial3D_pgj4u")
+size = Vector3(1.6, 0.3, 1.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cord3"]
+resource_name = "red"
+albedo_color = Color(0.88, 0.26, 0.24, 1)
+albedo_texture = ExtResource("2_wq2dd")
+roughness = 0.75
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+texture_filter = 5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_q4ogm"]
+material = SubResource("StandardMaterial3D_cord3")
+top_radius = 0.2
+bottom_radius = 0.22
+height = 0.9
+radial_segments = 16
+rings = 1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3u5go"]
+resource_name = "yellow"
+albedo_color = Color(0.98, 0.84, 0.25, 1)
+albedo_texture = ExtResource("2_wq2dd")
+roughness = 0.75
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+texture_filter = 5
+
+[sub_resource type="SphereMesh" id="SphereMesh_ytwqs"]
+material = SubResource("StandardMaterial3D_3u5go")
+radius = 0.22
+height = 0.22
+radial_segments = 14
+rings = 7
+is_hemisphere = true
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_6jo3r"]
+material = SubResource("StandardMaterial3D_3u5go")
+top_radius = 0.2
+bottom_radius = 0.22
+height = 0.9
+radial_segments = 16
+rings = 1
+
+[sub_resource type="SphereMesh" id="SphereMesh_tjo3p"]
+material = SubResource("StandardMaterial3D_cord3")
+radius = 0.22
+height = 0.22
+radial_segments = 14
+rings = 7
+is_hemisphere = true
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hovlf"]
+material = SubResource("StandardMaterial3D_cord3")
+top_radius = 0.2
+bottom_radius = 0.22
+height = 0.9
+radial_segments = 16
+rings = 1
+
+[sub_resource type="SphereMesh" id="SphereMesh_t21hg"]
+material = SubResource("StandardMaterial3D_3u5go")
+radius = 0.22
+height = 0.22
+radial_segments = 14
+rings = 7
+is_hemisphere = true
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wux0r"]
+material = SubResource("StandardMaterial3D_3u5go")
+top_radius = 0.2
+bottom_radius = 0.22
+height = 0.9
+radial_segments = 16
+rings = 1
+
+[sub_resource type="SphereMesh" id="SphereMesh_7gjxu"]
+material = SubResource("StandardMaterial3D_cord3")
+radius = 0.22
+height = 0.22
+radial_segments = 14
+rings = 7
+is_hemisphere = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_j0mw5"]
+material = SubResource("StandardMaterial3D_cord3")
+size = Vector3(1.3, 0.5, 0.18)
+
+[sub_resource type="BoxMesh" id="BoxMesh_i4qpj"]
+material = SubResource("StandardMaterial3D_3u5go")
+size = Vector3(0.18, 0.5, 1.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_dkcc2"]
+material = SubResource("StandardMaterial3D_3u5go")
+size = Vector3(0.18, 0.5, 1.3)
+
+[sub_resource type="TorusMesh" id="TorusMesh_xg7kh"]
+material = SubResource("StandardMaterial3D_cord3")
+inner_radius = 0.3
+outer_radius = 0.42
+rings = 16
+ring_segments = 6
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u826s"]
+resource_name = "pink"
+albedo_color = Color(0.95, 0.58, 0.68, 1)
+albedo_texture = ExtResource("2_wq2dd")
+roughness = 0.75
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+texture_filter = 5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_4v4ob"]
+material = SubResource("StandardMaterial3D_u826s")
+top_radius = 0.3
+bottom_radius = 0.34
+height = 0.8
+radial_segments = 16
+rings = 1
+
+[sub_resource type="TorusMesh" id="TorusMesh_trhmm"]
+material = SubResource("StandardMaterial3D_3u5go")
+inner_radius = 0.26
+outer_radius = 0.38
+rings = 16
+ring_segments = 6
+
+[sub_resource type="SphereMesh" id="SphereMesh_1skm4"]
+material = SubResource("StandardMaterial3D_3u5go")
+radius = 0.32
+height = 0.64
+radial_segments = 14
+rings = 7
+
+[sub_resource type="SphereMesh" id="SphereMesh_bhcta"]
+material = SubResource("StandardMaterial3D_3u5go")
+radius = 0.1984
+height = 0.3968
+radial_segments = 14
+rings = 7
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gu5h0"]
+resource_name = "orange"
+albedo_color = Color(0.98, 0.55, 0.18, 1)
+albedo_texture = ExtResource("2_wq2dd")
+roughness = 0.75
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+texture_filter = 5
+
+[sub_resource type="BoxMesh" id="BoxMesh_sincd"]
+material = SubResource("StandardMaterial3D_gu5h0")
+size = Vector3(0.16, 0.0512, 0.128)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_6j5cf"]
+material = SubResource("StandardMaterial3D_3u5go")
+top_radius = 0.0
+bottom_radius = 0.096
+height = 0.16
+radial_segments = 8
+rings = 1
+
+[sub_resource type="SphereMesh" id="SphereMesh_rxd3l"]
+material = SubResource("StandardMaterial3D_3u5go")
+radius = 0.128
+height = 0.128
+radial_segments = 10
+rings = 5
+is_hemisphere = true
+
+[sub_resource type="SphereMesh" id="SphereMesh_w3olg"]
+material = SubResource("StandardMaterial3D_3u5go")
+radius = 0.128
+height = 0.128
+radial_segments = 10
+rings = 5
+is_hemisphere = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4geq3"]
+resource_name = "white"
+albedo_color = Color(0.96, 0.95, 0.92, 1)
+albedo_texture = ExtResource("2_wq2dd")
+roughness = 0.75
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+texture_filter = 5
+
+[sub_resource type="SphereMesh" id="SphereMesh_6y0k2"]
+material = SubResource("StandardMaterial3D_4geq3")
+radius = 0.0416
+height = 0.0832
+radial_segments = 8
+rings = 4
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wy3a2"]
+resource_name = "black"
+albedo_color = Color(0.08, 0.08, 0.1, 1)
+albedo_texture = ExtResource("2_wq2dd")
+roughness = 0.75
+uv1_scale = Vector3(2, 2, 2)
+uv1_triplanar = true
+texture_filter = 5
+
+[sub_resource type="SphereMesh" id="SphereMesh_4snof"]
+material = SubResource("StandardMaterial3D_wy3a2")
+radius = 0.0208
+height = 0.0416
+radial_segments = 6
+rings = 3
+
+[sub_resource type="SphereMesh" id="SphereMesh_nt74i"]
+material = SubResource("StandardMaterial3D_4geq3")
+radius = 0.0416
+height = 0.0832
+radial_segments = 8
+rings = 4
+
+[sub_resource type="SphereMesh" id="SphereMesh_tqb8a"]
+material = SubResource("StandardMaterial3D_wy3a2")
+radius = 0.0208
+height = 0.0416
+radial_segments = 6
+rings = 3
+
+[node name="BouncyCastle" type="Node3D" unique_id=200475582]
+script = ExtResource("1_p4ts7")
+metadata/footprint = Vector2i(2, 2)
+
+[node name="Base" type="MeshInstance3D" parent="." unique_id=895919303]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+mesh = SubResource("BoxMesh_myt16")
+
+[node name="Castle" type="Node3D" parent="." unique_id=1744821825]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+script = ExtResource("3_4da3y")
+shape = 1
+amplitude = 0.06
+speed = 5.0
+
+[node name="Floor" type="MeshInstance3D" parent="Castle" unique_id=1567222158]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+mesh = SubResource("BoxMesh_dtvw7")
+
+[node name="Tower0" type="MeshInstance3D" parent="Castle" unique_id=1875781522]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.6, -0.75)
+mesh = SubResource("CylinderMesh_q4ogm")
+
+[node name="TowerCap0" type="MeshInstance3D" parent="Castle" unique_id=1066829721]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 1.05, -0.75)
+mesh = SubResource("SphereMesh_ytwqs")
+
+[node name="Tower1" type="MeshInstance3D" parent="Castle" unique_id=1236379998]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 0.6, -0.75)
+mesh = SubResource("CylinderMesh_6jo3r")
+
+[node name="TowerCap1" type="MeshInstance3D" parent="Castle" unique_id=904507878]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 1.05, -0.75)
+mesh = SubResource("SphereMesh_tjo3p")
+
+[node name="Tower2" type="MeshInstance3D" parent="Castle" unique_id=975647138]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 0.6, 0.75)
+mesh = SubResource("CylinderMesh_hovlf")
+
+[node name="TowerCap2" type="MeshInstance3D" parent="Castle" unique_id=29546543]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.75, 1.05, 0.75)
+mesh = SubResource("SphereMesh_t21hg")
+
+[node name="Tower3" type="MeshInstance3D" parent="Castle" unique_id=547344882]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 0.6, 0.75)
+mesh = SubResource("CylinderMesh_wux0r")
+
+[node name="TowerCap3" type="MeshInstance3D" parent="Castle" unique_id=666546825]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.75, 1.05, 0.75)
+mesh = SubResource("SphereMesh_7gjxu")
+
+[node name="WallBack" type="MeshInstance3D" parent="Castle" unique_id=395099517]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.55, -0.72)
+mesh = SubResource("BoxMesh_j0mw5")
+
+[node name="WallL" type="MeshInstance3D" parent="Castle" unique_id=103899865]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.72, 0.55, 0)
+mesh = SubResource("BoxMesh_i4qpj")
+
+[node name="WallR" type="MeshInstance3D" parent="Castle" unique_id=397589314]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.72, 0.55, 0)
+mesh = SubResource("BoxMesh_dkcc2")
+
+[node name="Arch" type="MeshInstance3D" parent="Castle" unique_id=939219044]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0.3, 0.75)
+mesh = SubResource("TorusMesh_xg7kh")
+
+[node name="Keep" type="MeshInstance3D" parent="Castle" unique_id=408854520]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, -0.45)
+mesh = SubResource("CylinderMesh_4v4ob")
+
+[node name="KeepRim" type="MeshInstance3D" parent="Castle" unique_id=689607069]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -0.45)
+mesh = SubResource("TorusMesh_trhmm")
+
+[node name="Theme" type="Node3D" parent="Castle" unique_id=1491624646]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.38, -0.45)
+
+[node name="Duck" type="Node3D" parent="Castle/Theme" unique_id=1245558588]
+
+[node name="Body" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=1876657114]
+mesh = SubResource("SphereMesh_1skm4")
+
+[node name="Head" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=1361796382]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.304, 0.112)
+mesh = SubResource("SphereMesh_bhcta")
+
+[node name="Beak" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=720934488]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.272, 0.304)
+mesh = SubResource("BoxMesh_sincd")
+
+[node name="Tail" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=1204055818]
+transform = Transform3D(1, 0, 0, 0, 0.64278764, 0.76604444, 0, -0.76604444, 0.64278764, 0, 0.176, -0.304)
+mesh = SubResource("CylinderMesh_6j5cf")
+
+[node name="WingL" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=1793791581]
+transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, -0.2816, 0, 0)
+mesh = SubResource("SphereMesh_rxd3l")
+
+[node name="WingR" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=2129985483]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0.2816, 0, 0)
+mesh = SubResource("SphereMesh_w3olg")
+
+[node name="EyeL" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=1325540193]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0704, 0.352, 0.2304)
+mesh = SubResource("SphereMesh_6y0k2")
+
+[node name="EyePupilL" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=293807740]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0704, 0.352, 0.2616)
+mesh = SubResource("SphereMesh_4snof")
+
+[node name="EyeR" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=1284613597]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0704, 0.352, 0.2304)
+mesh = SubResource("SphereMesh_nt74i")
+
+[node name="EyePupilR" type="MeshInstance3D" parent="Castle/Theme/Duck" unique_id=1175791435]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0704, 0.352, 0.2616)
+mesh = SubResource("SphereMesh_tqb8a")

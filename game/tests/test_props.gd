@@ -4,7 +4,9 @@ const PROPS := ["carousel", "ferris_wheel", "bumper_cars", "burger_stand",
 	"drinks_stand", "ice_cream_stand", "toilet", "thought_bubble",
 	"mechanic", "cleaner", "entertainer", "bin", "bench", "tree_round", "tree_pine",
 	"tree_blossom", "flowers", "lamp", "litter", "swing_ride", "haunted_house", "go_karts",
-	"guest", "entrance"]
+	"guest", "entrance", "bouncy_castle", "teacups", "trampoline", "sky_rings", "pirate_ship",
+	"space_rocket", "drop_tower", "fries_stand", "coffee_stand", "balloon_stand", "souvenir_shop",
+	"coconut_shy", "shooting_gallery", "hook_a_duck", "strength_tester"]
 
 
 func test_all_props_instantiate() -> void:
@@ -53,7 +55,13 @@ func test_lamp_off_by_default() -> void:
 	n.free()
 
 
-const RIDES := ["carousel", "ferris_wheel", "bumper_cars", "swing_ride", "haunted_house", "go_karts"]
+const M6 := ["bouncy_castle", "teacups", "trampoline", "sky_rings", "pirate_ship", "space_rocket",
+	"drop_tower", "fries_stand", "coffee_stand", "balloon_stand", "souvenir_shop", "coconut_shy",
+	"shooting_gallery", "hook_a_duck", "strength_tester"]
+const RIDES := ["carousel", "ferris_wheel", "bumper_cars", "swing_ride", "haunted_house", "go_karts",
+	"bouncy_castle", "teacups", "trampoline", "sky_rings", "pirate_ship", "space_rocket",
+	"drop_tower", "fries_stand", "coffee_stand", "balloon_stand", "souvenir_shop", "coconut_shy",
+	"shooting_gallery", "hook_a_duck", "strength_tester"]
 const FX := ["breakdown_smoke", "repair_sparks", "coins", "confetti", "build_dust", "sweep_dust"]
 
 
