@@ -101,7 +101,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-074 | Grafik: stiliserede bygninger med tema-elementer | graphics | review |
 | T-075 | Balance: rutsjebane-ratings og scenarier | designer | in-progress |
 | T-076 | Bug: rengøringsfolk løber i flok (opgavereservation) | simulation | review |
-| T-077 | Bug: test_ui_m5 forældet efter T-075-data | ui | todo |
+| T-077 | Bug: test_ui_m5 forældet efter T-075-data | ui | review |
 | T-078 | Balance: Floddalen/Bjergtoppen kan ikke vindes | designer | todo |
 
 ## Kommende milepæle

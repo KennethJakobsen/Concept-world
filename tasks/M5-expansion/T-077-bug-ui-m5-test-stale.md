@@ -14,3 +14,5 @@
 
 ## Log
 - 2026-10-15 – qa: oprettet under T-072
+
+- 2026-10-15 (ui): Testen finder nu selv et låst build-id via hud.is_build_locked i stedet for hardcodet ferris_wheel. test.sh: 236/0. -> review
