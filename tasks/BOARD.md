@@ -99,10 +99,10 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-072 | M5 verifikation | qa | review |
 | T-073 | Bug: rutsjebanestationens tag vender forkert | graphics | ✅ done |
 | T-074 | Grafik: stiliserede bygninger med tema-elementer | graphics | review |
-| T-075 | Balance: rutsjebane-ratings og scenarier | designer | in-progress |
+| T-075 | Balance: rutsjebane-ratings og scenarier | designer | review |
 | T-076 | Bug: rengøringsfolk løber i flok (opgavereservation) | simulation | review |
 | T-077 | Bug: test_ui_m5 forældet efter T-075-data | ui | review |
-| T-078 | Balance: Floddalen/Bjergtoppen kan ikke vindes | designer | todo |
+| T-078 | Balance: Floddalen/Bjergtoppen kan ikke vindes | designer | review |
 
 ## M6 – Mere indhold  ([kontrakt](M6-content/_CONTRACT.md), [ADR-004](../docs/adr/ADR-004-track-systems.md))
 | Task | Titel | Agent | Status |
