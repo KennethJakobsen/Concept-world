@@ -17,14 +17,14 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	var input := Vector2(
-		Input.get_axis(&"ui_left", &"ui_right"),
-		Input.get_axis(&"ui_up", &"ui_down"))
+		Input.get_axis(&"cam_left", &"cam_right"),
+		Input.get_axis(&"cam_forward", &"cam_back"))  # forward = -Z (væk fra seeren)
 	var dir := (transform.basis * Vector3(input.x, 0.0, input.y))
 	dir.y = 0.0
 	position += dir.normalized() * move_speed * delta if dir.length() > 0.0 else Vector3.ZERO
-	if Input.is_key_pressed(KEY_Q):
+	if Input.is_action_pressed(&"cam_rotate_left"):
 		rotate_y(rotate_speed * delta)
-	if Input.is_key_pressed(KEY_E):
+	if Input.is_action_pressed(&"cam_rotate_right"):
 		rotate_y(-rotate_speed * delta)
 
 

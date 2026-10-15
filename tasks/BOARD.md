@@ -23,6 +23,7 @@
 | T-014 | Terræn, picking, props | graphics | ✅ done |
 | T-015 | Bridge og byggeværktøjer | gameplay | ✅ done |
 | T-016 | M1 verifikation | qa | ✅ done |
+| T-017 | Bug: WASD virker ikke | graphics | 🔍 review |
 
 ## Kommende milepæle
 - **M2 Kernesimulation:** behov, køer, priser, økonomi
