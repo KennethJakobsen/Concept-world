@@ -37,3 +37,4 @@ Brugeren ønsker mere stiliserede bygninger i Theme Park-stil, f.eks. en isbod f
 ## Log
 - 2026-10-15 – graphics: oprettet og startet. Gennemgik props. Lavede before-screenshots (opengl3).
 - 2026-10-15 – graphics: tema-elementerne er tilføjet via en generator (rotationsmatricer række-major i .tscn, halvkugler med `is_hemisphere`). Spøgelseshusets veranda er erstattet af kraniet, og de små toppers på boderne er erstattet af de store. Ny test: `test_stylized_buildings.gd`. `./tools/test.sh`: 203 bestået, 0 fejlet. Sat til review, så brugeren kan se det.
+- 2026-10-15 – qa (T-072): Afventer brugerens visuelle bekræftelse.

@@ -16,7 +16,7 @@ func _init() -> void:
 	_m3_compare()
 	for d in ScenarioDef.list_all():
 		if not d.is_sandbox():
-			_scenario_run(d)
+			_scenario_runs(d)
 	quit(0)
 
 
@@ -175,27 +175,84 @@ func _diag(sim: ParkSim) -> void:
 	print("   tanker %s" % thoughts)
 
 
-## T-067: scenarie-run med simpel bot. Bygger en sti ind til midten og en "gade" på tværs; hver morgen
-## bygges den billigste ulåste forlystelse/bod nord for gaden, hvis der er råd (reserve 2000).
-## Forskning på niveau 1. Kører til sejr/nederlag (eller frist; max 120 dage).
-func _scenario_run(def: ScenarioDef) -> void:
-	var sim := ParkSim.new_from_scenario(def, 12345)
+## T-067/T-072: scenarie-bot der spiller "fornuftigt": sti ind til midten og en gade på tværs, mekaniker,
+## rengøring og skraldespande, forskning på niveau 1 med prioritet på rutsjebaner, en simpel oval
+## rutsjebane syd for gaden, så snart stykkerne er låst op, og den billigste ulåste forlystelse/bod
+## nord for gaden hver morgen, hvis der er råd (reserve 2000). Kører til sejr/nederlag (eller frist; max 120 dage).
+const BOT_OVAL: Array[String] = [
+	"track_lift_up", "track_lift_up", "track_lift_up", "track_straight", "track_straight",
+	"track_turn_right", "track_turn_right",
+	"track_down", "track_down", "track_down", "track_straight", "track_straight", "track_straight",
+	"track_turn_right", "track_turn_right",
+]
+const BOT_SEEDS: Array[int] = [12345, 1, 2, 3, 4]
+
+
+func _scenario_runs(def: ScenarioDef) -> void:
+	print("\n=== Scenarie-bot: %s (%s), %d seeds ===" % [def.name, def.id, BOT_SEEDS.size()])
+	var wins: int = 0
+	for sd in BOT_SEEDS:
+		if _scenario_run(def, sd):
+			wins += 1
+	print("Vundet %d/%d" % [wins, BOT_SEEDS.size()])
+
+
+func _bot_coaster(sim: ParkSim, station: Vector2i) -> String:
+	for p in BOT_OVAL:
+		if not sim.is_unlocked(p):
+			return ""
+	var cost: int = sim.get_def("wooden_coaster").build_cost
+	for p in BOT_OVAL:
+		cost += CoasterContent.piece(p).cost
+	cost += CoasterContent.piece(CoasterContent.station_id()).cost
+	if sim.economy.money - cost < 2000:
+		return ""
+	# stationens indgang (nord) skal ligge på gaden og ikke dele celle med en forlystelses indgang
+	var id: int = -1
+	for dx in 30:
+		id = sim.cmd_start_coaster("wooden_coaster", station + Vector2i(dx, 0), 1)
+		if id < 0:
+			continue
+		for p in BOT_OVAL:
+			if not sim.cmd_place_track_piece(id, p):
+				sim.cmd_remove_attraction(id)
+				id = -1
+				break
+		if id >= 0:
+			break
+	if id < 0:
+		return "ingen plads"
+	var errs: Array[String] = sim.cmd_finish_coaster(id)
+	if not errs.is_empty():
+		return "finish %s" % [errs]
+	return "ok E=%.2f" % float(sim.get_attraction(id).ratings.get("excitement", 0.0))
+
+
+func _scenario_run(def: ScenarioDef, p_seed: int) -> bool:
+	var sim := ParkSim.new_from_scenario(def, p_seed)
 	var result: Array = ["kører stadig"]
 	sim.scenario_finished.connect(func(won: bool, reason: String) -> void:
 		result[0] = ("VUNDET" if won else "TABT (%s)" % reason) + " dag %d" % sim.scenario.days_elapsed)
-	sim.cmd_set_research_funding(0)
+	sim.cmd_set_research_funding(1)
+	sim.cmd_set_research_priority("roller_coasters")
 	var c := Vector2i(def.map_size.x / 2, def.map_size.y / 2)
 	var cur: Vector2i = sim.world.entrance
-	sim.economy.money += 0
 	while cur.y != c.y:
 		cur.y += signi(c.y - cur.y)
 		sim.cmd_place_path(cur)
 	while cur.x != c.x:
 		cur.x += signi(c.x - cur.x)
 		sim.cmd_place_path(cur)
-	for x in range(maxi(0, c.x - 24), mini(def.map_size.x, c.x + 25)):
+	var x0: int = maxi(1, c.x - 24)
+	for x in range(x0, mini(def.map_size.x, c.x + 25)):
 		sim.cmd_place_path(Vector2i(x, c.y))
-	var slot_x: Array = [maxi(1, c.x - 24)]
+	sim.cmd_hire_staff("mechanic", c)
+	sim.cmd_hire_staff("cleaner", c + Vector2i(1, 0))
+	sim.cmd_place_decor("bin", Vector2i(c.x - 1, c.y + 1))
+	sim.cmd_place_decor("bin", Vector2i(c.x + 3, c.y + 1))
+	var station := Vector2i(x0 + 2, c.y + 1)
+	var coaster: String = ""
+	var slot_x: Array = [x0]
 	var ids: Array[String] = []
 	for f in DirAccess.get_files_at(ParkSim.ATTRACTION_DIR):
 		if f.ends_with(".json"):
@@ -205,8 +262,11 @@ func _scenario_run(def: ScenarioDef) -> void:
 	var built: Dictionary = {}
 	var day_seconds: float = sim.balance.day_ticks * SimClock.TICK_DELTA
 	var limit: int = def.deadline_days if def.deadline_days > 0 else 120
-	print("\n=== Scenarie-bot: %s (%s) ===" % [def.name, def.id])
 	for d in limit:
+		if not coaster.begins_with("ok"):
+			var r: String = _bot_coaster(sim, station)
+			if r != "":
+				coaster = r + " (dag %d)" % d
 		# byg: den billigste ikke-byggede ulåste; ellers den billigste ulåste igen
 		var best: AttractionDef = null
 		for id in ids:
@@ -231,6 +291,8 @@ func _scenario_run(def: ScenarioDef) -> void:
 	var parts: Array[String] = []
 	for o: Dictionary in st.objectives:
 		parts.append("%s %.1f/%.1f%s" % [o.type, o.current, o.value, " ok" if o.met else ""])
-	print("Resultat: %s | penge %d, omdømme %.1f, gæster %d, forlystelser %d, parkværdi %d" % [result[0],
-		sim.economy.money, sim.reputation, sim.guests.size(), sim.rides_count(), sim.park_value()])
-	print("Mål: %s" % ", ".join(parts))
+	print("seed %d: %s | penge %d, omdømme %.1f, gæster %d, forlystelser %d, parkværdi %d, bane: %s" % [p_seed,
+		result[0], sim.economy.money, sim.reputation, sim.guests.size(), sim.rides_count(), sim.park_value(),
+		coaster if coaster != "" else "ikke bygget"])
+	print("   Mål: %s" % ", ".join(parts))
+	return st.state == &"won"

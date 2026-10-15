@@ -1,6 +1,6 @@
 # T-066: Sim – forskning og save v2
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M5
 - **Agent:** simulation
 - **Afhænger af:** – (brug defaults/test-fixtures, indtil T-065 lander)
@@ -23,3 +23,4 @@ Ejer: `game/simulation/`, sim-tests og fixtures i `game/tests/`. Må ikke røre 
 ## Log
 - 2026-10-15 – architect: oprettet
 - 2026-10-15 – simulation: implementeret. `game/simulation/research/` (`ResearchDef` med defaults fra kontrakten, når `research.json` mangler, og `Research`). `ParkSim.research` er som default slået fra (alt låst op). T-067 slår den til via `setup(true, extra)`. Låste id'er afvises i `cmd_place_attraction`/`cmd_place_decor`. Daglig forskning bogføres som `"research"`. `SaveMigrations.CURRENT = 2` med `_v1_to_v2`, fixture `game/tests/fixtures/save_v1.json`. Tests i `test_research.gd`. `test_economy` accepterer nu `kind "coaster"` (wooden_coaster.json fra T-065). test/integration/balance er grønne.
+- 2026-10-15 – qa (T-072): Forskning, v1-fixture → v2 og determinisme er verificeret (test_research og test_qa_m5). test.sh (235/236. Den eneste fejl er test_ui_m5, se T-077), integration.sh (inkl. ny pck-test af ScenarioDef.list_all), balance.sh, build_web.sh og smoke er grønne. Acceptkriterierne er verificeret, og test_qa_m5.gd dækker dem også. Godkendt.

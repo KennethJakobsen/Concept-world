@@ -1,6 +1,6 @@
 # T-067: Sim – scenarier, mål, sejr/nederlag
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M5
 - **Agent:** simulation
 - **Afhænger af:** T-065, T-066
@@ -28,3 +28,4 @@ Som T-066.
   - `park_value` medregner decor og trækker ikke lån fra, fordi der ikke findes lån i M5 (`start.loan` parses, men bruges ikke).
   - **Balance-bot** (`game/tools/balance_sim.gd`, run pr. scenarie): botten lægger sti + gade og bygger hver morgen den billigste ulåste bygning med 2000 i reserve. Med forskningsfinansiering 0 taber den alle tre: green_meadow på frist (61/150 gæster, omdømme 33), river_valley på frist (3 forlystelser, 354 kr.) og mountain_peak på `money_below` på dag 57. Med finansiering 1 (500/dag) går den fallit tidligere (dag 37/30/14). Scenarierne vindes altså ikke med en naiv strategi. Coaster-målene kan først opfyldes efter T-068. Forskningsprisen på 500/dag er tung i forhold til den tidlige indtjening, så designeren bør kigge på det.
   - Ikke dækket: kontrakten nævner, at `list_all` i en eksporteret build skal testes i integration.sh. Det ligger i `tools/` (QA) og bør tages i T-072.
+- 2026-10-15 – qa (T-072): Scenarier, sejr/nederlag og list_all i eksporteret pck (integration.sh) er ok. test.sh (235/236. Den eneste fejl er test_ui_m5, se T-077), integration.sh (inkl. ny pck-test af ScenarioDef.list_all), balance.sh, build_web.sh og smoke er grønne. Acceptkriterierne er verificeret, og test_qa_m5.gd dækker dem også. Godkendt.

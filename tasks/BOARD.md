@@ -89,18 +89,20 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 ## M5 – Udvidelse  ([kontrakt](M5-expansion/_CONTRACT.md), [ADR-003](../docs/adr/ADR-003-coaster.md))
 | Task | Titel | Agent | Status |
 |---|---|---|---|
-| T-065 | Data: forskning, scenarier, rutsjebane | designer | review |
-| T-066 | Sim: forskning + save v2 | simulation | review |
-| T-067 | Sim: scenarier, mål, sejr/nederlag | simulation | review |
-| T-068 | Sim: rutsjebane (bane, fysik, ratings) | simulation | review |
+| T-065 | Data: forskning, scenarier, rutsjebane | designer | ✅ done |
+| T-066 | Sim: forskning + save v2 | simulation | ✅ done |
+| T-067 | Sim: scenarier, mål, sejr/nederlag | simulation | ✅ done |
+| T-068 | Sim: rutsjebane (bane, fysik, ratings) | simulation | ✅ done |
 | T-069 | Grafik: procedurel bane, tog, station | graphics | ✅ done |
 | T-070 | Gameplay: rutsjebane-værktøj, bridge, scenarie-flow | gameplay | review |
 | T-071 | UI: scenarievalg, mål, forskning, rutsjebane-menu | ui | review |
-| T-072 | M5 verifikation | qa | todo |
+| T-072 | M5 verifikation | qa | review |
 | T-073 | Bug: rutsjebanestationens tag vender forkert | graphics | ✅ done |
 | T-074 | Grafik: stiliserede bygninger med tema-elementer | graphics | review |
-| T-075 | Balance: rutsjebane-ratings og scenarier | designer | review |
+| T-075 | Balance: rutsjebane-ratings og scenarier | designer | in-progress |
 | T-076 | Bug: rengøringsfolk løber i flok (opgavereservation) | simulation | review |
+| T-077 | Bug: test_ui_m5 forældet efter T-075-data | ui | todo |
+| T-078 | Balance: Floddalen/Bjergtoppen kan ikke vindes | designer | todo |
 
 ## Kommende milepæle
 - Ingen planlagt efter M5.

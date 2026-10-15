@@ -1,6 +1,6 @@
 # T-068: Sim – rutsjebane: bane, validering, fysik, ratings
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M5
 - **Agent:** simulation
 - **Afhænger af:** T-065, T-066, T-067 (samme filer, køres sekventielt)
@@ -28,3 +28,4 @@ Som T-066.
   - Intensitets-tolerance pr. gæst: deterministisk ud fra gæste-id inden for `guest_tolerance` (ingen RNG-træk). Sick: tanke "Jeg har kvalme!" + glæde-straf (`sick_happiness_penalty`, default 10).
   - `cmd_place_attraction` afviser `kind: coaster` (brug `cmd_start_coaster`). Fysikkens kurveradius/overgangslængde kan overskrives i trains.json (`curve_radius`, `transition_len`).
   - **Faktiske ratings for simpel oval** (station, 3× kædelift til niveau 3, 2 lige, 2 højre, 3× fald, 3 lige, 2 højre; 16 stykker): længde 17,6 m, 5,1 s, vmax 7,85 m/s, max_g 5,93, max_lat 11,8 → **E 3,30, I 10,0, N 10,0**. Forventet E 4–5, I 3–5, N 2–3. Årsag: med 1 m celler og r = 0,5 m giver v²/(r·g) ekstreme laterale g, og overgangen fald→fladt over 1 m giver ~6 g. Det skal designer balancere (fx `curve_radius`/`transition_len` i trains.json eller lavere `per_max_lat`/`per_max_g`); max_lat > 2,5 halverer også excitement.
+- 2026-10-15 – qa (T-072): Oval/too_slow, kollision, gæster på banen og save-round-trip med tog i bevægelse er ok. test.sh (235/236. Den eneste fejl er test_ui_m5, se T-077), integration.sh (inkl. ny pck-test af ScenarioDef.list_all), balance.sh, build_web.sh og smoke er grønne. Acceptkriterierne er verificeret, og test_qa_m5.gd dækker dem også. Godkendt.
