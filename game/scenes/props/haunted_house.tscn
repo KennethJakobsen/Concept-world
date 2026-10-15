@@ -81,11 +81,11 @@ transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 
 mesh = SubResource("mesh2")
 
 [node name="Roof0" type="MeshInstance3D" parent="."]
-transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.7317, -0.6816, 0.0000, 0.6816, 0.7317, 0.0000, 1.8500, -0.4200)
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.7317, 0.6816, 0.0000, -0.6816, 0.7317, 0.0000, 1.8500, -0.4200)
 mesh = SubResource("mesh3")
 
 [node name="Roof2" type="MeshInstance3D" parent="."]
-transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.7317, 0.6816, 0.0000, -0.6816, 0.7317, 0.0000, 1.8500, 0.4200)
+transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 0.7317, -0.6816, 0.0000, 0.6816, 0.7317, 0.0000, 1.8500, 0.4200)
 mesh = SubResource("mesh4")
 
 [node name="Tower" type="MeshInstance3D" parent="."]
@@ -93,7 +93,7 @@ transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 
 mesh = SubResource("mesh5")
 
 [node name="Spire" type="MeshInstance3D" parent="."]
-transform = Transform3D(1.0000, 0.0000, 0.0000, 0.0000, 1.0000, 0.0000, 0.0000, 0.0000, 1.0000, -0.9000, 3.0500, -0.3000)
+transform = Transform3D(0.7071, 0.0000, 0.7071, 0.0000, 1.0000, 0.0000, -0.7071, 0.0000, 0.7071, -0.9000, 3.0500, -0.3000)
 mesh = SubResource("mesh6")
 
 [node name="Door" type="MeshInstance3D" parent="."]
