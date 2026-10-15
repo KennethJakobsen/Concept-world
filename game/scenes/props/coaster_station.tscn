@@ -62,12 +62,12 @@ mesh = SubResource("post")
 surface_material_override/0 = ExtResource("wood")
 
 [node name="RoofL" type="MeshInstance3D" parent="."]
-transform = Transform3D(0.9659, 0.2588, 0, -0.2588, 0.9659, 0, 0, 0, 1, -0.27, 1.45, 0)
+transform = Transform3D(0.9659, -0.2588, 0, 0.2588, 0.9659, 0, 0, 0, 1, -0.27, 1.45, 0)
 mesh = SubResource("roof")
 surface_material_override/0 = ExtResource("roof")
 
 [node name="RoofR" type="MeshInstance3D" parent="."]
-transform = Transform3D(0.9659, -0.2588, 0, 0.2588, 0.9659, 0, 0, 0, 1, 0.27, 1.45, 0)
+transform = Transform3D(0.9659, 0.2588, 0, -0.2588, 0.9659, 0, 0, 0, 1, 0.27, 1.45, 0)
 mesh = SubResource("roof")
 surface_material_override/0 = ExtResource("roof")
 
