@@ -86,8 +86,20 @@
 
 M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 
+## M5 – Udvidelse  ([kontrakt](M5-expansion/_CONTRACT.md), [ADR-003](../docs/adr/ADR-003-coaster.md))
+| Task | Titel | Agent | Status |
+|---|---|---|---|
+| T-065 | Data: forskning, scenarier, rutsjebane | designer | todo |
+| T-066 | Sim: forskning + save v2 | simulation | todo |
+| T-067 | Sim: scenarier, mål, sejr/nederlag | simulation | todo |
+| T-068 | Sim: rutsjebane (bane, fysik, ratings) | simulation | todo |
+| T-069 | Grafik: procedurel bane, tog, station | graphics | todo |
+| T-070 | Gameplay: rutsjebane-værktøj, bridge, scenarie-flow | gameplay | todo |
+| T-071 | UI: scenarievalg, mål, forskning, rutsjebane-menu | ui | todo |
+| T-072 | M5 verifikation | qa | todo |
+
 ## Kommende milepæle
-- **M5 Udvidelse:** forskning, scenarier, rutsjebane-bygger
+- Ingen planlagt efter M5.
 
 ## Åbne punkter / backlog
 - Ingen. (Startpark-nedbrud → T-047, pærer → T-062, grid → T-063, tools i web-build → T-064.)
