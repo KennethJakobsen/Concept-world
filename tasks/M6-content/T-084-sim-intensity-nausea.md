@@ -17,3 +17,4 @@ Mekanik B for alle forlystelser og save-version 3 (kontrakt §1). Se `tasks/M6-c
 
 ## Log
 - 2026-10-15 – architect: oprettet
+- 2026-10-15 – simulation: test_real_content_parses tillader nu M6-kinds (sideshow, flume, train, transport)
