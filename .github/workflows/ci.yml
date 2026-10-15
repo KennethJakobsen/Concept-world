@@ -1,0 +1,20 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  test-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { lfs: true }
+      - name: Install Godot 4.7.2 + templates
+        run: |
+          V=4.7.2-stable
+          wget -q https://github.com/godotengine/godot/releases/download/$V/Godot_v${V}_linux.x86_64.zip
+          unzip -q Godot_v${V}_linux.x86_64.zip && sudo mv Godot_v${V}_linux.x86_64 /usr/local/bin/godot
+          wget -q https://github.com/godotengine/godot/releases/download/$V/Godot_v${V}_export_templates.tpz
+          D=~/.local/share/godot/export_templates/4.7.2.stable && mkdir -p $D
+          unzip -q Godot_v${V}_export_templates.tpz && mv templates/* $D/
+      - run: ./tools/test.sh
+      - run: ./tools/build_web.sh
+      - uses: actions/upload-artifact@v4
+        with: { name: web, path: build/web }
