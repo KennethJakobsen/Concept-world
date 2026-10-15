@@ -1,6 +1,6 @@
 # T-012: Simulation – Attraktion (karrusel)
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M1
 - **Agent:** simulation
 - **Afhænger af:** T-010
@@ -18,3 +18,4 @@ Datadrevet attraktion med footprint, indgangscelle, kø, kapacitet og cyklus.
 - [x] Tests: placering/kollision, kø → ride → finish efter ride_ticks, kapacitet respekteres
 - 2026-10-15 – simulation: startet
 - 2026-10-15 – simulation: implementeret med tests, ./tools/test.sh grøn (17 tests) → review
+- 2026-10-15 – qa: kode gennemgået mod API-kontrakt, tests 18/18 grønne, smoke + web-build OK → done

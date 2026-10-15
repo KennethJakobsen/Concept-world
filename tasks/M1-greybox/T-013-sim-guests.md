@@ -1,6 +1,6 @@
 # T-013: Simulation – Gæster der går rundt
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M1
 - **Agent:** simulation
 - **Afhænger af:** T-011, T-012
@@ -21,3 +21,4 @@ Gæster spawner ved indgangen, vælger en attraktion (eller vandrer på stier), 
 - [x] Tests: gæst når attraktion og kører; deterministisk ved samme seed; gæst forlader parken; ingen gæster spawner uden sti fra indgang
 - 2026-10-15 – simulation: startet
 - 2026-10-15 – simulation: implementeret med tests, ./tools/test.sh grøn (17 tests) → review
+- 2026-10-15 – qa: kode gennemgået mod API-kontrakt, tests 18/18 grønne, smoke + web-build OK → done

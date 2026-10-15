@@ -1,6 +1,6 @@
 # T-014: Grafik – Terræn, grid-overlay, musepicking og placeholder-meshes
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M1
 - **Agent:** graphics
 - **Afhænger af:** T-009
@@ -20,3 +20,4 @@ Visuelt fundament til byggeri. Må ikke afhænge af simulationen.
 
 ## Log
 - 2026-10-15 – graphics: GridPicker, CellHighlight, grid-shader på jord (64×64, hjørne i 0,0), props (path_tile, carousel, guest, entrance); kamera start (32,0,40). Test+web-build grøn.
+- 2026-10-15 – qa: kode gennemgået mod API-kontrakt, tests 18/18 grønne, smoke + web-build OK → done

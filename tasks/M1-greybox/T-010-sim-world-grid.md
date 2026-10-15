@@ -1,6 +1,6 @@
 # T-010: Simulation – ParkWorld grid og stier
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M1
 - **Agent:** simulation
 - **Afhænger af:** T-004
@@ -24,3 +24,4 @@ Rent data-grid for parken, som alle andre systemer bygger på.
 - [x] Tests: grænser, placér/fjern sti, kan ikke placere oven på attraktion/indgang, signal udsendes
 - 2026-10-15 – simulation: startet
 - 2026-10-15 – simulation: implementeret med tests, ./tools/test.sh grøn (17 tests) → review
+- 2026-10-15 – qa: kode gennemgået mod API-kontrakt, tests 18/18 grønne, smoke + web-build OK → done

@@ -1,6 +1,6 @@
 # T-011: Simulation – Pathfinding på stier
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M1
 - **Agent:** simulation
 - **Afhænger af:** T-010
@@ -18,3 +18,4 @@ A* over sti-celler (PATH, ENTRANCE og attraktioners indgangscelle). 4-naboskab.
 - [x] Tests: lige vej, omvej, ingen vej, opdatering efter fjernet sti
 - 2026-10-15 – simulation: startet
 - 2026-10-15 – simulation: implementeret med tests, ./tools/test.sh grøn (17 tests) → review
+- 2026-10-15 – qa: kode gennemgået mod API-kontrakt, tests 18/18 grønne, smoke + web-build OK → done

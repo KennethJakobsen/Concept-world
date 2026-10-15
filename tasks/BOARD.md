@@ -16,13 +16,13 @@
 ## M1 – Gråboks
 | Task | Titel | Agent | Status |
 |---|---|---|---|
-| T-010 | ParkWorld grid og stier | simulation | 🔍 review |
-| T-011 | Pathfinding | simulation | 🔍 review |
-| T-012 | Attraktion (karrusel) | simulation | 🔍 review |
-| T-013 | Gæster + ParkSim | simulation | 🔍 review |
-| T-014 | Terræn, picking, props | graphics | 🔍 review |
-| T-015 | Bridge og byggeværktøjer | gameplay | ⬜ todo |
-| T-016 | M1 verifikation | qa | ⬜ todo |
+| T-010 | ParkWorld grid og stier | simulation | ✅ done |
+| T-011 | Pathfinding | simulation | ✅ done |
+| T-012 | Attraktion (karrusel) | simulation | ✅ done |
+| T-013 | Gæster + ParkSim | simulation | ✅ done |
+| T-014 | Terræn, picking, props | graphics | ✅ done |
+| T-015 | Bridge og byggeværktøjer | gameplay | ✅ done |
+| T-016 | M1 verifikation | qa | ✅ done |
 
 ## Kommende milepæle
 - **M2 Kernesimulation:** behov, køer, priser, økonomi
