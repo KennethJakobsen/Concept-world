@@ -1,1 +1,1 @@
-{"id":"drinks_stand","name":"Drikkebod","kind":"shop","footprint":[1,1],"build_cost":250,"running_cost_per_day":15,"capacity":2,"ride_ticks":30,"ticket_price":3,"excitement":0,"satisfies":{"thirst":-70,"toilet":20},"model":"res://scenes/props/drinks_stand.tscn"}
+{"id": "drinks_stand", "name": "Drikkebod", "kind": "shop", "footprint": [1, 1], "build_cost": 250, "running_cost_per_day": 60, "capacity": 2, "ride_ticks": 30, "ticket_price": 3, "excitement": 0, "satisfies": {"thirst": -70, "toilet": 20}, "model": "res://scenes/props/drinks_stand.tscn"}

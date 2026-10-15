@@ -47,18 +47,35 @@ Nye gæster starter med tilfældige behov 0–30. Ved et besøg på 1–2 dage b
 - Er `price > max_pris`: gæsten afviser, tanke "For dyrt!", glæde -2, og vælger igen (ekskl. denne bygning) næste beslutning.
 
 ### Økonomi
-- Start 2500; entré 10; sti 10 (refusion 5); gæster medbringer 30–80.
-- Start-budget: karrusel 800 + 2 boder (~550) + ~50 stier (500) = ~1850 → ~650 buffer.
-- Drift pr. dag for start-park: ~75. Indtægt pr. dag ved ~40 gæster/dag: entré ~400 + forlystelse/boder ~300 → overskud fra dag 1–2, og de indledende investeringer er tjent hjem efter ~3 dage.
+- Start 2200; entré 6; sti 10 (refusion 5); gæster medbringer 30–80.
+- Start-budget: karrusel 800 + burger 300 + drikke 250 + toilet 200 + ~25 stier (250) = 1800 → ~400 buffer.
+- Drift pr. dag for start-park: 360 (~30% af omsætningen). Netto ca. +800/dag fra dag 2; investeringen er tjent hjem i løbet af dag 3.
+
+#### Balance-rationale (T-026)
+Balance-sim (`tools/balance.sh`, seed 12345, startpark):
+
+| Dag | Penge | Gæster | Glæde | Karrusel/Burger/Drikke/Toilet | Entré | Billetter | Drift | Byg | Netto | Kumuleret | For dyrt! |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | 961 | 29 | 81.3 | 99/9/10/10 | 354 | 546 | −360 | −1800 | −1260 | −1260 | 0 |
+| 2 | 1765 | 46 | 81.9 | 106/37/42/34 | 360 | 814 | −360 | 0 | +814 | −446 | 0 |
+| 3 | 2582 | 49 | 82.8 | 98/60/61/44 | 264 | 918 | −360 | 0 | +822 | +376 | 0 |
+| 4 | 3384 | 48 | 81.3 | 88/62/72/50 | 258 | 904 | −360 | 0 | +802 | | 0 |
+| 5 | 4230 | 48 | 81.8 | 103/46/53/36 | 348 | 858 | −360 | 0 | +846 | | 0 |
+
+- Drift ×4–5 så den betyder noget (≈30% af omsætning) og hver ny bygning skal tjene sig selv ind.
+- Entré 10→6: entré var ~45% af indtægten; nu ~25–30%, så forlystelser/boder driver økonomien.
+- Start 2500→2200: første park er stram (~400 buffer).
+- Hunger-rate 0.03→0.04 og `need_start_max` 30→40: boder bruges fra dag 1.
+- Pris-konstanter skrives eksplicit i guests.json. Ved standardpriser ingen "For dyrt!" (karrusel max ≈ (2+25·0.2)·(0.75+0.005·82) ≈ 8.1 vs. pris 5); hæves priserne ~60%+ kommer de første afvisninger.
 - Fjernelse af bygning refunderer 50% af build_cost.
 
 ### Bygninger
 | id | kind | fp | pris (byg) | drift/dag | kap. | ticks | billet | excitement | satisfies |
 |---|---|---|---|---|---|---|---|---|---|
-| carousel | ride | 3×3 | 800 | 40 | 8 | 200 | 5 | 25 | energy -10 |
-| ferris_wheel | ride | 3×3 | 1200 | 60 | 12 | 320 | 6 | 35 | energy -15 |
-| bumper_cars | ride | 4×4 | 1500 | 70 | 10 | 240 | 7 | 45 | energy +10, thirst +10 |
-| burger_stand | shop | 1×1 | 300 | 20 | 2 | 40 | 4 | 0 | hunger -70, thirst +10, toilet +15 |
-| drinks_stand | shop | 1×1 | 250 | 15 | 2 | 30 | 3 | 0 | thirst -70, toilet +20 |
-| ice_cream_stand | shop | 1×1 | 280 | 15 | 2 | 30 | 3 | 5 | hunger -25, thirst -20, toilet +10 |
-| toilet | toilet | 1×1 | 200 | 10 | 2 | 60 | 0 | 0 | toilet -90 |
+| carousel | ride | 3×3 | 800 | 180 | 8 | 200 | 5 | 25 | energy -10 |
+| ferris_wheel | ride | 3×3 | 1200 | 240 | 12 | 320 | 6 | 35 | energy -15 |
+| bumper_cars | ride | 4×4 | 1500 | 280 | 10 | 240 | 7 | 45 | energy +10, thirst +10 |
+| burger_stand | shop | 1×1 | 300 | 70 | 2 | 40 | 4 | 0 | hunger -70, thirst +10, toilet +15 |
+| drinks_stand | shop | 1×1 | 250 | 60 | 2 | 30 | 3 | 0 | thirst -70, toilet +20 |
+| ice_cream_stand | shop | 1×1 | 280 | 60 | 2 | 30 | 3 | 5 | hunger -25, thirst -20, toilet +10 |
+| toilet | toilet | 1×1 | 200 | 50 | 2 | 60 | 0 | 0 | toilet -90 |

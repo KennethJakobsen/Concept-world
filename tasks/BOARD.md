@@ -36,7 +36,7 @@
 | T-023 | Generisk byggeri og valg | gameplay | ✅ done |
 | T-025 | Afstem simulation med GDD | simulation | ✅ done |
 | T-024 | M2 verifikation | qa | ✅ done |
-| T-026 | Balance-justering | designer | ⬜ todo |
+| T-026 | Balance-justering | designer | ✅ done |
 
 ## Kommende milepæle
 - **M3 Spilbar loop:** 5–8 forlystelser, butikker, personale, save/load, UI

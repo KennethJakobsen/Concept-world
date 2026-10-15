@@ -1,1 +1,1 @@
-{"id":"toilet","name":"Toilet","kind":"toilet","footprint":[1,1],"build_cost":200,"running_cost_per_day":10,"capacity":2,"ride_ticks":60,"ticket_price":0,"excitement":0,"satisfies":{"toilet":-90},"model":"res://scenes/props/toilet.tscn"}
+{"id": "toilet", "name": "Toilet", "kind": "toilet", "footprint": [1, 1], "build_cost": 200, "running_cost_per_day": 50, "capacity": 2, "ride_ticks": 60, "ticket_price": 0, "excitement": 0, "satisfies": {"toilet": -90}, "model": "res://scenes/props/toilet.tscn"}

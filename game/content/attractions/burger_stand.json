@@ -1,1 +1,1 @@
-{"id":"burger_stand","name":"Burgerbod","kind":"shop","footprint":[1,1],"build_cost":300,"running_cost_per_day":20,"capacity":2,"ride_ticks":40,"ticket_price":4,"excitement":0,"satisfies":{"hunger":-70,"thirst":10,"toilet":15},"model":"res://scenes/props/burger_stand.tscn"}
+{"id": "burger_stand", "name": "Burgerbod", "kind": "shop", "footprint": [1, 1], "build_cost": 300, "running_cost_per_day": 70, "capacity": 2, "ride_ticks": 40, "ticket_price": 4, "excitement": 0, "satisfies": {"hunger": -70, "thirst": 10, "toilet": 15}, "model": "res://scenes/props/burger_stand.tscn"}
