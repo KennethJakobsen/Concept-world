@@ -24,6 +24,7 @@ var task_target_id: int = -1  ## attraktion/decor-id
 var task_cell: Vector2i       ## celle der arbejdes på
 var work_ticks_left: int = 0
 var since_inspect: int = 0    ## ticks siden sidste inspektion (mekaniker)
+var task_ticks: int = 0       ## ticks brugt på nuværende opgave (reservations-timeout, T-076)
 
 
 func _init(p_id: int, p_def: StaffDef, p_cell: Vector2i) -> void:
@@ -53,6 +54,7 @@ func to_save() -> Dictionary:
 		"path": SaveCodec.v2i_array(path), "home_cell": SaveCodec.v2i(home_cell), "state": state,
 		"task": task, "task_target_id": task_target_id, "task_cell": SaveCodec.v2i(task_cell),
 		"work_ticks_left": work_ticks_left, "since_inspect": since_inspect,
+		"task_ticks": task_ticks,
 	}
 
 
@@ -68,4 +70,5 @@ static func from_save(d: Dictionary, p_def: StaffDef) -> Staff:
 	s.task_cell = SaveCodec.to_v2i(d.get("task_cell"), s.cell)
 	s.work_ticks_left = int(d.get("work_ticks_left", 0))
 	s.since_inspect = int(d.get("since_inspect", 0))
+	s.task_ticks = int(d.get("task_ticks", 0))
 	return s

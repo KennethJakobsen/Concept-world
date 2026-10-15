@@ -270,3 +270,76 @@ func test_save_roundtrip_with_staff_decor_litter() -> void:
 	var p: Dictionary = s.to_save()["park"]
 	assert_true(not (p["staff"] as Array).is_empty() and not (p["decor"] as Array).is_empty())
 
+
+
+# --- T-076: reservationer, spredning ---
+
+func test_two_cleaners_two_litter_distinct_targets() -> void:
+	var s := _sim()
+	s.world.set_litter(Vector2i(15, 12), 1)
+	s.world.set_litter(Vector2i(15, 14), 1)
+	var a: int = s.cmd_hire_staff("cleaner", Vector2i(15, 20))
+	var b: int = s.cmd_hire_staff("cleaner", Vector2i(15, 20))
+	_step(s, 1)
+	var sa: Staff = s.get_staff(a)
+	var sb: Staff = s.get_staff(b)
+	assert_eq(sa.task, Staff.TASK_SWEEP)
+	assert_eq(sb.task, Staff.TASK_SWEEP)
+	assert_true(sa.task_cell != sb.task_cell, "forskellige mål")
+	_step(s, 400)
+	assert_eq(s.world.total_litter(), 0)
+
+
+func test_idle_cleaners_spread_out() -> void:
+	var s := _sim()
+	var ids: Array[int] = []
+	for i in 3:
+		ids.append(s.cmd_hire_staff("cleaner", Vector2i(15, 20)))
+	_step(s, 600)
+	var cells: Dictionary = {}
+	for id in ids:
+		cells[s.get_staff(id).cell] = true
+	assert_eq(cells.size(), 3, "ikke samme celle")
+
+
+func test_one_mechanic_per_breakdown_and_inspection() -> void:
+	var s := _sim({"mechanic_inspect_interval_ticks": 1}, 0.5)
+	s.cmd_place_attraction("r", Vector2i(14, 20))
+	var a: int = s.cmd_hire_staff("mechanic", Vector2i(15, 26))
+	var b: int = s.cmd_hire_staff("mechanic", Vector2i(15, 27))
+	_step(s, 3)
+	var sa: Staff = s.get_staff(a)
+	var sb: Staff = s.get_staff(b)
+	assert_true(not (sa.task == sb.task and sa.task != Staff.TASK_NONE and sa.task_target_id == sb.task_target_id),
+		"ikke samme opgave")
+
+
+func test_reservation_released_on_fire_and_timeout() -> void:
+	var s := _sim()
+	s.world.set_litter(Vector2i(15, 12), 1)
+	var a: int = s.cmd_hire_staff("cleaner", Vector2i(15, 20))
+	_step(s, 1)
+	assert_eq(s.get_staff(a).task_cell, Vector2i(15, 12))
+	s.cmd_fire_staff(a)
+	var b: int = s.cmd_hire_staff("cleaner", Vector2i(15, 20))
+	_step(s, 1)
+	assert_eq(s.get_staff(b).task_cell, Vector2i(15, 12))
+	s.get_staff(b).task_ticks = StaffAI.TASK_TIMEOUT_TICKS
+	_step(s, 1)
+	assert_true(s.get_staff(b).task_ticks <= 1, "timeout frigiver/nulstiller")
+
+
+func test_reservation_roundtrip_deterministic() -> void:
+	var s := _sim()
+	for y in [11, 13, 17, 24]:
+		s.world.set_litter(Vector2i(15, y), 2)
+	s.cmd_hire_staff("cleaner", Vector2i(15, 20))
+	s.cmd_hire_staff("cleaner", Vector2i(15, 21))
+	_step(s, 7)
+	var defs: Array = [s.get_staff_def("cleaner"), s.get_staff_def("mechanic"), s.get_staff_def("entertainer")]
+	var b := ParkSim.from_save(SaveCodec.parse(SaveCodec.stringify(s.to_save())), s.balance, defs)
+	assert_eq(_park_str(b), _park_str(s))
+	_step(s, 300)
+	_step(b, 300)
+	assert_eq(_park_str(b), _park_str(s))
+	assert_eq(s.world.total_litter(), 0)

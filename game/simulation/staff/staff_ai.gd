@@ -6,6 +6,11 @@ extends RefCounted
 const MECHANIC: String = "mechanic"
 const CLEANER: String = "cleaner"
 const ENTERTAINER: String = "entertainer"
+## T-076: en reservation (opgave) frigives senest efter så mange ticks.
+const TASK_TIMEOUT_TICKS: int = 1200
+
+# Reservationer (T-076) udledes af de ansattes opgaver (task/task_target_id/task_cell),
+# så de genopbygges automatisk ved indlæsning og frigives ved drop_task/fyring.
 
 
 static func tick_all(sim: ParkSim) -> void:
@@ -50,6 +55,11 @@ static func _assign_repairs(sim: ParkSim) -> void:
 static func _tick(sim: ParkSim, s: Staff) -> void:
 	if s.def.id == MECHANIC:
 		s.since_inspect += 1
+	if s.task != Staff.TASK_NONE:
+		s.task_ticks += 1
+		if s.task_ticks > TASK_TIMEOUT_TICKS:
+			drop_task(sim, s)
+			return
 	match s.state:
 		Staff.State.WORKING:
 			s.work_ticks_left -= 1
@@ -97,6 +107,7 @@ static func _set_task(s: Staff, task: String, target_id: int, cell: Vector2i, ro
 	s.task_cell = cell
 	s.state = Staff.State.WALKING
 	s.work_ticks_left = 0
+	s.task_ticks = 0
 	_set_route(s, route)
 
 
@@ -112,6 +123,7 @@ static func drop_task(sim: ParkSim, s: Staff) -> void:
 	s.next_cell = s.cell
 	s.progress = 0.0
 	s.work_ticks_left = 0
+	s.task_ticks = 0
 
 
 static func _arrive(sim: ParkSim, s: Staff) -> void:
@@ -182,6 +194,8 @@ static func _find_inspection(sim: ParkSim, s: Staff) -> void:
 	for a: Attraction in sim.attractions:
 		if a.def.kind != "ride" or a.broken or a.def.reliability >= 1.0 or not s.in_radius(a.entrance_cell):
 			continue
+		if is_target_reserved(sim, s, Staff.TASK_INSPECT, a.id):
+			continue
 		if best == null or a.last_inspect_tick < best.last_inspect_tick:
 			best = a
 	if best == null:
@@ -202,7 +216,8 @@ static func _find_cleaning(sim: ParkSim, s: Staff) -> void:
 	var bins: Array = []
 	for did: int in sim.decor:
 		var d: Decor = sim.decor[did]
-		if d.def.kind == "bin" and d.fill >= sim.balance.bin_capacity and s.in_radius(d.cell):
+		if d.def.kind == "bin" and d.fill >= sim.balance.bin_capacity and s.in_radius(d.cell) \
+				and not is_target_reserved(sim, s, Staff.TASK_EMPTY_BIN, d.id):
 			bins.append(d)
 	bins.sort_custom(func(x: Decor, y: Decor) -> bool:
 		var dx: int = _dist(s.cell, x.cell)
@@ -214,8 +229,9 @@ static func _find_cleaning(sim: ParkSim, s: Staff) -> void:
 			_set_task(s, Staff.TASK_EMPTY_BIN, d.id, d.cell, route)
 			return
 	var cells: Array = []
+	var taken: Dictionary = _reserved_cells(sim, s, true)
 	for c: Vector2i in sim.world.litter:
-		if s.in_radius(c):
+		if s.in_radius(c) and not taken.has(c):
 			cells.append(c)
 	cells.sort_custom(func(x: Vector2i, y: Vector2i) -> bool:
 		var dx: int = _dist(s.cell, x)
@@ -226,6 +242,79 @@ static func _find_cleaning(sim: ParkSim, s: Staff) -> void:
 		if not route.is_empty():
 			_set_task(s, Staff.TASK_SWEEP, -1, c, route)
 			return
+	_spread_patrol(sim, s)
+
+
+## Er opgaven (task, target_id) reserveret af en anden ansat?
+static func is_target_reserved(sim: ParkSim, me: Staff, task: String, target_id: int) -> bool:
+	for sid: int in sim.staff:
+		var o: Staff = sim.staff[sid]
+		if o != me and o.task == task and o.task_target_id == target_id:
+			return true
+	return false
+
+
+## Celler som andre fejere har reserveret (fej-opgaver; evt. også patruljemål).
+static func _reserved_cells(sim: ParkSim, me: Staff, sweep_only: bool) -> Dictionary:
+	var out: Dictionary = {}
+	for sid: int in sim.staff:
+		var o: Staff = sim.staff[sid]
+		if o == me or o.def.id != CLEANER:
+			continue
+		if o.task == Staff.TASK_SWEEP or (not sweep_only and o.task != Staff.TASK_NONE):
+			out[o.task_cell] = true
+	return out
+
+
+## Fejer uden opgaver: gå mod den sti-celle i radius, der ligger længst fra de andre
+## fejere (deres position og mål). Aldrig mod et mål, en anden allerede har.
+static func _spread_patrol(sim: ParkSim, s: Staff) -> void:
+	var others: Array[Vector2i] = []
+	var ids: Array = sim.staff.keys()
+	ids.sort()
+	for sid in ids:
+		var o: Staff = sim.staff[sid]
+		if o != s and o.def.id == CLEANER:
+			others.append(o.cell)
+			if o.task != Staff.TASK_NONE:
+				others.append(o.task_cell)
+	if others.is_empty():
+		return  # alene: bliv stående (ingen grund til at vandre)
+	var taken: Dictionary = _reserved_cells(sim, s, false)
+	var r: int = s.def.work_radius
+	var x0: int = 0
+	var x1: int = sim.world.width - 1
+	var y0: int = 0
+	var y1: int = sim.world.height - 1
+	if r > 0:
+		x0 = maxi(0, s.home_cell.x - r)
+		x1 = mini(x1, s.home_cell.x + r)
+		y0 = maxi(0, s.home_cell.y - r)
+		y1 = mini(y1, s.home_cell.y + r)
+	var best: Vector2i = s.cell
+	var best_score: int = _min_dist(s.cell, others)
+	for y in range(y0, y1 + 1):
+		for x in range(x0, x1 + 1):
+			var c := Vector2i(x, y)
+			if taken.has(c) or not sim.world.is_walkable(c) or not s.in_radius(c):
+				continue
+			var score: int = _min_dist(c, others)
+			if score > best_score or (score == best_score and _dist(s.cell, c) < _dist(s.cell, best)):
+				best = c
+				best_score = score
+	if best == s.cell:
+		return
+	var route: Array[Vector2i] = sim.path_finder.find_path(s.cell, best)
+	if route.is_empty():
+		return
+	_set_task(s, Staff.TASK_PATROL, -1, best, route)
+
+
+static func _min_dist(c: Vector2i, cells: Array[Vector2i]) -> int:
+	var m: int = 1 << 30
+	for o: Vector2i in cells:
+		m = mini(m, _dist(c, o))
+	return m
 
 
 static func _patrol(sim: ParkSim, s: Staff) -> void:

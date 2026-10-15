@@ -100,6 +100,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-073 | Bug: rutsjebanestationens tag vender forkert | graphics | ✅ done |
 | T-074 | Grafik: stiliserede bygninger med tema-elementer | graphics | review |
 | T-075 | Balance: rutsjebane-ratings og scenarier | designer | review |
+| T-076 | Bug: rengøringsfolk løber i flok (opgavereservation) | simulation | review |
 
 ## Kommende milepæle
 - Ingen planlagt efter M5.
