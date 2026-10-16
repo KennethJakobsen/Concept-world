@@ -1,6 +1,6 @@
 # T-077: Bug: test_ui_m5 bruger ferris_wheel som låst, men det er låst op i Grøn eng
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M5
 - **Agent:** ui
 - **Afhænger af:** T-071, T-075
@@ -16,3 +16,4 @@
 - 2026-10-15 – qa: oprettet under T-072
 
 - 2026-10-15 (ui): Testen finder nu selv et låst build-id via hud.is_build_locked i stedet for hardcodet ferris_wheel. test.sh: 236/0. -> review
+- 2026-10-16 – qa (T-096): Godkendt headless. test.sh 308/0 (inkl. ny runner-selvtest og test_qa_m6), integration OK, balance.sh 5/5 i alle tre scenarier, build_web OK, smoke uden fejl. Kriterierne er opfyldt (T-078: Bjergtoppen nu 5/5). → done

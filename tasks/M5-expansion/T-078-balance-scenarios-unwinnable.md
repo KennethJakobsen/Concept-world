@@ -1,6 +1,6 @@
 # T-078: Balance: Floddalen og Bjergtoppen kan ikke vindes af bot med fornuftigt spil
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M5
 - **Agent:** designer
 - **Afhænger af:** T-075, T-072
@@ -30,3 +30,4 @@ Botten ansætter mekaniker og rengøring, sætter 2 skraldespande, forsker på n
   - balance.sh (5 seeds): **Grøn eng 5/5** (dag 16-34, før 11-16). **Floddalen 5/5** (dag 35, ca. 51k). **Bjergtoppen**: 1/5 i de seeds, jeg nåede at se (seed 1 vandt på dag 89, 12345 tabte med omdømme 53/55, og seed 2 tabte med 76/85 gæster). Kørslen var afkortet, men sværhedsgraden stiger tydeligt.
   - NB: Kørslen skete med M6-arbejde (T-083 m.fl.), der ikke var committet, i arbejdstræet: nye attraktioner og ændret research.json. Tallene for Bjergtoppen kan derfor flytte sig en smule, når M6 lander.
   - test.sh: 236 bestået, 2 fejlede. Begge fejl skyldes M6-filerne, der ikke er committet (coconut_shy m.fl. og research-id'erne mini_train/monorail/log_flume), ikke denne ændring.
+- 2026-10-16 – qa (T-096): Godkendt headless. test.sh 308/0 (inkl. ny runner-selvtest og test_qa_m6), integration OK, balance.sh 5/5 i alle tre scenarier, build_web OK, smoke uden fejl. Kriterierne er opfyldt (T-078: Bjergtoppen nu 5/5). → done

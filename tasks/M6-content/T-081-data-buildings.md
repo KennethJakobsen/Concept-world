@@ -1,6 +1,6 @@
 # T-081: Data: 14 bygninger, intensity/nausea, præmier, bærbare ting
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M6
 - **Agent:** designer
 - **Afhænger af:** T-080
@@ -21,3 +21,4 @@ Data for alle bygninger uden spor samt felter til mekanik B, D og E (kontrakt §
 ## Log
 - 2026-10-15 – architect: oprettet
 - 2026-10-15 – designer: 14 attraktioner, I/N på eksisterende rides, items.json, guests.json (tolerance/kvalme/opkast, `litter_kinds`), research (water_rides/sideshows, bouncy_castle start). balance.sh grøn. test.sh: 2 forventede fejl – `test_real_content_parses` afviser `kind: sideshow` (kræver T-085), og `test_research_ids_exist_in_catalog` mangler mini_train/monorail/log_flume (løses af T-082). Tests er ikke rettet.
+- 2026-10-16 – qa (T-096): Godkendt headless. test.sh 308/0 (inkl. ny runner-selvtest og test_qa_m6), integration OK, balance.sh 5/5 i alle tre scenarier, build_web OK, smoke uden fejl. → done

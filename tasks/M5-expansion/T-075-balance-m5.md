@@ -1,6 +1,6 @@
 # T-075: Balance M5 – rutsjebane-ratings og scenarier
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M5
 - **Agent:** designer
 - **Afhænger af:** T-067, T-068
@@ -27,3 +27,4 @@ Rutsjebane-ratings i et fornuftigt spænd, start-stier i scenarierne der hænger
   - balance.sh (botten, forskning 0): Grøn eng taber på fristen (55/100 gæster, omdømme 32,8, 21066 kr.). Floddalen taber på fristen (pengemålet er nået med 36863 kr., men der er 4/5 forlystelser og ingen rutsjebane). Bjergtoppen går fallit på dag 59 (før: dag 57, 354 kr. i Floddalen og 11039 kr. i Grøn eng). Botten er stadig ikke i stand til at vinde, fordi den hverken ansætter personale (omdømmet falder af skrald og nedbrud), forsker eller bygger rutsjebaner. Coaster-målene kan altså ikke nås af botten. Det kræver en bedre bot i `tools/` (uden for designerens område), hvis det skal verificeres automatisk.
 - 2026-10-15 – qa (T-072): Sendt tilbage. Med den nye bot (personale, forskning niv. 1, oval) vindes Grøn eng 5/5, men Floddalen og Bjergtoppen vindes 0/5. Floddalen: ovalen giver E 4.66, mens målet er 5.0. Bjergtoppen: der er ~80-108 gæster, og målet er 350. Se T-078 for tal.
 - 2026-10-15 – designer: Scenariemålene er rebalanceret under T-078. Botten vinder nu Grøn eng 5/5, Floddalen 5/5 og Bjergtoppen ~1/5. Se T-078.
+- 2026-10-16 – qa (T-096): Godkendt headless. test.sh 308/0 (inkl. ny runner-selvtest og test_qa_m6), integration OK, balance.sh 5/5 i alle tre scenarier, build_web OK, smoke uden fejl. Kriterierne er opfyldt (T-078: Bjergtoppen nu 5/5). → done

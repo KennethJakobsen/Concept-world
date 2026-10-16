@@ -1,6 +1,6 @@
 # T-086: Sim: bærbare ting (ballon, souvenir, præmier)
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M6
 - **Agent:** simulation
 - **Afhænger af:** T-085
@@ -18,3 +18,4 @@ Mekanik E (kontrakt §3). Se `tasks/M6-content/_CONTRACT.md`.
 ## Log
 - 2026-10-15 – architect: oprettet
 - 2026-10-16 – simulation: ItemDef (guests/item_def.gd), AttractionDef.carry_item, timevis tick (_tick_items_hour, hour_ticks()=day_ticks/24) med glæde, aura (manhattan) og ballontab via sim-RNG; signaler item_gained/item_lost; ny ParkSim.guest_info(id) (fandtes ikke før). Items gemmes allerede (T-084/v3). Tests: test_carried_items.gd.
+- 2026-10-16 – qa (T-096): Godkendt headless. test.sh 308/0 (inkl. ny runner-selvtest og test_qa_m6), integration OK, balance.sh 5/5 i alle tre scenarier, build_web OK, smoke uden fejl. → done

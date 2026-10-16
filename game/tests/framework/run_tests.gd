@@ -9,8 +9,19 @@ func _init() -> void:
 	var passed: int = 0
 	var logger := TestErrorCounter.new()
 	OS.add_logger(logger)
-	for path in _find_tests(TEST_DIR):
-		var script: GDScript = load(path)
+	var test_dir: String = TEST_DIR
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--test-dir="):
+			test_dir = a.trim_prefix("--test-dir=")
+	for path in _find_tests(test_dir):
+		logger.take()
+		var script: GDScript = load(path) as GDScript
+		var load_errors: PackedStringArray = logger.take()
+		# T-096: en testfil, der ikke kan indlæses/parses, er en fejl (ikke et stille skip).
+		if script == null or not script.can_instantiate() or not load_errors.is_empty():
+			failed += 1
+			printerr("FAIL %s – kunne ikke indlæses: %s" % [path, "; ".join(load_errors)])
+			continue
 		for m in script.get_script_method_list():
 			var name: String = m["name"]
 			if not name.begins_with("test_"):
