@@ -15,3 +15,4 @@ Brugerrapport: UI'et (menu/dock) hopper ved dagskift – formentlig en layout-st
 ## Log
 - 2026-10-16 – orkestrator: oprettet fra brugerrapport
 - 2026-10-16 – ui: Årsag: layout blev kun genberegnet når top-tekstens længde ændrede sig, så breddeændringer (dag/ur) lod top-bar vokse uden relayout og blev først rettet senere. Fix: top_bar.minimum_size_changed -> Hud._relayout (samme frame, re-entrancy-vagt). Test: test_layout_stable_across_day_change. Kræver visuel bekræftelse.
+- 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.

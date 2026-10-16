@@ -1,6 +1,6 @@
 # T-117: Balance: M7-mekanik
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** designer
 - **Afhænger af:** T-115, T-116
@@ -28,3 +28,4 @@ Kontraktens §5 T-117. Se `tasks/M7-depth-ux/_CONTRACT.md`.
   - **ATM:** målet i GDD er revideret til +3–6 % (ATM er en bekvemmelighed i M7). `guests.json` `atm_low_money: 30` → T-117-sektionen viser **+5,6 %** (30960→32693, 625 hævninger). Gebyrerne (ca. 125/dag) dækker driften (20/dag). Forslaget om en ny pengeøkonomi for gæster står i `tasks/M8-ideas/IDEAS.md`.
   - Køopgivelser 0/1951 ✅. Milepæle green_meadow: `stars_3` dag 2 og `first_thrill` dag 5 ✅.
   - `test.sh` 443/0. `_m7_balance` er kørt isoleret (en kopi af balance_sim med kun den sektion).
+- 2026-10-16 – qa: verificeret (test.sh 446/446, integration, balance 5/5 scenarier vundet, web-build, smoke, v1/v2/v3→v4 i test_qa_m7). review → done.

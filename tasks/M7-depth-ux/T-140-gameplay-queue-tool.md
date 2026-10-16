@@ -23,3 +23,4 @@ Brugeren savner kø-konceptet. Køsti-delen af T-110 og kø/gæstemasse-delen af
   - UI (minimal): kort "Køsti" ($15) i Stier via `_add_build_button` + `research_id`-undtagelse; kølinjen i Oversigt viser "Kø: n/kap, ventetid ca. N s" (indtil T-112). Kortet bruger kategori-ikonet som miniature (ingen `thumbs/queue_path.png` endnu).
   - Tests: `tests/test_queue_view.gd` (værktøj, penge, visual-masker, gæster på separate køpladser, kølinje). 370 grønne; eneste røde er `test_ui_m7_foundation::test_dock_returns_to_bottom_after_close` (ui-agentens igangværende dock-arbejde, ikke berørt). Integration OK, smoke uden fejl.
   - Screenshots: `docs/screenshots/t140_queue.png`, `t140_queue_close.png` (Compatibility, simpel testscene: karrusel med 6-celle køsti med knæk, 12/12 i kø, to pr. celle, ingen overlap). Afventer brugerens øjne.
+- 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.

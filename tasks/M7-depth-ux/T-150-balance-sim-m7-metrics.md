@@ -1,6 +1,6 @@
 # T-150: balance_sim måler M7-mekanik
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** qa
 - **Afhænger af:** T-117
@@ -18,3 +18,4 @@
 ## Log
 - 2026-10-16 – designer: oprettet fra T-117
 - 2026-10-16 – simulation: `_m7_balance()` i balance_sim.gd (sektionen `=== T-117: M7-balance ===`, ca. 1 min). Parklayoutet er flyttet ud i `_build_park()`, og `_scenario_run` har fået et valgfrit milepæl-dict. Første tal: salt −1,2 % drikkesalg (1956→1932), køopgivelser 0/1951, ATM −5,4 %, milepæle green_meadow: guests_100/stars_3/clean_park dag 2, first_thrill dag 5, sideshow_ready dag 11. balance.sh er grøn (15½ min i alt).
+- 2026-10-16 – qa: verificeret (test.sh 446/446, integration, balance 5/5 scenarier vundet, web-build, smoke, v1/v2/v3→v4 i test_qa_m7). review → done.

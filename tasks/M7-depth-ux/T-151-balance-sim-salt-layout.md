@@ -1,6 +1,6 @@
 # T-151: balance_sim: salt-målingen bruger en Fritterbix, der næsten ikke sælger
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** simulation
 - **Afhænger af:** T-150
@@ -19,3 +19,4 @@ Ret: flyt boden til `Vector2i(e.x - 6, 49)`, brug seeds `[1, 2, 3, 4, 5, 12345]`
 ## Log
 - 2026-10-16 – designer: oprettet fra T-117
 - 2026-10-16 – simulation: `_m7_balance` flytter Fritterbixen til `(e.x - 6, 49)`, bruger seeds [1, 2, 3, 4, 5, 12345] og tæller fritter-salg via `purchase_made`. Resultat: fritter 122 → 99 solgt, drikkesalg 2646 → 3003 (+13,5 %), som designeren målte. Tests 443/443, balance.sh grøn.
+- 2026-10-16 – qa: verificeret (test.sh 446/446, integration, balance 5/5 scenarier vundet, web-build, smoke, v1/v2/v3→v4 i test_qa_m7). review → done.

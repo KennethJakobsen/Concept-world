@@ -23,3 +23,4 @@ Brugerønske: et logo for Concept-world, der passer til `docs/ui-style.md`. Brug
 - project.godot: `config/icon` = logo_symbol_256.png, `boot_splash/image` = logo_full_512.png (ikke fullsize, grøn bg).
 - export_presets.cfg har intet favicon-felt; Godots web-export bruger `config/icon` som favicon.
 - Test: `test_menu_uses_logo_texture`. test.sh: 334 bestået, 2 kendte atm-fejl. integration.sh OK. docs/screenshots/t138_menu.png opdateret.
+- 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.

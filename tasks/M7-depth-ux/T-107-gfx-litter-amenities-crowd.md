@@ -24,3 +24,4 @@ Kontraktens §2 T-107. Se `tasks/M7-depth-ux/_CONTRACT.md`.
 - `FloatingText3D.new()`; `show_amount(pos, amount, color := grøn)` (pool 32, skjules > 40 m fra kamera).
 - `LitterScatter.new()`; sæt `cell`, kald `set_items(sim.litter_at(cell))` ved `litter_changed` (kinds: wrapper/cup/can/food/vomit; visibility_range 40 m).
 - `AmenityVisuals.set_bin_level(bin_node, level)` ved `bin_state_changed` (0/1/2; fuld = rødt ikon). `AmenityVisuals.bench_seat_position(seat)` (lokal ift. bænk) + `set_guest_seated(guest, on)` ved `guest_sat`/`guest_stood`.
+- 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.

@@ -1,6 +1,6 @@
 # T-136: Design: samlet visuel stil for UI (art direction)
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** designer
 - **Afhænger af:** T-101
@@ -17,3 +17,4 @@ Brugerfeedback på T-101: byggemenuen er tekst på blå knapper på grå baggrun
 ## Log
 - 2026-10-16 – orkestrator: oprettet efter brugerfeedback på byggemenuen
 - 2026-10-16 – designer: review. `docs/ui-style.md` skrevet: retningen "Tivoli-skilt" (træ/papir/messing), research (RCT2/3, Planet Coaster, Parkitect, Two Point, JWE), palet med hex, StyleBox-tabel, typografi (standardfont, valgfri Kenney Future CC0), ikonstil, miniature-spec (160×120, offline-render), komponent-specs (BuildDock, TopBar, ParkRail, Inspector, AlertTray, hovedmenu, tooltip) og en ikonliste.
+- 2026-10-16 – qa: verificeret (test.sh 446/446, integration, balance 5/5 scenarier vundet, web-build, smoke, v1/v2/v3→v4 i test_qa_m7). review → done.

@@ -140,15 +140,15 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 |---|---|---|---|
 | T-097 | Design: GDD-afsnit for M7 | designer | ✅ done |
 | T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | ✅ done |
-| T-121 | balance_sim måler opkast, sideshow-margin og impulskøb | simulation | review |
+| T-121 | balance_sim måler opkast, sideshow-margin og impulskøb | simulation | done |
 | T-131 | Ændringsønske: rutsjebane kan startes uden stykker til at lukke den | designer | review |
-| T-100 | Data: config, opskrifter, kø/gæste-parametre, ATM, milepæle, omgivelser | designer | review |
+| T-100 | Data: config, opskrifter, kø/gæste-parametre, ATM, milepæle, omgivelser | designer | done |
 | T-101 | UI: UX-fundament (skærmzoner, tooltips, indstillinger) | ui | review |
-| T-102 | Sim: config, opskrifter, prisvirkninger, salg + save v4 | simulation | review |
-| T-103 | Sim: køstier, tålmodighed, ledig frem for optaget, gæstemasse | simulation | review |
-| T-104 | Sim: gå hjem, hæveautomat, spande, bænke og lys | simulation | review |
-| T-105 | Sim: milepæle, der låser forskningsgrene op | simulation | review |
-| T-106 | Sim: flyt (også sporbaner), sælg-refusion og fortryd | simulation | review |
+| T-102 | Sim: config, opskrifter, prisvirkninger, salg + save v4 | simulation | done |
+| T-103 | Sim: køstier, tålmodighed, ledig frem for optaget, gæstemasse | simulation | done |
+| T-104 | Sim: gå hjem, hæveautomat, spande, bænke og lys | simulation | done |
+| T-105 | Sim: milepæle, der låser forskningsgrene op | simulation | done |
+| T-106 | Sim: flyt (også sporbaner), sælg-refusion og fortryd | simulation | done |
 | T-107 | Grafik: skrald, spande, bænke, ATM, køsti, svævetal og gæstemængde | graphics | review |
 | T-108 | Grafik: mur, port og omgivelser | graphics | review |
 | T-109 | Grafik: kort-overlays og farveblind-palet | graphics | review |
@@ -159,14 +159,14 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-114 | Data: tutorial-scenariet 'Første park' | designer | review |
 | T-115 | Gameplay: TutorialDirector og pile i verden | gameplay | review |
 | T-116 | UI: tutorial-trinpanel | ui | review |
-| T-117 | Balance: M7-mekanik | designer | review |
-| T-149 | Sim: hæveautomat ved lav saldo (fra T-117) | simulation | review |
-| T-150 | balance_sim måler M7-mekanik (fra T-117) | qa | review |
-| T-151 | balance_sim: salt-måling med en Fritterbix, der sælger | simulation | review |
-| T-133 | Sim: required_pieces for sporbaner | simulation | review |
+| T-117 | Balance: M7-mekanik | designer | done |
+| T-149 | Sim: hæveautomat ved lav saldo (fra T-117) | simulation | done |
+| T-150 | balance_sim måler M7-mekanik (fra T-117) | qa | done |
+| T-151 | balance_sim: salt-måling med en Fritterbix, der sælger | simulation | done |
+| T-133 | Sim: required_pieces for sporbaner | simulation | done |
 | T-134 | UI: låst sporbane-kort | ui | review |
 | T-135 | Gameplay: omgivelser i ParkView | gameplay | review |
-| T-136 | Design: samlet UI-stil (art direction) | designer | review |
+| T-136 | Design: samlet UI-stil (art direction) | designer | done |
 | T-137 | Grafik: UI-ikoner og prop-miniaturer | graphics | review |
 | T-138 | UI: fælles tema og billedbaseret byggemenu | ui | review |
 | T-139 | Design: logo i Tivoli-skilt-stilen | designer | review |
@@ -178,9 +178,10 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-145 | Svævebane som attraktion – kører kun ved brug | simulation | review |
 | T-146 | Bug: personale-panelet uden for skærmen | ui | review |
 | T-148 | Bug: gæster ser forskellige ud, strakte kapsler | graphics | review |
-| T-118 | M7 verifikation | qa | todo |
+| T-118 | M7 verifikation | qa | review |
+| T-152 | balance.sh tager over 15 minutter | simulation | todo |
 
-M7 startet 2026-10-16. Runde 1 (T-100, T-101, T-108, T-121, T-131) på review. Kendt: 2 tests fejler på `atm` indtil T-104/T-107.
+M7 startet 2026-10-16. T-118 QA: 13 headless-tasks er done. Resten (visuelt) er teknisk OK og afventer brugerens godkendelse (tjekliste i T-118). Ny: T-152.
 
 Runder: 1) T-100, T-101 (UX-fundament), T-108 · 2) T-102 (save v4), T-107 · 3) T-103→T-104→T-105, T-112, T-109 · 4) T-106, T-111 · 5) T-110, T-113, derefter T-114 · 6) T-115/T-116, derefter T-117 · 7) T-118.
 

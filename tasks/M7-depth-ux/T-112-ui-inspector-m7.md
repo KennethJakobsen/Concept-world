@@ -24,3 +24,4 @@ Kontraktens §4 T-112. Se `tasks/M7-depth-ux/_CONTRACT.md`.
   - Tests: `tests/test_ui_m7_inspector.gd` (5 tests inkl. glyf-tjek af alle faner) er grønne. Inspektøren er fortsat UiFit-styret (280 px bred, scroll).
   - Skærmbilleder: `docs/screenshots/t112_{settings_ride,settings_shop,economy,queue}.png` (script `scripts/ui/ui_screenshots_t112.gd`); set og ser fine ud.
   - Kendte røde ting, der ikke er mine: coaster/render-tests (parallelt graphics-arbejde: `ColorPalette.ghost`, `ParkColors`), `test_m7_amenities` (sim T-104), og integration.sh melder leak-advarsler ved exit, også med T-112 slået fra. Integration-flowet selv: OK (0 fejl).
+- 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
