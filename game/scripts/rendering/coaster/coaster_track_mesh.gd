@@ -9,6 +9,9 @@ extends MeshInstance3D
 ## Hele banen bygges som én sammenhængende polylinje, så der ikke er huller ved samlinger.
 
 const PIECES_PATH := "res://content/coaster/pieces.json"
+const TRACKS_DIR := "res://content/tracks/"
+const TRACK_SYSTEMS: Array[String] = ["flume", "train", "monorail"]
+const WATER_SHADER := preload("res://shaders/flume_water.gdshader")
 const SAMPLES := 8
 const GAUGE := 0.17          ## halv sporvidde (m)
 const RAIL_W := 0.05
@@ -19,6 +22,14 @@ const TIE_W := 0.07
 const TIE_H := 0.05
 const LEG_W := 0.07
 const LEG_SPREAD := 0.24
+
+const FLUME_HALF := 0.25
+const FLUME_FLOOR_Y := -0.02
+const FLUME_WALL_H := 0.24
+const WATER_Y := 0.09
+const TRAIN_GAUGE := 0.12
+const MONO_BEAM_W := 0.18
+const MONO_BEAM_H := 0.3
 
 const DEFAULT_DEFS := {
 	"track_straight": {"id": "track_straight", "cost": 40, "length": 1.0, "turn": 0, "rise": 0, "kind": "track"},
@@ -35,16 +46,27 @@ const DIRS: Array[Vector3] = [Vector3(0, 0, -1), Vector3(1, 0, 0), Vector3(0, 0,
 static var _mat_rail: Material
 static var _mat_wood: Material
 static var _mat_chain: StandardMaterial3D
+static var _mat_water: ShaderMaterial
+static var _mat_concrete: StandardMaterial3D
+static var _mat_ballast: Material
 
 var _ghost_mat: StandardMaterial3D = null
 
 
-## Indlæser stykke-defs fra pieces.json (liste eller {pieces: [...]}); falder tilbage til DEFAULT_DEFS.
+## Indlæser stykke-defs fra pieces.json + tracks/<system>.json (T-092, ADR-004);
+## falder tilbage til DEFAULT_DEFS. Hver def får "system" (default fra filen).
 static func load_defs() -> Dictionary:
 	var out: Dictionary = DEFAULT_DEFS.duplicate(true)
-	if not FileAccess.file_exists(PIECES_PATH):
-		return out
-	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(PIECES_PATH))
+	_merge_file(out, PIECES_PATH, "coaster")
+	for sys: String in TRACK_SYSTEMS:
+		_merge_file(out, TRACKS_DIR + sys + ".json", sys)
+	return out
+
+
+static func _merge_file(out: Dictionary, path: String, sys: String) -> void:
+	if not FileAccess.file_exists(path):
+		return
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
 	var arr: Array = []
 	if data is Array:
 		arr = data
@@ -52,8 +74,17 @@ static func load_defs() -> Dictionary:
 		arr = data["pieces"]
 	for d: Variant in arr:
 		if d is Dictionary and d.has("id"):
-			out[String(d["id"])] = d
-	return out
+			var dd: Dictionary = (d as Dictionary).duplicate()
+			if not dd.has("system"):
+				dd["system"] = sys
+			out[String(dd["id"])] = dd
+
+
+## Banens system (første stykkes def; "coaster" som default).
+static func system_of(pieces: Array, defs: Dictionary) -> StringName:
+	if pieces.is_empty():
+		return &"coaster"
+	return StringName(String(_def_for(pieces[0], defs).get("system", "coaster")))
 
 
 static func heading_dir(h: int) -> Vector3:
@@ -211,9 +242,17 @@ static func _materials() -> void:
 	_mat_chain = StandardMaterial3D.new()
 	_mat_chain.albedo_color = Color(0.16, 0.16, 0.18)
 	_mat_chain.roughness = 0.6
+	_mat_water = ShaderMaterial.new()
+	_mat_water.shader = WATER_SHADER
+	_mat_concrete = StandardMaterial3D.new()
+	_mat_concrete.albedo_color = Color(0.72, 0.71, 0.68)
+	_mat_concrete.albedo_texture = load("res://assets/textures/plaster.png")
+	_mat_concrete.uv1_triplanar = true
+	_mat_concrete.roughness = 0.9
+	_mat_ballast = load("res://assets/materials/path_stone.tres")
 
 
-## Bygger meshet. Kald kun ved ændring.
+## Bygger meshet. Kald kun ved ændring. Dispatcher på system (ADR-004 §5).
 func build(pieces: Array, defs: Dictionary) -> void:
 	_materials()
 	var idx := PackedInt32Array()
@@ -222,17 +261,34 @@ func build(pieces: Array, defs: Dictionary) -> void:
 		mesh = null
 		return
 	var closed := pieces.size() > 2 and _is_closed(pieces, defs)
+	var frames := _frames(line, closed)
+	match system_of(pieces, defs):
+		&"flume":
+			mesh = _build_flume(pieces, defs, line, frames)
+		&"train":
+			mesh = _build_train(line, frames, closed)
+		&"monorail":
+			mesh = _build_monorail(pieces, defs, line, frames)
+		_:
+			mesh = _build_coaster(pieces, defs, line, frames, idx, closed)
+	_apply_ghost()
+
+
+## Frames pr. punkt (gennemsnitlig tangent ved samlinger -> ingen huller).
+static func _frames(line: PackedVector3Array, closed: bool) -> Array[Basis]:
 	var n := line.size()
-	# Frames pr. punkt (gennemsnitlig tangent ved samlinger -> ingen huller).
 	var frames: Array[Basis] = []
 	for i in n:
 		var a := line[i - 1] if i > 0 else (line[n - 2] if closed else line[i])
 		var b := line[i + 1] if i < n - 1 else (line[1] if closed else line[i])
-		var fwd := (b - a).normalized()
-		frames.append(_basis_for(fwd))
+		frames.append(_basis_for((b - a).normalized()))
 	if closed:
 		frames[n - 1] = frames[0]
+	return frames
 
+
+func _build_coaster(pieces: Array, defs: Dictionary, line: PackedVector3Array, frames: Array[Basis], idx: PackedInt32Array, closed: bool) -> ArrayMesh:
+	var n := line.size()
 	var am := ArrayMesh.new()
 	# Skinner (2 stk) + rygbjælke under midten.
 	var st := SurfaceTool.new()
@@ -296,8 +352,126 @@ func build(pieces: Array, defs: Dictionary) -> void:
 		st.generate_normals()
 		st.commit(am)
 		am.surface_set_material(am.get_surface_count() - 1, _mat_chain)
-	mesh = am
-	_apply_ghost()
+	return am
+
+
+## Flume (T-092): trug af træ (bund + to vægge), vandoverflade og træben.
+func _build_flume(pieces: Array, defs: Dictionary, line: PackedVector3Array, frames: Array[Basis]) -> ArrayMesh:
+	var am := ArrayMesh.new()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_sweep_box(st, line, frames, Vector2(0.0, FLUME_FLOOR_Y - 0.03), Vector2(FLUME_HALF * 2.0 + 0.06, 0.06))
+	for side: float in [-FLUME_HALF, FLUME_HALF]:
+		_sweep_box(st, line, frames, Vector2(side, FLUME_FLOOR_Y + FLUME_WALL_H * 0.5), Vector2(0.05, FLUME_WALL_H))
+	_legs(st, pieces, defs, -FLUME_FLOOR_Y + 0.06, 0.24, 0.07)
+	st.generate_normals()
+	st.commit(am)
+	am.surface_set_material(am.get_surface_count() - 1, _mat_wood)
+	# Vand: én strimmel med UV (x på tværs, y = buelængde).
+	st = SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var acc := arc_lengths(line)
+	var hw := FLUME_HALF - 0.03
+	for i in line.size() - 1:
+		var b0 := frames[i]
+		var b1 := frames[i + 1]
+		var a0 := line[i] + b0.y * WATER_Y - b0.x * hw
+		var a1 := line[i] + b0.y * WATER_Y + b0.x * hw
+		var e0 := line[i + 1] + b1.y * WATER_Y - b1.x * hw
+		var e1 := line[i + 1] + b1.y * WATER_Y + b1.x * hw
+		var v0 := acc[i]
+		var v1 := acc[i + 1]
+		var up := b0.y
+		for t: Array in [[a0, 0.0, v0], [e1, 1.0, v1], [a1, 1.0, v0], [a0, 0.0, v0], [e0, 0.0, v1], [e1, 1.0, v1]]:
+			st.set_normal(up)
+			st.set_uv(Vector2(t[1], t[2]))
+			st.add_vertex(t[0])
+	st.commit(am)
+	am.surface_set_material(am.get_surface_count() - 1, _mat_water)
+	return am
+
+
+## Train (T-092): to skinner med sveller på et grusleje (jordniveau).
+func _build_train(line: PackedVector3Array, frames: Array[Basis], closed: bool) -> ArrayMesh:
+	var am := ArrayMesh.new()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	for side: float in [-TRAIN_GAUGE, TRAIN_GAUGE]:
+		_sweep_box(st, line, frames, Vector2(side, 0.065), Vector2(0.035, 0.04))
+	st.generate_normals()
+	st.commit(am)
+	am.surface_set_material(am.get_surface_count() - 1, _mat_rail)
+	st = SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var n := line.size()
+	for i in n:
+		if closed and i == n - 1:
+			continue
+		var bs := frames[i]
+		_box(st, line[i] + bs.y * 0.03, bs.x * 0.2, bs.y * 0.015, bs.z * 0.035)
+	st.generate_normals()
+	st.commit(am)
+	am.surface_set_material(am.get_surface_count() - 1, _mat_wood)
+	st = SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_sweep_box(st, line, frames, Vector2(0.0, 0.008), Vector2(0.5, 0.016))
+	st.generate_normals()
+	st.commit(am)
+	am.surface_set_material(am.get_surface_count() - 1, _mat_ballast)
+	return am
+
+
+## Monorail (T-092): betonbjælke under centerlinjen på søjler med T-hoved.
+func _build_monorail(pieces: Array, defs: Dictionary, line: PackedVector3Array, frames: Array[Basis]) -> ArrayMesh:
+	var am := ArrayMesh.new()
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	_sweep_box(st, line, frames, Vector2(0.0, -MONO_BEAM_H * 0.5), Vector2(MONO_BEAM_W, MONO_BEAM_H))
+	var seen := {}
+	for p: Dictionary in pieces:
+		var cl := centerline(p, _def_for(p, defs), 2)
+		var mid := cl[1]
+		var top := mid.y - MONO_BEAM_H
+		var cell := _cell_of(p)
+		if top < 0.1 or seen.has(cell):
+			continue
+		seen[cell] = true
+		var fwd := cl[2] - cl[0]
+		fwd.y = 0.0
+		fwd = fwd.normalized()
+		var side := fwd.cross(Vector3.UP).normalized()
+		var base := Vector3(mid.x, 0.0, mid.z)
+		_box(st, base + Vector3(0, top * 0.5, 0), side * 0.07, Vector3(0, top * 0.5, 0), fwd * 0.07)
+		_box(st, base + Vector3(0, top - 0.05, 0), side * 0.16, Vector3(0, 0.05, 0), fwd * 0.1)
+		_box(st, base + Vector3(0, 0.04, 0), side * 0.16, Vector3(0, 0.04, 0), fwd * 0.16)
+	st.generate_normals()
+	st.commit(am)
+	am.surface_set_material(am.get_surface_count() - 1, _mat_concrete)
+	return am
+
+
+## To ben pr. hævet stykke (én gang pr. celle/højde) + tværbjælke.
+static func _legs(st: SurfaceTool, pieces: Array, defs: Dictionary, below: float, spread: float, w: float) -> void:
+	var seen := {}
+	for p: Dictionary in pieces:
+		var cl := centerline(p, _def_for(p, defs), 2)
+		var mid := cl[1]
+		var top := mid.y - below
+		if top < 0.2:
+			continue
+		var cell := _cell_of(p)
+		var key := Vector3i(cell.x, cell.y, int(round(top * 4)))
+		if seen.has(key):
+			continue
+		seen[key] = true
+		var fwd := cl[2] - cl[0]
+		fwd.y = 0.0
+		fwd = fwd.normalized()
+		var side := fwd.cross(Vector3.UP).normalized()
+		for sgn: float in [-1.0, 1.0]:
+			var base := Vector3(mid.x, 0.0, mid.z) + side * (spread * sgn)
+			_box(st, base + Vector3(0, top * 0.5, 0), Vector3(w * 0.5, 0, 0), Vector3(0, top * 0.5, 0), Vector3(0, 0, w * 0.5))
+		_box(st, Vector3(mid.x, top - 0.04, mid.z), side * (spread + w * 0.5), Vector3(0, 0.04, 0), fwd * (w * 0.5))
 
 
 ## Halvgennemsigtig grøn (ok) / rød preview-variant.

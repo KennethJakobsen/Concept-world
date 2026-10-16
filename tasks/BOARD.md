@@ -120,7 +120,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-089 | UI: intensity, kvalme, præmier og ting | ui | review |
 | T-090 | Sim: generaliseret spor, tømmerrende og minitog | simulation | todo |
 | T-091 | Sim: svævebane – transport mellem to stationer | simulation | todo |
-| T-092 | Grafik: trug, togskinner, monorail-bjælke og køretøjer | graphics | todo |
+| T-092 | Grafik: trug, togskinner, monorail-bjælke og køretøjer | graphics | review |
 | T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | todo |
 | T-094 | UI: spor-faner, fejltekster og info | ui | todo |
 | T-095 | Balance: M6-indhold | designer | todo |
