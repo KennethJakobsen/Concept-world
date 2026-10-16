@@ -257,6 +257,8 @@ func _connect_scene() -> void:
 				selection.connect("selected_staff", show_staff)
 			if selection.has_signal("pause_menu_requested"):
 				selection.connect("pause_menu_requested", open_pause_menu)
+			if selection.has_signal("build_category_requested"):  # T-111: tast 1-6
+				selection.connect("build_category_requested", func(c: String) -> void: build_dock._on_category(c))
 
 
 func _process(_delta: float) -> void:
@@ -596,10 +598,11 @@ func refresh() -> void:
 	top_bar.smiley.value = float(st.get("avg_happiness", 0.0)) if int(st.get("guests", 0)) > 0 else 50.0
 	for id: String in _build_buttons:
 		var b: Button = _build_buttons[id]
-		var locked: bool = is_build_locked(id)
+		var reason: String = build_lock_text(id)
+		var locked: bool = is_build_locked(id) or reason != ""
 		var afford: bool = sim.economy.can_afford(_build_costs[id])
 		b.disabled = locked or not afford
-		LockOverlay.apply(b, locked)
+		LockOverlay.apply(b, locked, reason)
 		build_dock.set_affordable(id, afford)
 	_refresh_m5()
 	_refresh_attraction()
@@ -1122,6 +1125,14 @@ static func research_id(build_id: String) -> String:
 	if build_id.begins_with("coaster:"):
 		return build_id.substr(8)
 	return build_id
+
+
+## T-134: låsetekst for sporbaner, der ikke kan lukkes med oplåste stykker ("" ellers).
+func build_lock_text(build_id: String) -> String:
+	var rid: String = research_id(build_id)
+	if rid == "" or sim == null or (sim.has_method("is_unlocked") and not sim.is_unlocked(rid)):
+		return ""
+	return LockOverlay.track_lock_text(sim, rid)
 
 
 func is_build_locked(build_id: String) -> bool:

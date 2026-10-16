@@ -191,6 +191,15 @@ func occupied_by_track(cell: Vector2i) -> Array[int]:
 	return out
 
 
+## T-106: niveauer i cellen fra andre baner end exclude_id.
+func track_levels_except(cell: Vector2i, exclude_id: int) -> Array[int]:
+	var out: Array[int] = []
+	for e: Array in _track.get(cell, []):
+		if int(e[1]) != exclude_id:
+			out.append(int(e[0]))
+	return out
+
+
 ## Ligger der et stykke under TRACK_CLEARANCE i cellen?
 func has_low_track(cell: Vector2i) -> bool:
 	for lv in occupied_by_track(cell):
@@ -311,32 +320,61 @@ func remove_path(cell: Vector2i) -> bool:
 	return true
 
 
-func can_place_attraction(def: AttractionDef, origin: Vector2i) -> bool:
+func can_place_attraction(def: AttractionDef, origin: Vector2i, rotation: int = 0) -> bool:
 	if def == null:
 		return false
-	for y in def.footprint.y:
-		for x in def.footprint.x:
-			if get_tile(origin + Vector2i(x, y)) != Tile.GRASS or has_low_track(origin + Vector2i(x, y)):
-				return false
-	var ent := Vector2i(origin.x + def.footprint.x / 2, origin.y + def.footprint.y)
+	return footprint_error(def, origin, rotation, null) == ""
+
+
+## T-106: "" = gyldigt. ignore = bygningen selv (ved flyt må den overlappe sit gamle fodaftryk og indgang).
+func footprint_error(def: AttractionDef, origin: Vector2i, rotation: int, ignore: Attraction) -> String:
+	var own: Array[Vector2i] = ignore.footprint_cells() if ignore != null else ([] as Array[Vector2i])
+	var cells: Array[Vector2i] = Attraction.cells_for(def, origin, rotation)
+	for c in cells:
+		if not in_bounds(c):
+			return "out_of_bounds"
+		var t: int = get_tile(c)
+		var free: bool = t == Tile.GRASS or own.has(c) \
+			or (ignore != null and c == ignore.entrance_cell and t == Tile.PATH)
+		if not free or has_low_track(c):
+			return "occupied"
+	var ent: Vector2i = Attraction.entrance_for(def, origin, rotation)
+	if not in_bounds(ent):
+		return "out_of_bounds"
 	var et: int = get_tile(ent)
-	return (et == Tile.GRASS or et == Tile.PATH) and get_attraction_by_entrance(ent) == null \
-		and not has_low_track(ent)
+	if not (et == Tile.GRASS or et == Tile.PATH or own.has(ent)) or has_low_track(ent):
+		return "entrance_blocked"
+	var other: Attraction = get_attraction_by_entrance(ent)
+	if other != null and other != ignore:
+		return "entrance_blocked"
+	return ""
 
 
-func place_attraction(def: AttractionDef, origin: Vector2i) -> Attraction:
-	if not can_place_attraction(def, origin):
+func place_attraction(def: AttractionDef, origin: Vector2i, rotation: int = 0) -> Attraction:
+	if not can_place_attraction(def, origin, rotation):
 		return null
 	var a := Attraction.new(_next_attraction_id, def, origin)
 	_next_attraction_id += 1
-	for y in def.footprint.y:
-		for x in def.footprint.x:
-			_set_tile(origin + Vector2i(x, y), Tile.ATTRACTION)
+	a.rotation = posmod(rotation, 4)
+	a.entrance_cell = Attraction.entrance_for(def, origin, a.rotation)
+	for c in a.footprint_cells():
+		_set_tile(c, Tile.ATTRACTION)
 	attractions.append(a)
 	if get_tile(a.entrance_cell) != Tile.PATH:
 		_set_tile(a.entrance_cell, Tile.PATH)
 	attraction_placed.emit(a)
 	return a
+
+
+## T-106: genindsætter en tidligere fjernet attraktion (fortryd). Kalderen har valideret.
+func reinsert_attraction(a: Attraction) -> void:
+	if a.track == null:
+		for c in a.footprint_cells():
+			_set_tile(c, Tile.ATTRACTION)
+	if get_tile(a.entrance_cell) != Tile.PATH:
+		_set_tile(a.entrance_cell, Tile.PATH)
+	attractions.append(a)
+	attraction_placed.emit(a)
 
 
 func get_attraction_by_entrance(cell: Vector2i) -> Attraction:
@@ -364,9 +402,8 @@ func remove_attraction(attraction_id: int) -> Attraction:
 			clear_track(a.id)
 			remove_links(a.id)
 		else:
-			for y in a.def.footprint.y:
-				for x in a.def.footprint.x:
-					_set_tile(a.origin + Vector2i(x, y), Tile.GRASS)
+			for c in a.footprint_cells():
+				_set_tile(c, Tile.GRASS)
 		attraction_removed.emit(a)
 		return a
 	return null

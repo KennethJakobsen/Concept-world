@@ -148,12 +148,12 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-103 | Sim: køstier, tålmodighed, ledig frem for optaget, gæstemasse | simulation | review |
 | T-104 | Sim: gå hjem, hæveautomat, spande, bænke og lys | simulation | review |
 | T-105 | Sim: milepæle, der låser forskningsgrene op | simulation | review |
-| T-106 | Sim: flyt (også sporbaner), sælg-refusion og fortryd | simulation | todo |
+| T-106 | Sim: flyt (også sporbaner), sælg-refusion og fortryd | simulation | review |
 | T-107 | Grafik: skrald, spande, bænke, ATM, køsti, svævetal og gæstemængde | graphics | review |
 | T-108 | Grafik: mur, port og omgivelser | graphics | review |
 | T-109 | Grafik: kort-overlays og farveblind-palet | graphics | review |
 | T-110 | Gameplay: køsti-, flyt-, rotér- og fortryd-værktøjer | gameplay | todo |
-| T-111 | Gameplay: bridge for salg, skrald, bænke, kø og overlays | gameplay | todo |
+| T-111 | Gameplay: bridge for salg, skrald, bænke, kø og overlays | gameplay | review |
 | T-112 | UI: inspektør-faner (indstillinger, økonomi, kø) | ui | review |
 | T-113 | UI: milepæle, overlay-vælger, indstillinger og tanker | ui | todo |
 | T-114 | Data: tutorial-scenariet 'Første park' | designer | todo |
@@ -161,7 +161,7 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-116 | UI: tutorial-trinpanel | ui | todo |
 | T-117 | Balance: M7-mekanik | designer | todo |
 | T-133 | Sim: required_pieces for sporbaner | simulation | review |
-| T-134 | UI: låst sporbane-kort | ui | todo |
+| T-134 | UI: låst sporbane-kort | ui | review |
 | T-135 | Gameplay: omgivelser i ParkView | gameplay | review |
 | T-136 | Design: samlet UI-stil (art direction) | designer | review |
 | T-137 | Grafik: UI-ikoner og prop-miniaturer | graphics | review |

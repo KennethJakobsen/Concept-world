@@ -5,7 +5,6 @@ extends Node3D
 
 const PATH_SCENE: PackedScene = preload("res://scenes/props/path_tile.tscn")
 const GUEST_SCENE: PackedScene = preload("res://scenes/props/guest.tscn")
-const LITTER_SCENE: PackedScene = preload("res://scenes/props/litter.tscn")
 const SMOKE_SCENE: PackedScene = preload("res://scenes/effects/breakdown_smoke.tscn")
 const BUBBLE_SCENE: PackedScene = preload("res://scenes/props/thought_bubble.tscn")
 const RIG_SCENE: PackedScene = preload("res://scenes/rendering/day_night_rig.tscn")
@@ -39,8 +38,8 @@ var _bubbles: Dictionary = {}      ## guest id -> [ThoughtBubble, time_left]
 var _scene_cache: Dictionary = {}  ## model path -> PackedScene
 var _staff: Dictionary = {}        ## staff id -> Node3D
 var _decor: Dictionary = {}        ## decor id -> Node3D
-var _litter: Dictionary = {}       ## Vector2i -> LitterVisual
-var _litter_pool: Array[Node3D] = []
+var _litter: Dictionary = {}       ## Vector2i -> LitterScatter
+var _litter_pool: Array[LitterScatter] = []
 var _smoke: Dictionary = {}        ## attraction id -> Node3D
 ## ParkView udsender selv effekt-events (tests/UI). kind = effekt-id, fx &"build_dust".
 signal fx_event(kind: StringName, pos: Vector3)
@@ -58,6 +57,23 @@ var _coasters: Dictionary = {}     ## coaster id -> CoasterVis (T-070)
 var _piece_defs: Dictionary = {}
 var _queues: Dictionary = {}       ## T-140: Vector2i -> QueuePathVisual
 var _queue_refreshing: bool = false
+## T-111 (M7)
+var overlay: OverlayRenderer       ## én pr. ParkView, overlever rebuild
+var floating: FloatingText3D       ## svævetal (pool)
+var crowd: GuestCrowdRenderer      ## gæstemasse (MultiMesh/LOD)
+var floating_money: bool = true    ## UserSettings [ui] floating_money
+var _sales: SalesBatcher = SalesBatcher.new()
+var _last_money: int = 0
+var _seated: Dictionary = {}       ## guest id -> [decor id, seat]
+var _hidden_guest: Dictionary = {} ## guest id -> true, når gæsten kører i en forlystelse
+var _individual: Dictionary = {}   ## guest id -> true (vises som GuestVisual); tom = alle
+var _crowd_active: bool = false
+var _focus_tween: Tween
+var _overlay_t: float = 0.0
+const OVERLAY_REFRESH: float = 1.0
+## Sum af et salgsvindue (til UI: pengeblink). sign = +1/-1.
+signal money_flash(sign: int)
+signal sales_flushed(sales: Dictionary)
 
 
 ## Visningsdata for én rutsjebane.
@@ -132,6 +148,14 @@ func setup(p_sim: ParkSim) -> void:
 	sim.item_gained.connect(_on_item_changed)
 	sim.item_lost.connect(_on_item_lost)
 	sim.queue_changed.connect(_on_queue_changed)
+	sim.sales_tick.connect(_on_sales_tick)
+	sim.atm_used.connect(_on_atm_used)
+	sim.bin_state_changed.connect(_on_bin_state_changed)
+	sim.guest_sat.connect(_on_guest_sat)
+	sim.guest_stood.connect(_on_guest_stood)
+	_last_money = sim.economy.money
+	_sales = SalesBatcher.new()
+	refresh_settings()
 	_tod_vis = sim.time_of_day()
 	_on_phase_changed(sim.phase())
 	rebuild()
@@ -148,7 +172,10 @@ func _disconnect() -> void:
 			[sim.litter_swept, _on_litter_swept], [sim.ride_cycle_started, _on_ride_cycle_started],
 			[sim.coaster_changed, _on_coaster_changed], [sim.guest_vomited, _on_guest_vomited],
 			[sim.prize_won, _on_prize_won], [sim.item_gained, _on_item_changed], [sim.item_lost, _on_item_lost],
-			[sim.ride_splash, _on_ride_splash], [sim.queue_changed, _on_queue_changed]]:
+			[sim.ride_splash, _on_ride_splash], [sim.queue_changed, _on_queue_changed],
+			[sim.sales_tick, _on_sales_tick], [sim.atm_used, _on_atm_used],
+			[sim.bin_state_changed, _on_bin_state_changed], [sim.guest_sat, _on_guest_sat],
+			[sim.guest_stood, _on_guest_stood]]:
 		var sig: Signal = pair[0]
 		if sig.is_connected(pair[1]):
 			sig.disconnect(pair[1])
@@ -177,7 +204,11 @@ func rebuild() -> void:
 	_repairing.clear()
 	_running.clear()
 	_coasters.clear()
+	_seated.clear()
+	_hidden_guest.clear()
+	_individual.clear()
 	_night = -1.0
+	_ensure_m7_nodes()
 	var w: ParkWorld = sim.world
 	for y in w.height:
 		for x in w.width:
@@ -202,6 +233,9 @@ func rebuild() -> void:
 		_on_staff_hired(sim.staff[sid])
 	for gid: int in sim.guests:
 		_on_guest_spawned(sim.guests[gid])
+		var g: Guest = sim.guests[gid]
+		if g.resting_on >= 0 and sim.bench_seat(gid) >= 0:
+			_on_guest_sat(gid, g.resting_on, sim.bench_seat(gid))
 	for cell: Vector2i in w.litter:
 		_on_litter_changed(cell, int(w.litter[cell]))
 	_rebuilding = false
@@ -242,6 +276,9 @@ func _process(delta: float) -> void:
 	sim.update(delta)
 	_coin_cd = maxf(0.0, _coin_cd - delta)
 	sync_guests()
+	update_crowd()
+	_flush_sales(delta)
+	_refresh_overlay(delta)
 	sync_staff()
 	sync_attractions()
 	update_coasters(delta)
@@ -534,7 +571,7 @@ func guest_near(p: Vector3, radius: float = 0.5) -> int:
 	var best_d: float = radius * radius
 	for gid: int in _guests:
 		var n: Node3D = _guests[gid]
-		if not n.visible:
+		if _hidden_guest.has(gid):
 			continue
 		var d: float = Vector2(n.position.x - p.x, n.position.z - p.z).length_squared()
 		if d <= best_d:
@@ -708,6 +745,9 @@ func _on_guest_removed(guest_id: int) -> void:
 		_guests.erase(guest_id)
 	_bubbles.erase(guest_id)  # boblen er barn af gæst-noden
 	_last_thought.erase(guest_id)
+	_seated.erase(guest_id)
+	_hidden_guest.erase(guest_id)
+	_individual.erase(guest_id)
 
 
 func _free_in(d: Dictionary, key: Variant) -> void:
@@ -777,6 +817,8 @@ func _on_decor_placed(d: Decor) -> void:
 		n.position.x += 0.35 if (d.cell.x + d.cell.y) % 2 == 0 else -0.35
 	_root.add_child(n)
 	_decor[d.id] = n
+	if d.def.kind == "bin":
+		AmenityVisuals.set_bin_level(n, sim.bin_level(d))
 	if _night >= 0.0:
 		_light_node(n, _night)
 	if not _rebuilding:
@@ -792,24 +834,39 @@ func _on_decor_removed(decor_id: int) -> void:
 	_free_in(_decor, decor_id)
 
 
+## T-111: skrald som LitterScatter-props (deterministisk placering pr. celle/index). Poolet.
 func _on_litter_changed(cell: Vector2i, amount: int) -> void:
 	if amount <= 0:
 		if _litter.has(cell):
-			var old: Node3D = _litter[cell]
-			old.visible = false
+			var old: LitterScatter = _litter[cell]
+			old.set_items([])
 			_litter.erase(cell)
 			_litter_pool.append(old)
 		return
-	var n: Node3D = _litter.get(cell, null)
+	var n: LitterScatter = _litter.get(cell, null)
 	if n == null:
 		if not _litter_pool.is_empty():
 			n = _litter_pool.pop_back()
 		else:
-			n = LITTER_SCENE.instantiate()
+			n = LitterScatter.new()
 			_root.add_child(n)
+		n.cell = cell
 		n.position = cell_center(cell)
 		_litter[cell] = n
-	n.call("set_level", amount)
+	n.set_items(litter_items(sim.litter_at(cell), cell))
+
+
+## Sim giver kind "litter"/"vomit"; "litter" fordeles deterministisk på papir/bæger/dåse/mad.
+static func litter_items(items: Array[Dictionary], cell: Vector2i) -> Array:
+	const KINDS: Array[String] = ["wrapper", "cup", "can", "food"]
+	var out: Array = []
+	for it: Dictionary in items:
+		var k: String = str(it.get("kind", "litter"))
+		var idx: int = int(it.get("index", 0))
+		if k != "vomit":
+			k = KINDS[posmod(hash([cell.x, cell.y, idx, 7]), KINDS.size())]
+		out.append({"kind": k, "index": idx})
+	return out
 
 
 # --- Gæste-interpolation ---
@@ -860,9 +917,21 @@ func _sync_repair(sid: int, st: Staff, n: Node3D) -> void:
 func _update_guest(n: Node3D, g: Guest) -> void:
 	if g.state == Guest.State.RIDING or sim.guest_state_name(g) == &"riding_transport":
 		n.visible = false
+		_hidden_guest[g.id] = true
 		return
-	n.visible = true
-	if n.has_method("set_walking"):
+	_hidden_guest.erase(g.id)
+	var show: bool = not _crowd_active or _individual.has(g.id)
+	n.visible = show
+	n.process_mode = Node.PROCESS_MODE_INHERIT if show else Node.PROCESS_MODE_DISABLED
+	if _seated.has(g.id):
+		var e: Array = _seated[g.id]
+		var bn: Node3D = _decor.get(int(e[0]), null)
+		if bn != null:
+			var sp: Vector3 = AmenityVisuals.bench_seat_position(int(e[1]))
+			n.position = bn.transform * Vector3(sp.x, 0.0, sp.z)
+			n.rotation.y = bn.rotation.y + PI
+			return
+	if show and n.has_method("set_walking"):
 		n.call("set_walking", g.next_cell != g.cell and g.state != Guest.State.RESTING)
 	if g.state == Guest.State.RESTING:
 		var d: Decor = sim.get_decor(g.target_decor_id)
@@ -1098,3 +1167,164 @@ func _pose_train(cv: CoasterVis, a: Attraction, t: float) -> void:
 	for i in n:
 		poses.append(CoasterTrackMesh.pose_at(cv.line, cv.acc, head - i * CoasterTrain.CAR_SPACING))
 	cv.train.set_path_pose(poses)
+
+
+# --- T-111: M7-bridge (salg, ATM, spande, bænke, gæstemasse, overlays, fokus) ---
+
+func _ensure_m7_nodes() -> void:
+	if overlay == null:
+		overlay = OverlayRenderer.new()
+		overlay.name = "Overlay"
+		add_child(overlay)
+	if floating == null:
+		floating = FloatingText3D.new()
+		floating.name = "FloatingMoney"
+		add_child(floating)
+	if crowd == null:
+		crowd = GuestCrowdRenderer.new()
+		crowd.name = "GuestCrowd"
+		add_child(crowd)
+
+
+## Læser UserSettings (svævetal, farveblind). Kaldes ved opstart og af UI, når indstillingerne ændres.
+func refresh_settings() -> void:
+	var st: UserSettings = UserSettings.load_from()
+	floating_money = st.floating_money
+	ParkColors.set_colorblind(st.colorblind)
+
+
+func _on_sales_tick(sales: Dictionary) -> void:
+	_sales.add(sales)
+
+
+## Lukker 0,25 s-vinduet: svævetal pr. bygning + pengeblink (fortegn af pengeændringen i vinduet).
+func _flush_sales(delta: float) -> void:
+	var out: Dictionary = _sales.advance(delta)
+	var money: int = sim.economy.money
+	if not out.is_empty():
+		sales_flushed.emit(out)
+		if floating_money and floating != null:
+			for id: int in out:
+				var a: Attraction = sim.get_attraction(id)
+				if a != null and int(out[id]) != 0:
+					floating.show_amount(_attraction_pos(a, 2.0), int(out[id]))
+	if _sales_window_closed() and money != _last_money:
+		_emit_money_flash(signi(money - _last_money))
+		_last_money = money
+
+
+func _sales_window_closed() -> bool:
+	return _sales._t == 0.0
+
+
+func _emit_money_flash(sign: int) -> void:
+	money_flash.emit(sign)
+	var gs: Node = get_node_or_null("/root/GameSession") if is_inside_tree() else null
+	if gs != null and gs.has_signal("money_flash"):
+		gs.emit_signal("money_flash", sign)
+
+
+func _on_atm_used(_guest_id: int, attraction_id: int, amount: int) -> void:
+	var a: Attraction = sim.get_attraction(attraction_id)
+	if a == null:
+		return
+	var pos: Vector3 = _attraction_pos(a, 1.6)
+	fx_event.emit(&"atm", pos)
+	if floating_money and floating != null:
+		floating.show_amount(pos, amount, Color(0.55, 0.8, 1.0))
+
+
+func _on_bin_state_changed(decor_id: int, level: int) -> void:
+	var n: Node3D = _decor.get(decor_id, null)
+	if n != null:
+		AmenityVisuals.set_bin_level(n, level)
+
+
+func _on_guest_sat(guest_id: int, decor_id: int, seat: int) -> void:
+	_seated[guest_id] = [decor_id, seat]
+	var n: Node3D = _guests.get(guest_id, null)
+	if n != null:
+		AmenityVisuals.set_guest_seated(n, true)
+
+
+func _on_guest_stood(guest_id: int) -> void:
+	_seated.erase(guest_id)
+	var n: Node3D = _guests.get(guest_id, null)
+	if n != null:
+		AmenityVisuals.set_guest_seated(n, false)
+
+
+func seated_count() -> int:
+	return _seated.size()
+
+
+## Gæstemasse: de nærmeste (≤ 120) vises som GuestVisual, resten som MultiMesh (ADR-005 §7).
+## Uden kamera (headless tests) vises alle som noder.
+func update_crowd() -> void:
+	var cam: Camera3D = get_viewport().get_camera_3d() if is_inside_tree() else null
+	if crowd == null or cam == null:
+		_crowd_active = false
+		return
+	var entries: Array = []
+	for gid: int in _guests:
+		if _hidden_guest.has(gid):
+			continue
+		var n: Node3D = _guests[gid]
+		entries.append({"id": gid, "pos": n.position, "color": _guest_color(gid)})
+	var ids: PackedInt32Array = crowd.update(entries, cam.global_position)
+	_individual.clear()
+	for id: int in ids:
+		_individual[id] = true
+	_crowd_active = true
+
+
+static func _guest_color(gid: int) -> Color:
+	return Color.from_hsv(fposmod(gid * 0.618034, 1.0), 0.55, 0.9)
+
+
+func individual_guest_count() -> int:
+	var n: int = 0
+	for gid: int in _guests:
+		if (_guests[gid] as Node3D).visible:
+			n += 1
+	return n
+
+
+## Overlays (T-109): data fra sim via OverlayData. kind = &"" skjuler.
+func show_overlay(kind: StringName) -> void:
+	_ensure_m7_nodes()
+	if kind == &"":
+		overlay.hide_overlay()
+		return
+	overlay.show_overlay(kind, OverlayData.build(sim, kind))
+
+
+func hide_overlay() -> void:
+	if overlay != null:
+		overlay.hide_overlay()
+
+
+func overlay_kind() -> StringName:
+	return overlay.current_kind() if overlay != null else &""
+
+
+## Flytter kameraets fokus glat til cellen (toast-klik i AlertTray).
+func focus_cell(cell: Vector2i) -> void:
+	var cam: Camera3D = get_viewport().get_camera_3d() if is_inside_tree() else null
+	if cam == null or not (cam.get_parent() is ParkCamera):
+		return
+	var pc: ParkCamera = cam.get_parent()
+	var target := Vector3(cell.x + 0.5, pc.position.y, cell.y + 0.5)
+	if _focus_tween != null and _focus_tween.is_valid():
+		_focus_tween.kill()
+	_focus_tween = pc.create_tween()
+	_focus_tween.tween_property(pc, "position", target, 0.4).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+
+func _refresh_overlay(delta: float) -> void:
+	if overlay == null or overlay.current_kind() == &"":
+		return
+	_overlay_t += delta
+	if _overlay_t >= OVERLAY_REFRESH:
+		_overlay_t = 0.0
+		overlay.show_overlay(overlay.current_kind(), OverlayData.build(sim, overlay.current_kind()))

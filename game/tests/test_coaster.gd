@@ -231,6 +231,7 @@ func test_remove_coaster_clears_track() -> void:
 	var m: int = s.economy.money
 	var a: Attraction = s.get_attraction(1)
 	var val: int = a.build_value()
+	a.total_visitors = 1  # T-106: ellers fuld refusion lige efter opførelse
 	assert_true(s.cmd_remove_attraction(1))
 	assert_eq(s.economy.money, m + val / 2)
 	assert_eq(s.world.occupied_by_track(Vector2i(11, 10)), [] as Array[int])

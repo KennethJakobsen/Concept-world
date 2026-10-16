@@ -73,6 +73,11 @@ var _locked: Dictionary = {}
 var queue_cells: Array[Vector2i] = []
 ## Køens rækkefølge er ændret siden sidste queue_changed.
 var queue_dirty: bool = false
+## T-106: 90°-trin (0..3) for flade bygninger. 0 = indgang mod syd (+y), 1 = vest, 2 = nord, 3 = øst.
+## Ulige rotation bytter footprintets bredde/højde. Sporbaner bruger banens headings i stedet (altid 0).
+var rotation: int = 0
+## T-106: tick for opførelse (sell_refund). Gamle saves: 0.
+var built_tick: int = 0
 
 
 func is_coaster() -> bool:
@@ -222,7 +227,7 @@ func _init(p_id: int, p_def: AttractionDef, p_origin: Vector2i) -> void:
 	id = p_id
 	def = p_def
 	origin = p_origin
-	entrance_cell = Vector2i(origin.x + def.footprint.x / 2, origin.y + def.footprint.y)
+	entrance_cell = entrance_for(def, origin, 0)
 	price = def.ticket_price
 
 
@@ -238,8 +243,48 @@ func is_running() -> bool:
 func occupies(cell: Vector2i) -> bool:
 	if not cells.is_empty():
 		return cells.has(cell)
+	var fp: Vector2i = footprint_size()
 	return cell.x >= origin.x and cell.y >= origin.y \
-		and cell.x < origin.x + def.footprint.x and cell.y < origin.y + def.footprint.y
+		and cell.x < origin.x + fp.x and cell.y < origin.y + fp.y
+
+
+## T-106: footprint efter rotation.
+func footprint_size() -> Vector2i:
+	return rotated_size(def, rotation)
+
+
+## T-106: footprintets celler (flade bygninger) eller banens celler.
+func footprint_cells() -> Array[Vector2i]:
+	if not cells.is_empty():
+		return cells.duplicate()
+	return cells_for(def, origin, rotation)
+
+
+static func rotated_size(p_def: AttractionDef, rot: int) -> Vector2i:
+	var fp: Vector2i = p_def.footprint
+	return Vector2i(fp.y, fp.x) if posmod(rot, 2) == 1 else fp
+
+
+static func cells_for(p_def: AttractionDef, p_origin: Vector2i, rot: int) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var fp: Vector2i = rotated_size(p_def, rot)
+	for y in fp.y:
+		for x in fp.x:
+			out.append(p_origin + Vector2i(x, y))
+	return out
+
+
+## Indgangscellen for en flad bygning med origin og rotation.
+static func entrance_for(p_def: AttractionDef, p_origin: Vector2i, rot: int) -> Vector2i:
+	var fp: Vector2i = rotated_size(p_def, rot)
+	match posmod(rot, 4):
+		1:
+			return Vector2i(p_origin.x - 1, p_origin.y + fp.y / 2)
+		2:
+			return Vector2i(p_origin.x + fp.x / 2, p_origin.y - 1)
+		3:
+			return Vector2i(p_origin.x + fp.x, p_origin.y + fp.y / 2)
+	return Vector2i(p_origin.x + fp.x / 2, p_origin.y + fp.y)
 
 
 func enqueue(guest_id: int) -> void:
@@ -302,6 +347,7 @@ func to_save() -> Dictionary:
 		"customers_today": customers_today, "revenue_today": revenue_today,
 		"revenue_days": Array(revenue_days), "payback_day": payback_day,
 		"upkeep_total": upkeep_total, "supplies_total": supplies_total,
+		"rotation": rotation, "built_tick": built_tick,
 		"supplies_frac": SaveCodec.f(supplies_frac), "locked_config": SaveCodec.float_dict(_locked),
 	}
 
@@ -322,6 +368,9 @@ static func from_save(d: Dictionary, p_def: AttractionDef) -> Attraction:
 	a.last_inspect_tick = int(d.get("last_inspect_tick", -1))
 	a.self_repair_elapsed = int(d.get("self_repair_elapsed", 0))
 	a.cells = SaveCodec.to_v2i_array(d.get("cells", []))
+	a.rotation = posmod(int(d.get("rotation", 0)), 4)
+	a.built_tick = int(d.get("built_tick", 0))
+	a.entrance_cell = Attraction.entrance_for(p_def, a.origin, a.rotation)
 	if d.has("entrance_cell"):
 		a.entrance_cell = SaveCodec.to_v2i(d.get("entrance_cell"), a.entrance_cell)
 	var tr: Variant = d.get("track")

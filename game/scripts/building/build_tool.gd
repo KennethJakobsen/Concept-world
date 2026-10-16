@@ -2,7 +2,7 @@ class_name BuildTool
 extends Node
 ## Byggeværktøjer: sender kommandoer til ParkSim via ParkView og viser preview.
 ## Værktøj vælges via Selection.build_tool_requested (UI) eller taster:
-## 1=sti 2=karrusel 3=pariserhjul 4=radiobiler 5=burger 6=drikke 7=is 8=toilet
+## 1-6 = byggekategorier (stier/forlystelser/butikker/pynt/personale/rutsjebaner)
 ## X=fjern bygning/dekoration/sti (træk for flere stier), 0=vælg, Esc=vælg (eller pause-menu hvis allerede vælg).
 ## "decor:<id>" placerer dekoration, "staff:<type>" ansætter på sti,
 ## "staff_move:<id>" flytter personale (klik på sti). I vælg-værktøjet kan valgt personale trækkes. Venstre=byg/træk, højre=fjern sti.
@@ -15,9 +15,11 @@ const TOOL_QUEUE: String = "queue_path"  ## T-140: køsti (træk for flere, høj
 const TOOL_REMOVE: String = "remove"
 const TOOL_SELECT: String = "select"
 const KEY_TOOLS: Dictionary = {
-	KEY_1: "path", KEY_2: "carousel", KEY_3: "ferris_wheel", KEY_4: "bumper_cars",
-	KEY_5: "burger_stand", KEY_6: "drinks_stand", KEY_7: "ice_cream_stand", KEY_8: "toilet",
 	KEY_X: "remove", KEY_0: "select",
+}
+## T-111: tasterne 1-6 åbner BuildDock-kategorierne (samme rækkefølge som BuildDock.CATEGORIES).
+const KEY_CATEGORIES: Dictionary = {
+	KEY_1: "paths", KEY_2: "rides", KEY_3: "shops", KEY_4: "decor", KEY_5: "staff", KEY_6: "coaster",
 }
 const PREFIX_DECOR: String = "decor:"
 const PREFIX_STAFF: String = "staff:"
@@ -604,6 +606,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		if is_coaster_tool() and _coaster_key(k.keycode):
 			get_viewport().set_input_as_handled()
 			return
+		if KEY_CATEGORIES.has(k.keycode) and not k.ctrl_pressed and not k.meta_pressed:
+			request_category(KEY_CATEGORIES[k.keycode])
+			get_viewport().set_input_as_handled()
+			return
 		if KEY_TOOLS.has(k.keycode):
 			var id: String = KEY_TOOLS[k.keycode]
 			_request_tool(id)
@@ -652,6 +658,12 @@ func handle_escape() -> void:
 
 
 ## Udsender via Selection (så UI holder sig i sync); set_tool kaldes via signalet.
+## Åbner en kategori i BuildDock (som et klik på medaljonen). Signal via Selection til UI.
+func request_category(cat: String) -> void:
+	if _selection != null:
+		_selection.build_category_requested.emit(cat)
+
+
 func _request_tool(id: String) -> void:
 	if _selection != null:
 		_selection.build_tool_requested.emit(id)

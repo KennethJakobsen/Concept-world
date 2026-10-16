@@ -98,6 +98,9 @@ var queue_default_max: int = 4
 var queue_entertained_factor: float = 0.5
 var queue_path_cost: int = 15
 var queue_path_refund: int = 7
+## T-106: fuld refusion inden for N ticks (uden kunder) og antal fortryd-skridt.
+var sell_full_refund_ticks: int = 200
+var undo_steps: int = 20
 var queue_patience_min: float = 600.0
 var queue_patience_max: float = 1500.0
 var queue_impatient_decay: float = 0.02
@@ -199,6 +202,8 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 	b.queue_entertained_factor = clampf(float(park.get("queue_entertained_factor", b.queue_entertained_factor)), 0.0, 1.0)
 	b.queue_path_cost = maxi(0, int(park.get("queue_path_cost", b.queue_path_cost)))
 	b.queue_path_refund = maxi(0, int(park.get("queue_path_refund", b.queue_path_refund)))
+	b.sell_full_refund_ticks = maxi(0, int(park.get("sell_full_refund_ticks", b.sell_full_refund_ticks)))
+	b.undo_steps = maxi(1, int(park.get("undo_steps", b.undo_steps)))
 	b.dark_path_penalty_per_tick = maxf(0.0, float(park.get("dark_path_penalty_per_tick", b.dark_path_penalty_per_tick)))
 	var qp: Variant = guests.get("queue_patience_ticks", null)
 	if qp is Dictionary:

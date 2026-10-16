@@ -59,6 +59,7 @@ func test_build_cost_and_remove_refund() -> void:
 	assert_eq(s.economy.money, 100)
 	assert_eq(a.price, 3)
 	assert_true(s.cmd_place_attraction("stub_ride", Vector2i(2, 2)) == null, "ikke råd")
+	a.total_visitors = 1  # T-106: ellers fuld refusion lige efter opførelse
 	assert_true(s.cmd_remove_attraction(a.id))
 	assert_eq(s.economy.money, 300)
 	assert_true(s.get_attraction(a.id) == null)

@@ -12,6 +12,12 @@ var store: SaveStore = SaveStore.new()
 var _hooked_sim: ParkSim
 var _music_scene: Node  ## scenen der sidst valgte musik
 
+## T-111: pengeblink (+1/-1) efter hvert 0,25 s-salgsvindue (ParkView videresender).
+signal money_flash(sign: int)
+## T-111: sim'ens milepælssignaler videresendt til UI (overlever sim-skift ved load).
+signal milestone_achieved(id: String)
+signal milestones_backfilled(ids: Array)
+
 
 func _process(_delta: float) -> void:
 	_sync_music()
@@ -23,6 +29,8 @@ func _process(_delta: float) -> void:
 			s.day_passed.connect(_on_day_passed)
 			s.research_unlocked.connect(_on_research_unlocked)
 			s.scenario_finished.connect(_on_scenario_finished)
+			s.milestone_achieved.connect(func(id: String) -> void: milestone_achieved.emit(id))
+			s.milestones_backfilled.connect(func(ids: Array) -> void: milestones_backfilled.emit(ids))
 
 
 ## Alias for start_sandbox (bagudkompatibelt).
@@ -115,3 +123,43 @@ func _sync_music() -> void:
 	if am == null:
 		return
 	am.call("play_music", &"park" if cur.scene_file_path == MAIN_SCENE else &"menu")
+
+
+func current_view() -> ParkView:
+	if not is_inside_tree():
+		return null
+	return get_tree().get_first_node_in_group("park_view") as ParkView
+
+
+## T-111: overlay-data til OverlayRenderer ({cells, markers}). Tom, hvis der ikke er en park.
+func overlay_data(kind: StringName) -> Dictionary:
+	return OverlayData.build(current_sim(), kind)
+
+
+## Vis/skjul overlay i parken (kind = &"" skjuler). UI's overlay-vælger kalder disse.
+func show_overlay(kind: StringName) -> void:
+	var v: ParkView = current_view()
+	if v != null:
+		v.show_overlay(kind)
+
+
+func hide_overlay() -> void:
+	var v: ParkView = current_view()
+	if v != null:
+		v.hide_overlay()
+
+
+## Kameraet glider til cellen (toast-klik i AlertTray).
+func focus_cell(cell: Vector2i) -> void:
+	var v: ParkView = current_view()
+	if v != null:
+		v.focus_cell(cell)
+
+
+## Genlæs UserSettings (svævetal/farveblind) – UI kalder efter ændring i indstillinger.
+func refresh_settings() -> void:
+	var v: ParkView = current_view()
+	if v != null:
+		v.refresh_settings()
+	else:
+		ParkColors.refresh_from_settings()

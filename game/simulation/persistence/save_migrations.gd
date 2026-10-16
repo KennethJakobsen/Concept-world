@@ -128,6 +128,11 @@ static func _v3_to_v4(d: Dictionary) -> Dictionary:
 				if not ad.has(k):
 					ad[k] = {"config": {}, "recipes": [], "customers_today": 0, "revenue_days": [],
 						"payback_day": -1}[k]
+			# T-106: opførelsestick (0 = gamle bygninger kan ikke fuld-refunderes) og rotation.
+			if not ad.has("built_tick"):
+				ad["built_tick"] = 0
+			if not ad.has("rotation"):
+				ad["rotation"] = 0
 	for g: Variant in SaveCodec.arr(park, "guests"):
 		if g is Dictionary:
 			var gd: Dictionary = g

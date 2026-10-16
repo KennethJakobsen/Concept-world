@@ -46,6 +46,9 @@ signal litter_changed(cell: Vector2i)
 ## M7 (T-105): milepæle. Backfill (gamle saves) udsender kun milestones_backfilled (ingen toast).
 signal milestone_achieved(id: String)
 signal milestones_backfilled(ids: Array)
+## M7 (T-106): fortryd-stakken ændrede sig, og en bygning blev flyttet (også sporbaner).
+signal undo_changed()
+signal attraction_moved(attraction_id: int)
 
 const PHASE_DAWN: StringName = &"dawn"
 const PHASE_DAY: StringName = &"day"
@@ -120,12 +123,15 @@ var _bench_seat: Dictionary = {}  ## T-104: guest_id -> sædeplads (genberegnes 
 var _phase: StringName = &""  ## afledt af day_tick, gemmes ikke
 var _sales: Dictionary = {}  ## building_id -> kr i nuværende tick (T-102)
 var _queues_dirty: bool = true  ## T-103: køkæder skal genberegnes
+var undo_stack: UndoStack  ## T-106: gemmes ikke
+var _replaying: bool = false  ## T-106: undo/redo kører → ingen nye poster
 
 
 ## p_balance = null → indlæs content/economy.json + guests.json (defaults ved mangler).
 func _init(width: int, height: int, p_seed: int, p_balance: Balance = null) -> void:
 	balance = p_balance if p_balance != null else Balance.load_default()
 	economy = Economy.new(balance.start_money)
+	undo_stack = UndoStack.new(balance.undo_steps)
 	entry_fee = balance.entry_fee
 	spawn_interval_ticks = balance.spawn_interval_ticks
 	max_guests = balance.max_guests
@@ -161,7 +167,10 @@ func cmd_place_path(cell: Vector2i) -> bool:
 	if not world.can_place_path(cell) or not economy.can_afford(balance.path_cost):
 		return false
 	economy.spend(balance.path_cost, "path")
-	return world.place_path(cell)
+	var ok: bool = world.place_path(cell)
+	if ok:
+		_record("path", "Byg sti", {"cell": cell}, -balance.path_cost)
+	return ok
 
 
 func cmd_remove_path(cell: Vector2i) -> bool:
@@ -170,6 +179,7 @@ func cmd_remove_path(cell: Vector2i) -> bool:
 	for did in _decor_ids_at(cell):
 		_remove_decor(did)
 	economy.earn(balance.path_refund, "refund")
+	_record("remove_path", "Fjern sti", {"cell": cell}, balance.path_refund)
 	return true
 
 
@@ -178,13 +188,17 @@ func cmd_place_queue_path(cell: Vector2i) -> bool:
 	if not world.can_place_path(cell) or not economy.can_afford(balance.queue_path_cost):
 		return false
 	economy.spend(balance.queue_path_cost, "path")
-	return world.place_queue(cell)
+	var ok: bool = world.place_queue(cell)
+	if ok:
+		_record("queue_path", "Byg køsti", {"cell": cell}, -balance.queue_path_cost)
+	return ok
 
 
 func cmd_remove_queue_path(cell: Vector2i) -> bool:
 	if not world.remove_queue(cell):
 		return false
 	economy.earn(balance.queue_path_refund, "refund")
+	_record("remove_queue_path", "Fjern køsti", {"cell": cell}, balance.queue_path_refund)
 	return true
 
 
@@ -195,15 +209,21 @@ func cmd_place_attraction(def_id: String, origin: Vector2i) -> Attraction:
 	if not world.can_place_attraction(def, origin) or not economy.can_afford(def.build_cost):
 		return null
 	economy.spend(def.build_cost, "build")
-	return world.place_attraction(def, origin)
+	var a: Attraction = world.place_attraction(def, origin)
+	if a != null:
+		a.built_tick = clock.tick
+		_record("build", "Byg " + def.name, {"attraction": a}, -def.build_cost)
+	return a
 
 
-## Fjerner attraktionen og refunderer 50% af byggeprisen.
+## Fjerner attraktionen og refunderer sell_refund (T-106: 100 % kort efter opførelse uden kunder, ellers 50 %).
 func cmd_remove_attraction(attraction_id: int) -> bool:
+	var refund: int = sell_refund(attraction_id)
 	var a: Attraction = world.remove_attraction(attraction_id)
 	if a == null:
 		return false
-	economy.earn(a.build_value() / 2, "refund")
+	economy.earn(refund, "refund")
+	_record("sell", "Sælg " + a.def.name, {"attraction": a}, refund)
 	return true
 
 
@@ -211,6 +231,7 @@ func cmd_set_price(attraction_id: int, price: int) -> bool:
 	var a: Attraction = get_attraction(attraction_id)
 	if a == null or price < 0:
 		return false
+	_record_setting("price", "Pris", {"id": attraction_id, "key": ""}, a.price, price)
 	a.price = price
 	for g: Guest in guests.values():
 		g.rejected_ids.erase(attraction_id)
@@ -783,6 +804,11 @@ func _on_attraction_placed(a: Attraction) -> void:
 
 func _on_attraction_removed(a: Attraction) -> void:
 	attractions.erase(a)
+	for sig: Signal in [a.ride_finished, a.ride_started]:
+		for c: Dictionary in sig.get_connections():
+			var cb: Callable = c["callable"]
+			if cb.get_object() == self:
+				sig.disconnect(cb)
 	_queues_dirty = true
 	_ensure_queues()
 	var affected: Array = a.queue + a.riders
@@ -1544,6 +1570,8 @@ func cmd_set_config(attraction_id: int, key: String, value: float) -> bool:
 	var v: float = clampf(value, float(e["min"]), float(e["max"]))
 	if key != "speed":
 		v = round(v)
+	_record_setting("config", "Indstilling", {"id": attraction_id, "key": key},
+		float(a.config.get(key, float(e["default"]))), v)
 	if v == float(e["default"]):
 		a.config.erase(key)
 	else:
@@ -1557,6 +1585,8 @@ func cmd_set_recipe(attraction_id: int, recipe_id: String, on: bool) -> bool:
 	var a: Attraction = get_attraction(attraction_id)
 	if a == null or a.def.recipe(recipe_id).is_empty():
 		return false
+	if on != a.recipes.has(recipe_id):
+		_record("recipe", "Opskrift", {"id": attraction_id, "recipe": recipe_id, "on": on}, 0)
 	if on and not a.recipes.has(recipe_id):
 		a.recipes.append(recipe_id)
 		a.recipes.sort()
@@ -1735,6 +1765,7 @@ func cmd_place_decor(def_id: String, cell: Vector2i) -> int:
 	decor[d.id] = d
 	_aura_dirty = true
 	decor_placed.emit(d)
+	_record("decor", "Byg " + def.name, {"decor": d}, -def.build_cost)
 	return d.id
 
 
@@ -1742,8 +1773,11 @@ func cmd_place_decor(def_id: String, cell: Vector2i) -> int:
 func cmd_remove_decor(decor_id: int) -> bool:
 	if not decor.has(decor_id):
 		return false
-	economy.earn((decor[decor_id] as Decor).def.build_cost / 2, "refund")
+	var d: Decor = decor[decor_id]
+	var refund: int = d.def.build_cost / 2
+	economy.earn(refund, "refund")
 	_remove_decor(decor_id)
+	_record("remove_decor", "Fjern " + d.def.name, {"decor": d}, refund)
 	return true
 
 
@@ -2156,6 +2190,7 @@ func cmd_start_coaster(def_id: String, station_cell: Vector2i, heading: int) -> 
 	world.add_track_cell(station_cell, lvl, a.id)
 	a.building = true
 	a.is_open = false
+	a.built_tick = clock.tick
 	coaster_changed.emit(a.id)
 	return a.id
 
@@ -2273,6 +2308,8 @@ func cmd_finish_coaster(coaster_id: int) -> Array[String]:
 	if not errs.is_empty():
 		return errs
 	a.building = false
+	a.built_tick = clock.tick
+	_record("build_track", "Byg " + a.def.name, {"attraction": a}, -a.build_value())
 	if a.is_transport():
 		var exit: Vector2i = transport_exit_cell(a)
 		if world.get_tile(exit) != ParkWorld.Tile.PATH:
@@ -2966,3 +3003,456 @@ func missing_pieces(def_id: String) -> Array[String]:
 func can_complete(def_id: String) -> bool:
 	var def: AttractionDef = get_def(def_id)
 	return def != null and def.is_tracked() and missing_pieces(def_id).is_empty()
+
+
+# --- T-106: flyt, sælg-refusion og fortryd (ADR-005 §4–5) ---
+
+## Refusion ved salg: 100 % inden for sell_full_refund_ticks efter opførelse og uden kunder, ellers 50 %.
+func sell_refund(attraction_id: int) -> int:
+	var a: Attraction = get_attraction(attraction_id)
+	if a == null:
+		return 0
+	if a.total_visitors == 0 and clock.tick - a.built_tick <= balance.sell_full_refund_ticks:
+		return a.build_value()
+	return a.build_value() / 2
+
+
+static func _rot_cw(v: Vector2i, r: int) -> Vector2i:
+	var out: Vector2i = v
+	for i in posmod(r, 4):
+		out = Vector2i(-out.y, out.x)
+	return out
+
+
+## Banestykker forskudt til station new_origin og drejet til absolut rotation new_rot (om stationen).
+func _moved_pieces(a: Attraction, new_origin: Vector2i, new_rot: int) -> Array[TrackPiece]:
+	var r: int = posmod(new_rot - a.rotation, 4)
+	var s0: Vector2i = a.track.pieces[0].cell
+	var out: Array[TrackPiece] = []
+	for p in a.track.pieces:
+		out.append(TrackPiece.new(p.def_id, new_origin + _rot_cw(p.cell - s0, r), p.heading + r, p.level))
+	return out
+
+
+## Egne sticeller (indgang/udgang), som et flyt må bygge oven på.
+func _own_path_cells(a: Attraction) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var cands: Array[Vector2i] = [a.entrance_cell]
+	if a.is_transport() and a.track != null and a.track.end_station() != null:
+		cands.append(transport_exit_cell(a))
+	for c in cands:
+		var other: Attraction = world.get_attraction_by_entrance(c)
+		if world.get_tile(c) == ParkWorld.Tile.PATH and _decor_ids_at(c).is_empty() \
+				and (other == null or other == a):
+			out.append(c)
+	return out
+
+
+func _low_track_other(cell: Vector2i, self_id: int) -> bool:
+	for lv in world.track_levels_except(cell, self_id):
+		if lv < ParkWorld.TRACK_CLEARANCE:
+			return true
+	return false
+
+
+## Fejl for en indgangs-/udgangscelle til en bane ("" = ok).
+func _track_door_error(c: Vector2i, a: Attraction, own: Array[Vector2i], piece_cells: Dictionary) -> String:
+	if not world.in_bounds(c):
+		return "out_of_bounds"
+	var t: int = world.get_tile(c)
+	if (t != ParkWorld.Tile.GRASS and t != ParkWorld.Tile.PATH) or _low_track_other(c, a.id) \
+			or piece_cells.has(c):
+		return "entrance_blocked"
+	var other: Attraction = world.get_attraction_by_entrance(c)
+	if other != null and other != a:
+		return "entrance_blocked"
+	var at: Attraction = world.get_attraction_at(c)
+	if at != null and at != a:
+		return "entrance_blocked"
+	return ""
+
+
+## Validerer banen a med stykkerne pieces (ignorerer egne gamle celler). {reason, cells, entrance, exit}.
+func _track_layout(a: Attraction, pieces: Array[TrackPiece], entrance: Vector2i, ignore_self: bool) -> Dictionary:
+	var own: Array[Vector2i] = _own_path_cells(a) if ignore_self else ([] as Array[Vector2i])
+	var cells: Array[Vector2i] = []
+	var low_cells: Dictionary = {}
+	var reason: String = ""
+	for p in pieces:
+		if not cells.has(p.cell):
+			cells.append(p.cell)
+		var low: int = a.track.low_level(p)
+		if not world.in_bounds(p.cell):
+			reason = "out_of_bounds"
+			break
+		if low < ParkWorld.TRACK_CLEARANCE:
+			low_cells[p.cell] = true
+			var t: int = world.get_tile(p.cell)
+			var free: bool = t == ParkWorld.Tile.GRASS or (own.has(p.cell) and t == ParkWorld.Tile.PATH)
+			var flat: Attraction = world.get_attraction_at(p.cell)
+			if not free or (flat != null and flat.track == null):
+				reason = "occupied"
+				break
+		for lv in world.track_levels_except(p.cell, a.id):
+			if absi(lv - low) < a.track.clearance_levels:
+				reason = "collision"
+				break
+		if reason != "":
+			break
+	var exit: Vector2i = Vector2i(-1, -1)
+	if reason == "":
+		reason = _track_door_error(entrance, a, own, low_cells)
+	if reason == "" and a.is_transport() and not a.building:
+		var es: TrackPiece = null
+		for i in range(pieces.size() - 1, 0, -1):
+			var d: TrackPieceDef = a.track.def_of(pieces[i])
+			if d != null and d.kind == "station":
+				es = pieces[i]
+				break
+		if es != null:
+			exit = es.cell + TrackPiece.dir(es.heading + 3)
+			reason = _track_door_error(exit, a, own, low_cells)
+	return {"reason": reason, "cells": cells, "entrance": entrance, "exit": exit}
+
+
+## Ghost-validering for flyt: {ok, reason, cells, entrance}. rotation er absolut (0..3, 90° med uret).
+func preview_move(attraction_id: int, origin: Vector2i, rotation: int) -> Dictionary:
+	var a: Attraction = get_attraction(attraction_id)
+	var out: Dictionary = {"ok": false, "reason": "", "cells": [] as Array[Vector2i], "entrance": Vector2i(-1, -1)}
+	if a == null:
+		out["reason"] = "no_attraction"
+		return out
+	var rot: int = posmod(rotation, 4)
+	if origin == a.origin and rot == a.rotation:
+		out["reason"] = "same"
+		return out
+	if a.track != null:
+		var pcs: Array[TrackPiece] = _moved_pieces(a, origin, rot)
+		var ent: Vector2i = origin + _rot_cw(a.entrance_cell - a.track.pieces[0].cell, rot - a.rotation)
+		var lay: Dictionary = _track_layout(a, pcs, ent, true)
+		out["cells"] = lay["cells"]
+		out["entrance"] = ent
+		out["reason"] = lay["reason"]
+	else:
+		out["cells"] = Attraction.cells_for(a.def, origin, rot)
+		out["entrance"] = Attraction.entrance_for(a.def, origin, rot)
+		var err: String = world.footprint_error(a.def, origin, rot, a)
+		if err == "" and (out["cells"] as Array).has(a.entrance_cell) and not _decor_ids_at(a.entrance_cell).is_empty():
+			err = "occupied"
+		out["reason"] = err
+	out["ok"] = out["reason"] == ""
+	return out
+
+
+## Flytter (og drejer) en bygning eller hel sporbane. Gratis. {ok, reason}.
+func cmd_move_attraction(attraction_id: int, origin: Vector2i, rotation: int) -> Dictionary:
+	var a: Attraction = get_attraction(attraction_id)
+	var from_origin: Vector2i = a.origin if a != null else Vector2i.ZERO
+	var from_rot: int = a.rotation if a != null else 0
+	var r: String = _do_move(attraction_id, origin, rotation)
+	if r == "":
+		_record("move", "Flyt " + a.def.name, {"id": attraction_id, "from_origin": from_origin,
+			"from_rot": from_rot, "to_origin": origin, "to_rot": posmod(rotation, 4)}, 0)
+	return {"ok": r == "", "reason": r}
+
+
+func _do_move(attraction_id: int, origin: Vector2i, rotation: int) -> String:
+	var pv: Dictionary = preview_move(attraction_id, origin, rotation)
+	if not pv["ok"]:
+		return pv["reason"]
+	var a: Attraction = get_attraction(attraction_id)
+	var rot: int = posmod(rotation, 4)
+	var own: Array[Vector2i] = _own_path_cells(a)
+	var riders: Array = _eject_guests(a)
+	if a.track != null:
+		var pcs: Array[TrackPiece] = _moved_pieces(a, origin, rot)
+		world.clear_track(a.id)
+		world.remove_links(a.id)
+		for p in pcs:
+			if own.has(p.cell) and a.track.low_level(p) < ParkWorld.TRACK_CLEARANCE:
+				world._set_tile(p.cell, ParkWorld.Tile.GRASS)
+		a.track.pieces = pcs
+		for p in pcs:
+			world.add_track_cell(p.cell, a.track.low_level(p), a.id)
+		_sync_cells(a)
+		a.origin = origin
+		a.rotation = rot
+		a.entrance_cell = pv["entrance"]
+		if world.get_tile(a.entrance_cell) != ParkWorld.Tile.PATH:
+			world._set_tile(a.entrance_cell, ParkWorld.Tile.PATH)
+		if a.is_transport() and not a.building and a.track.is_complete():
+			var exit: Vector2i = transport_exit_cell(a)
+			if world.get_tile(exit) != ParkWorld.Tile.PATH:
+				world._set_tile(exit, ParkWorld.Tile.PATH)
+			_register_links(a)
+	else:
+		for c in a.footprint_cells():
+			world._set_tile(c, ParkWorld.Tile.GRASS)
+		a.origin = origin
+		a.rotation = rot
+		a.entrance_cell = pv["entrance"]
+		for c in a.footprint_cells():
+			world._set_tile(c, ParkWorld.Tile.ATTRACTION)
+		if world.get_tile(a.entrance_cell) != ParkWorld.Tile.PATH:
+			world._set_tile(a.entrance_cell, ParkWorld.Tile.PATH)
+	path_finder.invalidate()
+	_reachable_dirty = true
+	_queues_dirty = true
+	_ensure_queues()
+	if not riders.is_empty():
+		_on_ride_finished(riders, a)  # passagerer sættes af ved den nye indgang (ingen refusion)
+	if a.track != null:
+		coaster_changed.emit(a.id)
+	attraction_moved.emit(a.id)
+	queue_changed.emit(a.id)
+	return ""
+
+
+## Tømmer køen (med refusion) og returnerer passagererne (sættes af af kalderen).
+func _eject_guests(a: Attraction) -> Array:
+	var q: Array = a.queue.duplicate()
+	a.clear_queue()
+	for gid in q:
+		if guests.has(gid):
+			var g: Guest = guests[gid]
+			g.money += g.paid
+			g.paid = 0
+			g.state = Guest.State.WALKING
+			g.target_attraction_id = -1
+			g.queue_index = -1
+			_choose_goal(g)
+	var riders: Array = a.riders.duplicate()
+	a.riders.clear()
+	a.ticks_left = 0
+	return riders
+
+
+## Flytter dekoration til en ny gyldig celle (gratis).
+func cmd_move_decor(decor_id: int, cell: Vector2i) -> bool:
+	var d: Decor = decor.get(decor_id, null)
+	if d == null:
+		return false
+	var from: Vector2i = d.cell
+	if not _do_move_decor(d, cell):
+		return false
+	_record("move_decor", "Flyt " + d.def.name, {"id": decor_id, "from": from, "to": cell}, 0)
+	return true
+
+
+func _do_move_decor(d: Decor, cell: Vector2i) -> bool:
+	if cell == d.cell or not can_place_decor(d.def, cell):
+		return false
+	_remove_decor(d.id)
+	d.cell = cell
+	_reinsert_decor(d)
+	return true
+
+
+func _reinsert_decor(d: Decor) -> void:
+	if not d.def.on_path:
+		world.place_decor_tile(d.cell)
+	decor[d.id] = d
+	_aura_dirty = true
+	decor_placed.emit(d)
+
+
+# Fortryd-stakken
+
+func _record(kind: String, label: String, args: Dictionary, money_delta: int) -> void:
+	if _replaying:
+		return
+	undo_stack.push({"kind": kind, "label": label, "args": args, "inverse_args": args,
+		"money_delta": money_delta, "tick": clock.tick})
+	undo_changed.emit()
+
+
+## Pris/config: på hinanden følgende ændringer af samme felt slås sammen til én post.
+func _record_setting(kind: String, label: String, args: Dictionary, from: Variant, to: Variant) -> void:
+	if _replaying or from == to:
+		return
+	var top: Dictionary = undo_stack.peek_undo()
+	if not undo_stack.can_redo() and top.get("kind", "") == kind:
+		var ta: Dictionary = top["args"]
+		if ta["id"] == args["id"] and ta["key"] == args["key"]:
+			ta["to"] = to
+			undo_changed.emit()
+			return
+	var a2: Dictionary = args.duplicate()
+	a2["from"] = from
+	a2["to"] = to
+	_record(kind, label, a2, 0)
+
+
+func can_undo() -> bool:
+	return undo_stack.can_undo()
+
+
+func can_redo() -> bool:
+	return undo_stack.can_redo()
+
+
+## Tekst for næste fortryd ("" hvis tom).
+func undo_label() -> String:
+	return str(undo_stack.peek_undo().get("label", ""))
+
+
+func redo_label() -> String:
+	return str(undo_stack.peek_redo().get("label", ""))
+
+
+## Fortryder seneste handling. Pengene føres præcist tilbage. {ok, reason, kind}.
+func cmd_undo() -> Dictionary:
+	if not undo_stack.can_undo():
+		return {"ok": false, "reason": "empty", "kind": ""}
+	var e: Dictionary = undo_stack.peek_undo()
+	_replaying = true
+	var r: String = _apply_entry(e, false)
+	_replaying = false
+	if r == "":
+		undo_stack.commit_undo()
+		undo_changed.emit()
+	return {"ok": r == "", "reason": r, "kind": e["kind"]}
+
+
+func cmd_redo() -> Dictionary:
+	if not undo_stack.can_redo():
+		return {"ok": false, "reason": "empty", "kind": ""}
+	var e: Dictionary = undo_stack.peek_redo()
+	_replaying = true
+	var r: String = _apply_entry(e, true)
+	_replaying = false
+	if r == "":
+		undo_stack.commit_redo()
+		undo_changed.emit()
+	return {"ok": r == "", "reason": r, "kind": e["kind"]}
+
+
+## forward = gentag handlingen, ellers udfør den inverse. "" = ok, ellers grund (intet ændret).
+func _apply_entry(e: Dictionary, forward: bool) -> String:
+	var args: Dictionary = e["args"]
+	var md: int = int(e["money_delta"])
+	match str(e["kind"]):
+		"path":
+			return _undo_path(args["cell"], false, forward, -md, "path")
+		"remove_path":
+			return _undo_path(args["cell"], false, not forward, md, "refund")
+		"queue_path":
+			return _undo_path(args["cell"], true, forward, -md, "path")
+		"remove_queue_path":
+			return _undo_path(args["cell"], true, not forward, md, "refund")
+		"build", "build_track":
+			return _toggle_attraction(args["attraction"], forward, -md, "build")
+		"sell":
+			return _toggle_attraction(args["attraction"], not forward, md, "refund")
+		"decor":
+			return _toggle_decor(args["decor"], forward, -md, "decor")
+		"remove_decor":
+			return _toggle_decor(args["decor"], not forward, md, "refund")
+		"move":
+			if get_attraction(int(args["id"])) == null:
+				return "missing"
+			if forward:
+				return _do_move(int(args["id"]), args["to_origin"], int(args["to_rot"]))
+			return _do_move(int(args["id"]), args["from_origin"], int(args["from_rot"]))
+		"move_decor":
+			var d: Decor = decor.get(int(args["id"]), null)
+			if d == null:
+				return "missing"
+			return "" if _do_move_decor(d, args["to"] if forward else args["from"]) else "occupied"
+		"price":
+			if get_attraction(int(args["id"])) == null:
+				return "missing"
+			cmd_set_price(int(args["id"]), int(args["to"] if forward else args["from"]))
+			return ""
+		"config":
+			if get_attraction(int(args["id"])) == null:
+				return "missing"
+			cmd_set_config(int(args["id"]), str(args["key"]), float(args["to"] if forward else args["from"]))
+			return ""
+		"recipe":
+			if get_attraction(int(args["id"])) == null:
+				return "missing"
+			var on: bool = bool(args["on"])
+			cmd_set_recipe(int(args["id"]), str(args["recipe"]), on if forward else not on)
+			return ""
+	return "unknown"
+
+
+## add=true: læg (kø)sti og betal amount; ellers fjern og få amount retur. Samme kategori som originalen.
+func _undo_path(cell: Vector2i, queue: bool, add: bool, amount: int, category: String) -> String:
+	if add:
+		if not world.can_place_path(cell):
+			return "occupied"
+		if not economy.can_afford(amount):
+			return "no_money"
+		economy.spend(amount, category)
+		if queue:
+			world.place_queue(cell)
+		else:
+			world.place_path(cell)
+		return ""
+	if queue:
+		if not world.is_queue(cell):
+			return "missing"
+		world.remove_queue(cell)
+	else:
+		if world.get_tile(cell) != ParkWorld.Tile.PATH or not _decor_ids_at(cell).is_empty():
+			return "occupied"
+		if not world.remove_path(cell):
+			return "occupied"
+	economy.earn(amount, category)
+	return ""
+
+
+## present=true: genindsæt a og betal amount; ellers fjern a og få amount retur.
+func _toggle_attraction(a: Attraction, present: bool, amount: int, category: String) -> String:
+	if not present:
+		if get_attraction(a.id) != a:
+			return "missing"
+		world.remove_attraction(a.id)
+		economy.earn(amount, category)
+		return ""
+	if get_attraction(a.id) != null:
+		return "occupied"
+	var err: String = ""
+	if a.track != null:
+		err = _track_layout(a, a.track.pieces, a.entrance_cell, false)["reason"]
+	else:
+		err = world.footprint_error(a.def, a.origin, a.rotation, null)
+	if err != "":
+		return err
+	if not economy.can_afford(amount):
+		return "no_money"
+	economy.spend(amount, category)
+	world.reinsert_attraction(a)
+	if a.track != null:
+		_restore_coaster(a)
+		if a.is_transport() and not a.building and a.track.is_complete():
+			var exit: Vector2i = transport_exit_cell(a)
+			if world.get_tile(exit) != ParkWorld.Tile.PATH:
+				world._set_tile(exit, ParkWorld.Tile.PATH)
+		coaster_changed.emit(a.id)
+	path_finder.invalidate()
+	_reachable_dirty = true
+	for g: Guest in guests.values():
+		g.rejected_ids.erase(a.id)
+	return ""
+
+
+func _toggle_decor(d: Decor, present: bool, amount: int, category: String) -> String:
+	if not present:
+		if decor.get(d.id, null) != d:
+			return "missing"
+		_remove_decor(d.id)
+		economy.earn(amount, category)
+		return ""
+	if decor.has(d.id):
+		return "occupied"
+	if not can_place_decor(d.def, d.cell):
+		return "occupied"
+	if not economy.can_afford(amount):
+		return "no_money"
+	economy.spend(amount, category)
+	d.fill = 0
+	_reinsert_decor(d)
+	return ""
