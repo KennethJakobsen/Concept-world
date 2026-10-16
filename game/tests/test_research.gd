@@ -221,3 +221,21 @@ func test_research_ids_exist_in_catalog() -> void:
 	assert_eq(missing, [], "ukendte id'er i research.json")
 	for it in d.items:
 		assert_true(d.has_topic(it["topic"]), "ukendt emne for %s" % it["id"])
+
+
+## T-119: tømmerrendens stykker følger log_flume-oplåsningen; rutsjebanestykker forskes individuelt.
+func test_flume_pieces_follow_ride_unlock() -> void:
+	var s := ParkSim.new(40, 40, 5)
+	s.research.setup(true)
+	s.economy.money += 50000
+	assert_true(not s.is_unlocked("flume_station"))
+	assert_true(not s.is_unlocked("flume_straight"))
+	assert_eq(s.cmd_start_coaster("log_flume", Vector2i(10, 10), 1), -1)
+	s.research.unlocked["log_flume"] = true
+	assert_true(s.is_unlocked("flume_station"))
+	assert_true(s.is_unlocked("flume_straight"))
+	assert_true(not s.is_unlocked("train_straight"))
+	assert_true(not s.is_unlocked("track_turn_left"))
+	var id: int = s.cmd_start_coaster("log_flume", Vector2i(10, 10), 1)
+	assert_true(id > 0)
+	assert_true(s.cmd_place_track_piece(id, "flume_straight"))

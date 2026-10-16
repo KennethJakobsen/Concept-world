@@ -1301,8 +1301,21 @@ func broken_count() -> int:
 # --- Forskning (T-066) ---
 
 ## Altid true når forskning er slået fra.
+## T-119: sporstykker fra andre systemer end træ-rutsjebanen (coaster) følger banen: de er låst op,
+## når en ulåst attraktion bruger det system. Rutsjebanens stykker forskes individuelt.
 func is_unlocked(id: String) -> bool:
-	return research.is_unlocked(id)
+	if research.is_unlocked(id):
+		return true
+	var p: TrackPieceDef = CoasterContent.piece(id)
+	if p == null or p.system == CoasterContent.SYSTEM_COASTER:
+		return false
+	var ids: Array = research.unlocked.keys()
+	ids.sort()
+	for uid: String in ids:
+		var d: AttractionDef = get_def(uid)
+		if d != null and d.is_tracked() and d.track_system() == p.system:
+			return true
+	return false
 
 
 func cmd_set_research_funding(level: int) -> bool:
