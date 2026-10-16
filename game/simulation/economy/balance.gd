@@ -62,6 +62,9 @@ var nausea_decay: float = 0.01
 var vomit_threshold: float = 60.0
 var vomit_happiness: float = 15.0
 var vomit_litter: int = 2
+## T-090: våd efter vandbane – varighed (ticks) og glæde pr. tick, når det er varmt (dag-fase).
+var wet_ticks: int = 600
+var wet_happiness_per_tick: float = 0.005
 
 
 # Tiltrækning/omdømme (park.json, T-029). has_park = false → fast spawn-interval (legacy).
@@ -208,6 +211,8 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 	b.vomit_threshold = clampf(float(guests.get("vomit_threshold", b.vomit_threshold)), 0.0, 99.0)
 	b.vomit_happiness = float(guests.get("vomit_happiness", b.vomit_happiness))
 	b.vomit_litter = maxi(0, int(guests.get("vomit_litter", b.vomit_litter)))
+	b.wet_ticks = maxi(0, int(guests.get("wet_ticks", b.wet_ticks)))
+	b.wet_happiness_per_tick = float(guests.get("wet_happiness_per_tick", b.wet_happiness_per_tick))
 	return b
 
 

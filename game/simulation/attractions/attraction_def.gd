@@ -29,6 +29,10 @@ extends Resource
 @export var prize_happiness: float = 0.0
 @export var prize_item: String = ""
 @export var carry_item: String = ""  ## T-086: shop-køb giver denne ting
+## T-090: vandbane – tørst-ændring efter en tur (negativ = mindre tørst).
+@export var wet_thirst: float = 0.0
+## T-091: transport – vægt for kanten i stigrafen.
+@export var transport_cost: float = 4.0
 
 
 static func from_dict(d: Dictionary) -> AttractionDef:
@@ -60,6 +64,8 @@ static func from_dict(d: Dictionary) -> AttractionDef:
 	def.prize_happiness = float(d.get("prize_happiness", 0.0))
 	def.prize_item = str(d.get("prize_item", ""))
 	def.carry_item = str(d.get("carry_item", ""))
+	def.wet_thirst = float(d.get("wet_thirst", 0.0))
+	def.transport_cost = maxf(0.0, float(d.get("transport_cost", 4.0)))
 	return def
 
 
@@ -84,4 +90,14 @@ func to_dict() -> Dictionary:
 		"intensity": intensity, "nausea": nausea,
 		"win_chance": win_chance, "prize_cost": prize_cost, "prize_happiness": prize_happiness,
 		"prize_item": prize_item, "carry_item": carry_item,
+		"wet_thirst": wet_thirst, "transport_cost": transport_cost,
 	}
+
+
+## ADR-004: sporbaseret kind (coaster, flume, train, transport).
+func is_tracked() -> bool:
+	return CoasterContent.is_tracked_kind(kind)
+
+
+func track_system() -> StringName:
+	return CoasterContent.system_for_kind(kind)

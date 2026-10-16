@@ -11,6 +11,15 @@ extends Resource
 @export var kind: String = "track"  ## track | station | lift
 @export var friction: float = -1.0  ## < 0 = togets friktion
 @export var lift_speed: float = -1.0  ## < 0 = togets lift_speed
+## ADR-004 (T-090): sporsystem og systemspecifikke felter (alle med default).
+@export var system: StringName = &"coaster"
+@export var splash: bool = false
+@export var water: bool = false
+@export var min_level: int = 0
+@export var max_level: int = -1  ## < 0 = ingen grænse ud over attraktionens max_height
+@export var station_role: String = ""  ## "" | "start" | "end"
+@export var allow_rise: bool = true
+@export var allow_turn: bool = true
 
 
 static func from_dict(d: Dictionary) -> TrackPieceDef:
@@ -20,10 +29,18 @@ static func from_dict(d: Dictionary) -> TrackPieceDef:
 	p.cost = int(d.get("cost", 0))
 	p.length = float(d.get("length", 1.0))
 	p.turn = clampi(int(d.get("turn", 0)), -1, 1)
-	p.rise = clampi(int(d.get("rise", 0)), -1, 1)
+	p.rise = clampi(int(d.get("rise", 0)), -2, 2)
 	p.kind = str(d.get("kind", "track"))
 	p.friction = float(d.get("friction", -1.0))
 	p.lift_speed = float(d.get("lift_speed", -1.0))
+	p.system = StringName(str(d.get("system", "coaster")))
+	p.splash = bool(d.get("splash", false))
+	p.water = bool(d.get("water", false))
+	p.min_level = int(d.get("min_level", 0))
+	p.max_level = int(d.get("max_level", -1))
+	p.station_role = str(d.get("station_role", ""))
+	p.allow_rise = bool(d.get("allow_rise", true))
+	p.allow_turn = bool(d.get("allow_turn", true))
 	return p
 
 

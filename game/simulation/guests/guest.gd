@@ -35,6 +35,16 @@ var intensity_tolerance: float = 50.0
 var nausea: float = 0.0
 ## M6 (T-086): bærbare ting (maks. én af hver).
 var items: Array[StringName] = []
+## T-090: ticks tilbage som våd efter vandbanen.
+var wet_ticks: int = 0
+## T-091: transport (svævebane) – attraktion, destination og tilstand at vende tilbage til.
+var transport_id: int = -1
+var transport_dest: Vector2i = Vector2i.ZERO
+var transport_resume_state: int = State.WALKING
+
+
+func is_on_transport() -> bool:
+	return transport_id >= 0
 
 
 func _init(p_id: int, p_cell: Vector2i) -> void:
@@ -56,7 +66,9 @@ func to_save() -> Dictionary:
 		"target_decor_id": target_decor_id, "rest_ticks_left": rest_ticks_left,
 		"litter_steps_left": litter_steps_left,
 		"intensity_tolerance": SaveCodec.f(intensity_tolerance), "nausea": SaveCodec.f(nausea),
-		"items": _items_to_save(),
+		"items": _items_to_save(), "wet_ticks": wet_ticks,
+		"transport_id": transport_id, "transport_dest": SaveCodec.v2i(transport_dest),
+		"transport_resume_state": transport_resume_state,
 	}
 
 
@@ -88,6 +100,10 @@ static func from_save(d: Dictionary) -> Guest:
 	g.litter_steps_left = int(d.get("litter_steps_left", 0))
 	g.intensity_tolerance = SaveCodec.to_f(d.get("intensity_tolerance"), 50.0)
 	g.nausea = SaveCodec.to_f(d.get("nausea"), 0.0)
+	g.wet_ticks = int(d.get("wet_ticks", 0))
+	g.transport_id = int(d.get("transport_id", -1))
+	g.transport_dest = SaveCodec.to_v2i(d.get("transport_dest"), Vector2i.ZERO)
+	g.transport_resume_state = int(d.get("transport_resume_state", State.WALKING))
 	var its: Variant = d.get("items", [])
 	if its is Array:
 		for it: Variant in its:

@@ -89,6 +89,12 @@ static func _v2_to_v3(d: Dictionary) -> Dictionary:
 				gd["nausea"] = 0.0
 			if not gd.has("items"):
 				gd["items"] = []
+			if not gd.has("wet_ticks"):  # T-090
+				gd["wet_ticks"] = 0
+			if not gd.has("transport_id"):  # T-091
+				gd["transport_id"] = -1
+				gd["transport_dest"] = [0, 0]
+				gd["transport_resume_state"] = 0
 	for a: Variant in SaveCodec.arr(park, "attractions"):
 		if a is Dictionary:
 			var ad: Dictionary = a
@@ -96,6 +102,8 @@ static func _v2_to_v3(d: Dictionary) -> Dictionary:
 				ad["prizes_won"] = 0
 			if not ad.has("prize_cost_total"):
 				ad["prize_cost_total"] = 0
+			if not ad.has("riders_today"):  # T-091
+				ad["riders_today"] = 0
 	# Affald gemmes som [[x, y, n]] uden type; opkast ligger i en separat liste (alt gammelt = "litter").
 	if park.get("world") is Dictionary:
 		var wd: Dictionary = park["world"]

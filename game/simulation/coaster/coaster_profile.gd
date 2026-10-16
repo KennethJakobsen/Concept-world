@@ -16,6 +16,10 @@ var drops: int = 0
 var turns: int = 0
 var max_height: int = 0
 var ok: bool = false
+## T-090: plask (splash-stykker) og deres position (m, slutningen af stykket) + stykkeindeks.
+var splashes: int = 0
+var splash_s: PackedFloat32Array = PackedFloat32Array()
+var splash_pieces: PackedInt32Array = PackedInt32Array()
 
 
 func _index_at(t: float) -> Array:

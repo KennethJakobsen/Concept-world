@@ -5,11 +5,23 @@ extends RefCounted
 var pieces: Array[TrackPiece] = []
 var defs: Dictionary = {}  ## id -> TrackPieceDef
 var max_height: int = 8
+## ADR-004: sporsystem og dets definition (closed_loop, max_stations, clearance_levels, speed_mode).
+var system: StringName = &"coaster"
+var closed_loop: bool = true
+var max_stations: int = 1
+var clearance_levels: int = 2
+var speed_mode: String = "physics"
 
 
-func _init(p_defs: Dictionary = {}, p_max_height: int = 8) -> void:
-	defs = p_defs if not p_defs.is_empty() else CoasterContent.pieces()
+func _init(p_defs: Dictionary = {}, p_max_height: int = 8, p_system: StringName = &"coaster") -> void:
+	system = p_system
+	defs = p_defs if not p_defs.is_empty() else CoasterContent.pieces(p_system)
 	max_height = p_max_height
+	var sd: Dictionary = CoasterContent.system_def(p_system)
+	closed_loop = bool(sd.get("closed_loop", true))
+	max_stations = int(sd.get("max_stations", 1))
+	clearance_levels = maxi(1, int(sd.get("clearance_levels", 2)))
+	speed_mode = str(sd.get("speed_mode", "physics"))
 
 
 func def_of(p: TrackPiece) -> TrackPieceDef:
@@ -41,6 +53,25 @@ func is_closed() -> bool:
 	return e["cell"] == f.cell and e["heading"] == f.heading and e["level"] == f.level
 
 
+## Gyldig form: lukket (lukkede systemer) eller slutter i en end-station (åbne systemer).
+func is_complete() -> bool:
+	if closed_loop:
+		return is_closed()
+	if pieces.size() < 2:
+		return false
+	var d: TrackPieceDef = def_of(pieces[pieces.size() - 1])
+	return d != null and d.kind == "station" and d.station_role == "end"
+
+
+## Første stykke med station_role "end" (null hvis ingen).
+func end_station() -> TrackPiece:
+	for i in range(1, pieces.size()):
+		var d: TrackPieceDef = def_of(pieces[i])
+		if d != null and d.kind == "station" and d.station_role == "end":
+			return pieces[i]
+	return null
+
+
 ## Laveste niveau stykket optager.
 func low_level(p: TrackPiece) -> int:
 	var d: TrackPieceDef = def_of(p)
@@ -69,33 +100,48 @@ func cells() -> Array[Vector2i]:
 func validate(is_blocked: Callable = Callable(), train: Dictionary = {}) -> Array[String]:
 	var errs: Array[String] = []
 	var stations: int = 0
+	var wrong: bool = false
 	for p in pieces:
 		var d: TrackPieceDef = def_of(p)
+		if d == null or d.system != system:
+			wrong = true
 		if d != null and d.kind == "station":
 			stations += 1
+	if wrong:
+		errs.append("wrong_system")
 	if stations == 0:
 		errs.append("no_station")
-	elif stations > 1:
+	elif stations > max_stations:
 		errs.append("multiple_stations")
-	if not is_closed():
-		errs.append("not_closed")
+	if closed_loop:
+		if not is_closed():
+			errs.append("not_closed")
+	elif not is_complete():
+		errs.append("incomplete")
 	var high: bool = false
 	var low: bool = false
+	var too_low: bool = false
 	for p in pieces:
 		var d: TrackPieceDef = def_of(p)
 		var rise: int = d.rise if d != null else 0
-		if maxi(p.level, p.level + rise) > max_height:
+		var top: int = maxi(p.level, p.level + rise)
+		var bottom: int = mini(p.level, p.level + rise)
+		if top > max_height or (d != null and d.max_level >= 0 and top > d.max_level):
 			high = true
-		if mini(p.level, p.level + rise) < 0:
+		if bottom < 0:
 			low = true
+		elif d != null and bottom < d.min_level:
+			too_low = true
 	if high:
 		errs.append("too_high")
 	if low:
 		errs.append("below_ground")
+	if too_low:
+		errs.append("too_low")
 	var coll: bool = false
 	for i in pieces.size():
 		for j in range(i + 1, pieces.size()):
-			if pieces[i].cell == pieces[j].cell and absi(low_level(pieces[i]) - low_level(pieces[j])) < 2:
+			if pieces[i].cell == pieces[j].cell and absi(low_level(pieces[i]) - low_level(pieces[j])) < clearance_levels:
 				coll = true
 		if is_blocked.is_valid() and is_blocked.call(i):
 			coll = true
@@ -121,8 +167,9 @@ func to_dicts() -> Array[Dictionary]:
 	return out
 
 
-static func from_save(a: Variant, p_defs: Dictionary = {}, p_max_height: int = 8) -> CoasterTrack:
-	var t := CoasterTrack.new(p_defs, p_max_height)
+static func from_save(a: Variant, p_defs: Dictionary = {}, p_max_height: int = 8,
+		p_system: StringName = &"coaster") -> CoasterTrack:
+	var t := CoasterTrack.new(p_defs, p_max_height, p_system)
 	if a is Array:
 		for e: Variant in a:
 			if e is Dictionary:

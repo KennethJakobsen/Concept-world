@@ -51,6 +51,10 @@ static func simulate(track: CoasterTrack, train: Dictionary, pieces: Dictionary 
 		prof.max_height = maxi(prof.max_height, maxi(p.level, p.level + d.rise))
 		if d.turn != 0:
 			prof.turns += 1
+		if d.splash:
+			prof.splashes += 1
+			prof.splash_s.append(s_acc)
+			prof.splash_pieces.append(i)
 	for i in n:
 		if rises[i] < 0.0 and rises[posmod(i - 1, n)] >= 0.0:
 			prof.drops += 1
@@ -62,6 +66,8 @@ static func simulate(track: CoasterTrack, train: Dictionary, pieces: Dictionary 
 			prof.drops = 1
 	var total: float = s_acc
 	prof.length = total
+	if track.speed_mode == "constant":
+		return _simulate_constant(prof, total, float(train.get("cruise_speed", station_v)))
 	var s: float = 0.0
 	var v: float = station_v
 	var t: float = 0.0
@@ -133,3 +139,27 @@ static func _record(prof: CoasterProfile, t: float, s: float, v: float, idx: int
 	prof.max_speed = maxf(prof.max_speed, v)
 	prof.max_g = maxf(prof.max_g, g)
 	prof.max_lat = maxf(prof.max_lat, lat)
+
+
+## ADR-004: konstant fart (minitog, svævebane). g = 1, ingen lateral g; altid ok.
+static func _simulate_constant(prof: CoasterProfile, total: float, v: float) -> CoasterProfile:
+	v = maxf(v, MIN_SPEED)
+	prof.ok = true
+	var t: float = 0.0
+	var s: float = 0.0
+	while true:
+		prof.samples_t.append(t)
+		prof.samples_s.append(s)
+		prof.samples_v.append(v)
+		prof.samples_g.append(1.0)
+		prof.samples_lat.append(0.0)
+		if s >= total:
+			break
+		var ds: float = minf(v * DT, total - s)
+		t += ds / v
+		s += ds
+	prof.max_speed = v
+	prof.max_g = 1.0
+	prof.max_lat = 0.0
+	prof.duration_s = t
+	return prof

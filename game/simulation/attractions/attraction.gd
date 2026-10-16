@@ -52,6 +52,8 @@ var profile: CoasterProfile = null
 ## T-068: ride_ticks fra profilen (0 = def.ride_ticks) og ilæsningstid i starten af turen.
 var ride_ticks_override: int = 0
 var load_ticks: int = 0
+## T-091: passagerer i dag (nulstilles ved dagsskifte).
+var riders_today: int = 0
 
 
 func is_coaster() -> bool:
@@ -62,9 +64,19 @@ func is_sideshow() -> bool:
 	return def.kind == "sideshow"
 
 
-## Forlystelse (ride eller rutsjebane).
+## ADR-004: sporbaseret (coaster, flume, train, transport).
+func is_tracked() -> bool:
+	return def.is_tracked()
+
+
+## T-091: transport mellem to stationer (svævebane).
+func is_transport() -> bool:
+	return def.kind == "transport"
+
+
+## Forlystelse (ride, rutsjebane, vandbane, minitog – ikke transport).
 func is_ride() -> bool:
-	return def.kind == "ride" or def.kind == "coaster"
+	return def.kind == "ride" or def.kind == "coaster" or def.kind == "flume" or def.kind == "train"
 
 
 func ride_ticks() -> int:
@@ -101,11 +113,16 @@ func build_value() -> int:
 func ride_progress() -> float:
 	if not is_running():
 		return 0.0
+	return ride_progress_at(ticks_left)
+
+
+## 0..1 for ticks_left = tl (deterministisk; bruges til ride_splash).
+func ride_progress_at(tl: int) -> float:
 	var total: int = ride_ticks()
 	var run: int = total - load_ticks
 	if run <= 0:
 		return 0.0
-	var elapsed: int = total - ticks_left - load_ticks
+	var elapsed: int = total - tl - load_ticks
 	return clampf(float(elapsed) / float(run), 0.0, 1.0)
 
 func effective_reliability() -> float:
@@ -173,6 +190,7 @@ func to_save() -> Dictionary:
 		"ratings": SaveCodec.float_dict(ratings), "building": building,
 		"entrance_cell": SaveCodec.v2i(entrance_cell),
 		"prizes_won": prizes_won, "prize_cost_total": prize_cost_total,
+		"riders_today": riders_today,
 	}
 
 
@@ -196,9 +214,11 @@ static func from_save(d: Dictionary, p_def: AttractionDef) -> Attraction:
 		a.entrance_cell = SaveCodec.to_v2i(d.get("entrance_cell"), a.entrance_cell)
 	var tr: Variant = d.get("track")
 	if tr is Array:
-		a.track = CoasterTrack.from_save(tr, {}, p_def.max_height)
+		var sys: StringName = p_def.track_system()
+		a.track = CoasterTrack.from_save(tr, {}, p_def.max_height, sys if sys != &"" else &"coaster")
 	a.ratings = SaveCodec.to_float_dict(d.get("ratings", {}))
 	a.building = bool(d.get("building", false))
 	a.prizes_won = int(d.get("prizes_won", 0))
 	a.prize_cost_total = int(d.get("prize_cost_total", 0))
+	a.riders_today = int(d.get("riders_today", 0))
 	return a
