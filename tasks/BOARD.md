@@ -125,7 +125,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-119 | Sim: impulskøb i butikker uden behov | simulation | ✅ done |
 | T-120 | Bug: tømmerrenden går under terræn ved fald | simulation | review |
 | T-130 | Bug: tømmerrende "mangler en station" ved færdiggørelse | simulation | review |
-| T-131 | Bug: rutsjebane kan ikke færdiggøres i scenarier | designer | in-progress |
+| T-131 | Bug: rutsjebane kan ikke færdiggøres i scenarier | designer | review |
 | T-132 | Bug: stier kan ikke fjernes | gameplay | review |
 | T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | review |
 | T-094 | UI: spor-faner, fejltekster og info | ui | review |
