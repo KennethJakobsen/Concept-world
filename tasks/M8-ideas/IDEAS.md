@@ -34,5 +34,8 @@ Rå idéliste. Designer vurderer og laver forslag i T-147, før noget planlægge
 - Grillområde
 - Søer
 
+## Kampagne
+- En kampagne, der kan spilles igennem fra start til slut: rækkefølge af scenarier med stigende sværhed, oplåsning af næste bane, historie/rammefortælling og en afslutning.
+
 ## Allerede planlagt til M8 (fra M7)
 Personale (løn, træthed, områder), lån/regnskab/reklame, terræn (bakker, vand), gæstegrupper.
