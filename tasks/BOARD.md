@@ -129,13 +129,34 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 
 Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/T-088/T-089 · 4) T-090→T-091, T-092 · 5) T-093/T-094, derefter T-095 · 6) T-096.
 
-## M7 – Dybde og UX  (kontrakt følger i T-098)
+## M7 – Dybde og UX  ([kontrakt](M7-depth-ux/_CONTRACT.md), [ADR-005](../docs/adr/ADR-005-guest-mass-queues.md))
 | Task | Titel | Agent | Status |
 |---|---|---|---|
 | T-097 | Design: GDD-afsnit for M7 | designer | review |
-| T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | todo |
+| T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | review |
+| T-100 | Data: config, opskrifter, kø/gæste-parametre, ATM, milepæle, omgivelser | designer | todo |
+| T-101 | UI: UX-fundament (skærmzoner, tooltips, indstillinger) | ui | todo |
+| T-102 | Sim: config, opskrifter, prisvirkninger, salg + save v4 | simulation | todo |
+| T-103 | Sim: køstier, tålmodighed, ledig frem for optaget, gæstemasse | simulation | todo |
+| T-104 | Sim: gå hjem, hæveautomat, spande, bænke og lys | simulation | todo |
+| T-105 | Sim: milepæle, der låser forskningsgrene op | simulation | todo |
+| T-106 | Sim: flyt (også sporbaner), sælg-refusion og fortryd | simulation | todo |
+| T-107 | Grafik: skrald, spande, bænke, ATM, køsti, svævetal og gæstemængde | graphics | todo |
+| T-108 | Grafik: mur, port og omgivelser | graphics | todo |
+| T-109 | Grafik: kort-overlays og farveblind-palet | graphics | todo |
+| T-110 | Gameplay: køsti-, flyt-, rotér- og fortryd-værktøjer | gameplay | todo |
+| T-111 | Gameplay: bridge for salg, skrald, bænke, kø og overlays | gameplay | todo |
+| T-112 | UI: inspektør-faner (indstillinger, økonomi, kø) | ui | todo |
+| T-113 | UI: milepæle, overlay-vælger, indstillinger og tanker | ui | todo |
+| T-114 | Data: tutorial-scenariet 'Første park' | designer | todo |
+| T-115 | Gameplay: TutorialDirector og pile i verden | gameplay | todo |
+| T-116 | UI: tutorial-trinpanel | ui | todo |
+| T-117 | Balance: M7-mekanik | designer | todo |
+| T-118 | M7 verifikation | qa | todo |
 
 Starter først implementering, når T-096 er done.
+
+Runder: 1) T-100, T-101 (UX-fundament), T-108 · 2) T-102 (save v4), T-107 · 3) T-103→T-104→T-105, T-112, T-109 · 4) T-106, T-111 · 5) T-110, T-113, derefter T-114 · 6) T-115/T-116, derefter T-117 · 7) T-118.
 
 ## Kommende milepæle
 - **M8** (udskudt fra M7): personale (løn, træthed, områder), lån/regnskab/reklame, terræn (bakker, vand), gæstegrupper.
