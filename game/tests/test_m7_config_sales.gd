@@ -106,14 +106,21 @@ func test_recipes_supplies_and_needs() -> void:
 	var g := Guest.new(999, a.entrance_cell)
 	g.needs = {"hunger": 80.0, "thirst": 10.0}
 	g.happiness = 50.0
+	# Forventninger læses fra bodens data (ikke hardcodet), så balancering ikke bryder testen.
+	var salt: Dictionary = a.def.recipe("salt")
+	var big: Dictionary = a.def.recipe("big")
+	var exp_thirst: float = clampf(10.0 + float(salt["satisfies"].get("thirst", 0.0)) + float(big["satisfies"].get("thirst", 0.0)), 0.0, 100.0)
+	var exp_hunger: float = clampf(80.0 + float(salt["satisfies"].get("hunger", 0.0)) + float(big["satisfies"].get("hunger", 0.0)), 0.0, 100.0)
+	var exp_hap: float = 50.0 + float(salt.get("happiness", 0.0)) + float(big.get("happiness", 0.0))
 	s._apply_recipes(g, a)
-	assert_near(float(g.needs["thirst"]), 30.0, 1e-6)
-	assert_near(float(g.needs["hunger"]), 65.0, 1e-6)
-	assert_near(g.happiness, 51.0, 1e-6)
-	for i in 4:  # 5 × 0.6 kr = 3 kr
+	assert_near(float(g.needs["thirst"]), exp_thirst, 1e-6)
+	assert_near(float(g.needs["hunger"]), exp_hunger, 1e-6)
+	assert_near(g.happiness, exp_hap, 1e-6)
+	for i in 4:
 		s._apply_recipes(g, a)
-	assert_eq(a.supplies_total, 3)
-	assert_eq(int(s.finance_report()["today"]["supplies"]), -3)
+	var exp_sup: int = int(floor(5.0 * (float(salt["cost_per_sale"]) + float(big["cost_per_sale"])) + 1e-9))
+	assert_eq(a.supplies_total, exp_sup)
+	assert_eq(int(s.finance_report()["today"]["supplies"]), -exp_sup)
 	assert_true(Economy.CATEGORIES.has("supplies"))
 	var v_off: float = 0.0
 	s.cmd_set_recipe(a.id, "big", false)

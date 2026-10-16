@@ -37,5 +37,8 @@ Rå idéliste. Designer vurderer og laver forslag i T-147, før noget planlægge
 ## Kampagne
 - En kampagne, der kan spilles igennem fra start til slut: rækkefølge af scenarier med stigende sværhed, oplåsning af næste bane, historie/rammefortælling og en afslutning.
 
+## Økonomi (fra T-117)
+- **Gæsternes pengeøkonomi:** i M7 løfter hæveautomaten kun omsætningen ca. 3 %, fordi penge næsten aldrig er det, der får gæsterne til at gå. Forslag: lavere startbeløb (fx 15–40 kr) kombineret med flere ting at bruge penge på (souvenirs, mad-kombinationer, parkeringsafgift) og et betalingskort-/kontantvalg pr. gæst. Så bliver ATM-placering et rigtigt valg (mål +15–25 %). Det kræver en ny balancering af alle priser og entréer i scenarierne.
+
 ## Allerede planlagt til M8 (fra M7)
 Personale (løn, træthed, områder), lån/regnskab/reklame, terræn (bakker, vand), gæstegrupper.

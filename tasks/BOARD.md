@@ -159,7 +159,10 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-114 | Data: tutorial-scenariet 'Første park' | designer | review |
 | T-115 | Gameplay: TutorialDirector og pile i verden | gameplay | review |
 | T-116 | UI: tutorial-trinpanel | ui | review |
-| T-117 | Balance: M7-mekanik | designer | todo |
+| T-117 | Balance: M7-mekanik | designer | review |
+| T-149 | Sim: hæveautomat ved lav saldo (fra T-117) | simulation | review |
+| T-150 | balance_sim måler M7-mekanik (fra T-117) | qa | review |
+| T-151 | balance_sim: salt-måling med en Fritterbix, der sælger | simulation | review |
 | T-133 | Sim: required_pieces for sporbaner | simulation | review |
 | T-134 | UI: låst sporbane-kort | ui | review |
 | T-135 | Gameplay: omgivelser i ParkView | gameplay | review |

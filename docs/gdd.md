@@ -286,7 +286,7 @@ Udskudt til M8: løn/træthed/områder for personale, lån/regnskab/reklame, ter
 "recipes": [{"id": "salt", "name": "Ekstra salt", "cost_per_sale": 0.1, "satisfies": {"thirst": 20}, "happiness": 1},
             {"id": "big", "name": "Stor portion", "cost_per_sale": 0.5, "satisfies": {"hunger": -15}, "price_tolerance": 0.15}]
 ```
-- Fritterbix/burger kan få "Ekstra salt": thirst +20 efter køb, så drikkeboder sælger mere (ca. +15 % drikkesalg i en startpark). Prisen er lidt smag (+1 glæde) og en mindre glad gæst, hvis der ikke er en drikkebod i nærheden.
+- Fritterbix/burger kan få "Ekstra salt": thirst +40 (Fritterbix) / +20 (Burger) efter køb, så drikkeboder sælger mere (målt T-117: +13,5 % drikkesalg over 6 seeds, når Fritterbixen faktisk sælger, ca. 1 ekstra drik pr. saltet portion). Gevinsten er +1 glæde; prisen er varekøb (0,1 kr/salg) og tørstigere gæster. Den tidligere idé om en glædestraf uden drikkebod i nærheden er droppet (T-117): straffen er usynlig for spilleren, og tørsten straffer allerede selv.
 - Drikke kan få "Is i": thirst −10 ekstra og toilet +5.
 - `cost_per_sale` trækkes fra omsætningen pr. salg (varekøb).
 
@@ -385,8 +385,8 @@ Farveskalaer bruger en farveblind-sikker palet (viridis-lignende: mørkeblå →
 ### 9. Gå hjem og hæveautomat
 - Gæsten sætter kurs mod udgangen (tilstand `leaving`, sti til port) når: energy ≥ `leave_energy` 90, glæde < 20, eller penge < billigste åbne pris og ingen hæveautomat inden for rækkevidde. Tanke vises ("Jeg er træt", "Jeg har ikke flere penge").
 - `leaving`-gæster køber ikke og stiller sig ikke i kø, men kan stadig blive sultne (påvirker ikke længere).
-- **Hæveautomat** (`atm`, 1×1, byg 400, drift 20/dag, forskning `shops`, 90 point): en gæst uden penge går til nærmeste hæveautomat (op til 30 celler), hvis glæde ≥ 40, og hæver 20–50 kr (seedet). Højst 2 gange pr. besøg. Parken får 1 kr i gebyr pr. hævning.
-- Forventning: gæster bliver ca. 20–30 % længere ⇒ +15–25 % omsætning i en moden park. Det dækker automaten på dag 1–2.
+- **Hæveautomat** (`atm`, 1×1, byg 400, drift 20/dag, forskning `shops`, 90 point): en gæst med færre end `atm_low_money` (30) kr – eller helt uden penge – går til nærmeste hæveautomat (op til 30 celler), hvis glæde ≥ 40, og hæver 20–50 kr (seedet). Højst 2 gange pr. besøg. Parken får 1 kr i gebyr pr. hævning.
+- Forventning (revideret T-117): i M7 er hæveautomaten en **bekvemmelighed**, ikke en pengemaskine. Gæster går sjældent hjem, fordi pengene er sluppet op (de går pga. glæde/træthed, og parkens kapacitet begrænser), så målet er **+3–6 % omsætning** i en moden park. Automaten tjener sig selv hjem på gebyrerne (ca. 100 hævninger/dag ≫ drift 20/dag). Målt: `atm_low_money` 25 → +3,3 %, 30 → +5,6 % (625 hævninger på 5 dage, T-117), 40 → +3,6 %. En større rolle kræver en ny pengeøkonomi for gæster (M8-idé).
 
 ### 10. Milepæle, der låser forskning op
 Oven på den eksisterende forskning: en milepæl låser en *gren* (topic) op for forskning eller giver point. Uden milepælen kan grenen ikke vælges.

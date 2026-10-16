@@ -20,6 +20,7 @@ func _init() -> void:
 		if not d.is_sandbox():
 			_scenario_runs(d)
 	_m7_perf()
+	_m7_balance()
 	quit(0)
 
 
@@ -109,39 +110,8 @@ func _m3_one(p_seed: int, staff: bool) -> Dictionary:
 
 func _run(title: String, full: bool, fee: int, connect_rides: bool = true, with_staff: Variant = null) -> void:
 	var sim := ParkSim.new(64, 64, 12345)
+	var ok: bool = _build_park(sim, full, fee, connect_rides, with_staff)
 	var e: Vector2i = sim.world.entrance
-	var ok: bool = true
-	for y in range(e.y - 1, 49, -1):
-		ok = sim.cmd_place_path(Vector2i(e.x, y)) and ok
-	for x in range(e.x - 10, e.x + 11):
-		if x != e.x:
-			ok = sim.cmd_place_path(Vector2i(x, 50)) and ok
-	ok = sim.cmd_place_attraction("carousel", Vector2i(e.x - 2, 46)) != null and ok
-	ok = sim.cmd_place_attraction("burger_stand", Vector2i(e.x + 2, 49)) != null and ok
-	ok = sim.cmd_place_attraction("drinks_stand", Vector2i(e.x + 4, 49)) != null and ok
-	ok = sim.cmd_place_attraction("toilet", Vector2i(e.x - 4, 49)) != null and ok
-	if full:
-		sim.economy.money += 5000  # finansieret ekstra byggeri, så vi måler drift
-		ok = sim.cmd_place_attraction("ice_cream_stand", Vector2i(e.x + 6, 49)) != null and ok
-		ok = sim.cmd_place_attraction("ferris_wheel", Vector2i(e.x + 4, 51)) != null and ok
-		ok = sim.cmd_place_attraction("bumper_cars", Vector2i(e.x - 8, 51)) != null and ok
-	if full and connect_rides:
-		# T-033: indgangene skal forbindes til stinettet – i T-032 var de afskåret.
-		for y in range(51, 55):
-			ok = sim.cmd_place_path(Vector2i(e.x + 8, y)) and ok
-		for y in range(51, 56):
-			ok = sim.cmd_place_path(Vector2i(e.x - 3, y)) and ok
-		for x in range(e.x + 6, e.x + 8):
-			ok = sim.cmd_place_path(Vector2i(x, 54)) and ok
-		for x in range(e.x - 5, e.x - 3):
-			ok = sim.cmd_place_path(Vector2i(x, 55)) and ok
-	if fee >= 0:
-		sim.cmd_set_entry_fee(fee)
-	if with_staff == true:
-		ok = sim.cmd_hire_staff("mechanic", Vector2i(e.x, 52)) > 0 and ok
-		ok = sim.cmd_hire_staff("cleaner", Vector2i(e.x, 51)) > 0 and ok
-		ok = sim.cmd_place_decor("bin", Vector2i(e.x + 3, 50)) > 0 and ok
-		ok = sim.cmd_place_decor("bin", Vector2i(e.x - 3, 50)) > 0 and ok
 	var st0: Dictionary = sim.get_stats()
 	print("\n=== %s ===" % title)
 	print("Byggeri ok: %s, penge: %d, entré %d, score %.2f, rate %.1f/dag, max %d, omdømme %.1f" % [
@@ -175,6 +145,44 @@ func _run(title: String, full: bool, fee: int, connect_rides: bool = true, with_
 			_diag(sim)
 	_m6_report(sim, vomits[0], {}, DAYS)
 
+
+
+## Fælles startpark/fuld park-layout (T-150: genbrugt af M7-målingerne).
+func _build_park(sim: ParkSim, full: bool, fee: int = -1, connect_rides: bool = true, with_staff: Variant = null) -> bool:
+	var e: Vector2i = sim.world.entrance
+	var ok: bool = true
+	for y in range(e.y - 1, 49, -1):
+		ok = sim.cmd_place_path(Vector2i(e.x, y)) and ok
+	for x in range(e.x - 10, e.x + 11):
+		if x != e.x:
+			ok = sim.cmd_place_path(Vector2i(x, 50)) and ok
+	ok = sim.cmd_place_attraction("carousel", Vector2i(e.x - 2, 46)) != null and ok
+	ok = sim.cmd_place_attraction("burger_stand", Vector2i(e.x + 2, 49)) != null and ok
+	ok = sim.cmd_place_attraction("drinks_stand", Vector2i(e.x + 4, 49)) != null and ok
+	ok = sim.cmd_place_attraction("toilet", Vector2i(e.x - 4, 49)) != null and ok
+	if full:
+		sim.economy.money += 5000  # finansieret ekstra byggeri, så vi måler drift
+		ok = sim.cmd_place_attraction("ice_cream_stand", Vector2i(e.x + 6, 49)) != null and ok
+		ok = sim.cmd_place_attraction("ferris_wheel", Vector2i(e.x + 4, 51)) != null and ok
+		ok = sim.cmd_place_attraction("bumper_cars", Vector2i(e.x - 8, 51)) != null and ok
+	if full and connect_rides:
+		# T-033: indgangene skal forbindes til stinettet – i T-032 var de afskåret.
+		for y in range(51, 55):
+			ok = sim.cmd_place_path(Vector2i(e.x + 8, y)) and ok
+		for y in range(51, 56):
+			ok = sim.cmd_place_path(Vector2i(e.x - 3, y)) and ok
+		for x in range(e.x + 6, e.x + 8):
+			ok = sim.cmd_place_path(Vector2i(x, 54)) and ok
+		for x in range(e.x - 5, e.x - 3):
+			ok = sim.cmd_place_path(Vector2i(x, 55)) and ok
+	if fee >= 0:
+		sim.cmd_set_entry_fee(fee)
+	if with_staff == true:
+		ok = sim.cmd_hire_staff("mechanic", Vector2i(e.x, 52)) > 0 and ok
+		ok = sim.cmd_hire_staff("cleaner", Vector2i(e.x, 51)) > 0 and ok
+		ok = sim.cmd_place_decor("bin", Vector2i(e.x + 3, 50)) > 0 and ok
+		ok = sim.cmd_place_decor("bin", Vector2i(e.x - 3, 50)) > 0 and ok
+	return ok
 
 
 ## Instrumentering (T-033): tilstande, køer, behov over tærskel og tanker.
@@ -259,8 +267,13 @@ func _bot_coaster(sim: ParkSim, station: Vector2i) -> String:
 	return "ok E=%.2f" % float(sim.get_attraction(id).ratings.get("excitement", 0.0))
 
 
-func _scenario_run(def: ScenarioDef, p_seed: int) -> bool:
+func _scenario_run(def: ScenarioDef, p_seed: int, milestone_days: Variant = null) -> bool:
 	var sim := ParkSim.new_from_scenario(def, p_seed)
+	if milestone_days is Dictionary:
+		var md: Dictionary = milestone_days
+		sim.milestone_achieved.connect(func(id: String) -> void:
+			if not md.has(id):
+				md[id] = sim.scenario.days_elapsed)
 	var result: Array = ["kører stadig"]
 	sim.scenario_finished.connect(func(won: bool, reason: String) -> void:
 		result[0] = ("VUNDET" if won else "TABT (%s)" % reason) + " dag %d" % sim.scenario.days_elapsed)
@@ -423,3 +436,92 @@ func _m6_park(p_seed: int) -> void:
 	print("\n=== T-121 M6-park seed %d (%d dage): byggeri ok %s, gæster i alt %d, penge %d ===" % [p_seed, DAYS, ok,
 		sim._next_guest_id - 1, sim.economy.money])
 	_m6_report(sim, vomits[0], {}, DAYS)
+
+
+## T-150 / T-117: permanente M7-balancemålinger (salt, køopgivelser, ATM, milepæle).
+func _m7_balance() -> void:
+	print("\n=== T-117: M7-balance ===")
+	var day_ticks: int = ParkSim.new(8, 8, 1).balance.day_ticks
+	# 1) Salt: startpark + fritter, drikkebodens salg med/uden salt.
+	var sales: Array[int] = [0, 0]
+	var fries_sales: Array[int] = [0, 0]
+	for salt in 2:
+		for sd in [1, 2, 3, 4, 5, 12345]:
+			var sim := ParkSim.new(64, 64, sd)
+			_build_park(sim, false)
+			var e: Vector2i = sim.world.entrance
+			var fries: Attraction = sim.cmd_place_attraction("fries_stand", Vector2i(e.x - 6, 49))
+			if fries == null:
+				print("Salt: kunne ikke placere fries_stand")
+				return
+			if salt == 1:
+				sim.cmd_set_recipe(fries.id, "salt", true)
+			var drinks_id: int = -1
+			for a in sim.attractions:
+				if a.def.id == "drinks_stand":
+					drinks_id = a.id
+			var acc: Array = [0, 0]
+			var fries_id: int = fries.id
+			sim.purchase_made.connect(func(_g: int, b: int, amount: int) -> void:
+				if b == drinks_id:
+					acc[0] += amount
+				elif b == fries_id:
+					acc[1] += 1)
+			for t in DAYS * day_ticks / 100:
+				sim.update(STEP)
+			sales[salt] += acc[0]
+			fries_sales[salt] += acc[1]
+	print("Salt (seeds 1-5, 12345): fritter solgt uden %d, med %d; drikkesalg uden %d, med %d (%+.1f %%)" % [
+		fries_sales[0], fries_sales[1], sales[0], sales[1], 100.0 * (sales[1] - sales[0]) / maxf(1.0, sales[0])])
+	# 2) Køopgivelser: fuld park med personale, tik for tik.
+	var sim2 := ParkSim.new(64, 64, 12345)
+	_build_park(sim2, true, -1, true, true)
+	var prev: Dictionary = {}
+	var entered: int = 0
+	var gave_up: int = 0
+	var gave_up_thought: String = ParkSim.M7_THOUGHTS["queue_gave_up"]
+	for t in DAYS * day_ticks:
+		sim2.update(SimClock.TICK_DELTA)
+		var cur: Dictionary = {}
+		for gid: int in sim2.guests:
+			var g: Guest = sim2.guests[gid]
+			cur[gid] = g.state
+			var was: int = int(prev.get(gid, -1))
+			if g.state == Guest.State.QUEUING and was != Guest.State.QUEUING:
+				entered += 1
+			elif was == Guest.State.QUEUING and g.state == Guest.State.WALKING and g.thought == gave_up_thought:
+				gave_up += 1
+		prev = cur
+	print("Køopgivelser: %d af %d kø-indtrædener (%.1f %%)" % [gave_up, entered, 100.0 * gave_up / maxf(1.0, entered)])
+	# 3) ATM: fuld park med/uden hæveautomat.
+	var rev: Array[int] = [0, 0]
+	var uses: Array = [0]
+	for with_atm in 2:
+		for sd in [12345, 1, 2]:
+			var sim3 := ParkSim.new(64, 64, sd)
+			_build_park(sim3, true)
+			if with_atm == 1:
+				var e3: Vector2i = sim3.world.entrance
+				if sim3.cmd_place_attraction("atm", Vector2i(e3.x - 6, 49)) == null:
+					print("ATM: kunne ikke placere atm")
+					return
+				sim3.atm_used.connect(func(_g: int, _a: int, _m: int) -> void: uses[0] += 1)
+			for t in DAYS * day_ticks / 100:
+				sim3.update(STEP)
+			rev[with_atm] += sim3._total_revenue()
+	print("ATM: omsætning uden %d, med %d (%+.1f %%), hævninger %d" % [rev[0], rev[1],
+		100.0 * (rev[1] - rev[0]) / maxf(1.0, rev[0]), uses[0]])
+	# 4) Milepæle: green_meadow-bot.
+	var gm: ScenarioDef = null
+	for d in ScenarioDef.list_all():
+		if d.id == "green_meadow":
+			gm = d
+	if gm == null:
+		print("Milepæle: green_meadow ikke fundet")
+		return
+	var md: Dictionary = {}
+	_scenario_run(gm, BOT_SEEDS[0], md)
+	var keys: Array = md.keys()
+	keys.sort_custom(func(x: Variant, y: Variant) -> bool: return int(md[x]) < int(md[y]))
+	for k: Variant in keys:
+		print("Milepæl %s: dag %d" % [k, md[k]])

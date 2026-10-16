@@ -105,6 +105,8 @@ var queue_patience_min: float = 600.0
 var queue_patience_max: float = 1500.0
 var queue_impatient_decay: float = 0.02
 var queue_abandon_happiness: float = 10.0
+## T-149: gæster med saldo under dette hæver i en ATM inden for rækkevidde.
+var atm_low_money: int = 10
 var queue_weight_cells: float = 3.0
 var max_guests_per_cell: int = 6
 var crowd_reroute_ticks: int = 20
@@ -215,6 +217,7 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 	b.max_guests_per_cell = maxi(1, int(guests.get("max_guests_per_cell", b.max_guests_per_cell)))
 	b.crowd_reroute_ticks = maxi(1, int(guests.get("crowd_reroute_ticks", b.crowd_reroute_ticks)))
 	b.crowd_ticks = maxi(1, int(guests.get("crowd_ticks", b.crowd_ticks)))
+	b.atm_low_money = maxi(0, int(guests.get("atm_low_money", b.atm_low_money)))
 	b.crowd_decay = maxf(0.0, float(guests.get("crowd_decay", b.crowd_decay)))
 	b.start_money = int(economy.get("start_money", b.start_money))
 	b.entry_fee = int(economy.get("entry_fee", b.entry_fee))

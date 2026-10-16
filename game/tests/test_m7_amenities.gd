@@ -108,6 +108,35 @@ func test_atm_withdraw_fee_and_max_per_visit() -> void:
 	assert_true(u.leaving)
 
 
+func test_atm_low_money_withdraws_before_broke() -> void:
+	# T-149: saldo ≥ billigste pris, men under atm_low_money → hæv før pengene slipper op.
+	var s := _sim()
+	assert_eq(s.balance.atm_low_money, 10, "default")
+	assert_eq(Balance.from_dicts({}, {"atm_low_money": 25}).atm_low_money, 25, "læses fra guests.json")
+	s.balance.atm_low_money = 15
+	s.cmd_place_attraction("r10", Vector2i(12, 20))
+	var atm: Attraction = s.cmd_place_attraction("atm_t", Vector2i(8, 20))
+	var g := _guest(s, Vector2i(11, 21), 12)
+	s._choose_goal(g)
+	assert_eq(g.leave_reason, "")
+	assert_eq(g.target_attraction_id, atm.id, "lav saldo → hæveautomat")
+	_step(s, 100)
+	assert_eq(g.atm_uses, 1)
+	assert_true(g.money >= 12 + 20 - 1)
+	# Over tærsklen: ingen hævning; max_per_visit og min_happiness gælder stadig.
+	var rich := _guest(s, Vector2i(11, 21), 40)
+	s._choose_goal(rich)
+	assert_true(rich.target_attraction_id != atm.id)
+	var maxed := _guest(s, Vector2i(11, 21), 12)
+	maxed.atm_uses = 2
+	s._choose_goal(maxed)
+	assert_true(maxed.target_attraction_id != atm.id)
+	var sad := _guest(s, Vector2i(11, 21), 12)
+	sad.happiness = 30.0
+	s._choose_goal(sad)
+	assert_true(sad.target_attraction_id != atm.id)
+
+
 func test_atm_deterministic() -> void:
 	var r: Array = []
 	for k in 2:

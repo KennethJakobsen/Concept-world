@@ -998,6 +998,9 @@ func _choose_goal(g: Guest) -> void:
 	var leave_reason: String = _leave_reason(g)
 	if leave_reason == "no_money" and _try_atm(g):
 		return
+	# T-149: lav saldo → hæv i forvejen (deterministisk; samme betingelser som ovenfor)
+	if leave_reason == "" and g.money < balance.atm_low_money and _try_atm(g):
+		return
 	if leave_reason != "":
 		g.thought = LEAVE_THOUGHT
 		g.leave_reason = leave_reason
@@ -2679,7 +2682,8 @@ func _guests_sorted() -> Array[Guest]:
 	return out
 
 
-## Nærmeste brugbare hæveautomat inden for range_cells sti-celler (kun til gæster uden penge).
+## Nærmeste brugbare hæveautomat inden for range_cells sti-celler (gæster uden penge eller med
+## saldo under balance.atm_low_money, T-149).
 func _try_atm(g: Guest) -> bool:
 	var best: Attraction = null
 	var best_route: Array[Vector2i] = []
