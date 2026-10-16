@@ -28,6 +28,7 @@ extends Resource
 @export var prize_cost: int = 0
 @export var prize_happiness: float = 0.0
 @export var prize_item: String = ""
+@export var carry_item: String = ""  ## T-086: shop-køb giver denne ting
 
 
 static func from_dict(d: Dictionary) -> AttractionDef:
@@ -58,6 +59,7 @@ static func from_dict(d: Dictionary) -> AttractionDef:
 	def.prize_cost = maxi(0, int(d.get("prize_cost", 0)))
 	def.prize_happiness = float(d.get("prize_happiness", 0.0))
 	def.prize_item = str(d.get("prize_item", ""))
+	def.carry_item = str(d.get("carry_item", ""))
 	return def
 
 
@@ -81,5 +83,5 @@ func to_dict() -> Dictionary:
 		"train": train, "max_height": max_height,
 		"intensity": intensity, "nausea": nausea,
 		"win_chance": win_chance, "prize_cost": prize_cost, "prize_happiness": prize_happiness,
-		"prize_item": prize_item,
+		"prize_item": prize_item, "carry_item": carry_item,
 	}

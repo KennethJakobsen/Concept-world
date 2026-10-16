@@ -28,6 +28,9 @@ signal coaster_changed(coaster_id: int)
 signal guest_vomited(guest_id: int, cell: Vector2i)
 ## T-085 (M6): gæsten vandt en præmie i et sideshow.
 signal prize_won(guest_id: int, attraction_id: int, item_id: String)
+## T-086: bærbare ting.
+signal item_gained(guest_id: int, item_id: StringName)
+signal item_lost(guest_id: int, item_id: StringName, cell: Vector2i)
 
 const PHASE_DAWN: StringName = &"dawn"
 const PHASE_DAY: StringName = &"day"
@@ -448,6 +451,8 @@ func _on_tick(_tick: int) -> void:
 			var g: Guest = guests[gid]
 			if _update_needs(g):
 				_tick_guest(g)
+	if day_tick % hour_ticks() == 0:
+		_tick_items_hour()
 	StaffAI.tick_all(self)
 	_tick_self_repair()
 	_update_phase()
@@ -808,6 +813,8 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 		var g: Guest = guests[gid]
 		_apply_visit(g, a)
 		if a.def.kind == "shop":
+			if a.def.carry_item != "":
+				_give_item(g, StringName(a.def.carry_item))
 			g.litter_steps_left = rng.randi_range(1, maxi(1, balance.litter_carry_cells))
 		if a.is_sideshow():
 			_sideshow_result(g, a)
@@ -863,7 +870,74 @@ func _give_item(g: Guest, item_id: StringName) -> bool:
 	if g.items.has(item_id):
 		return false
 	g.items.append(item_id)
+	item_gained.emit(g.id, item_id)
 	return true
+
+
+const ITEM_LOST_THOUGHT: String = "Åh nej, min ballon fløj væk!"
+var _item_defs: Dictionary = {}
+var _item_defs_loaded: bool = false
+
+
+func item_def(item_id: StringName) -> ItemDef:
+	if not _item_defs_loaded:
+		_item_defs = ItemDef.load_all()
+		_item_defs_loaded = true
+	return _item_defs.get(item_id) as ItemDef
+
+
+## Antal ticks pr. spil-time (døgnet = 24 timer).
+func hour_ticks() -> int:
+	return maxi(1, balance.day_ticks / 24)
+
+
+## T-086: kører én gang pr. spil-time. Egen glæde, tab (sim-RNG) og aura (manhattan).
+func _tick_items_hour() -> void:
+	var ids: Array = guests.keys()
+	ids.sort()
+	var auras: Array = []  # [cell, radius, amount, guest_id]
+	for gid in ids:
+		var g: Guest = guests[gid]
+		for item_id: StringName in g.items.duplicate():
+			var d: ItemDef = item_def(item_id)
+			if d == null:
+				continue
+			g.happiness = clampf(g.happiness + d.happiness_per_hour, 0.0, 100.0)
+			if d.lose_chance_per_hour > 0.0 and rng.randf() < d.lose_chance_per_hour:
+				g.items.erase(item_id)
+				g.thought = ITEM_LOST_THOUGHT
+				item_lost.emit(g.id, item_id, g.cell)
+				continue
+			if d.aura_radius > 0 and d.aura_happiness != 0.0:
+				auras.append([g.cell, d.aura_radius, d.aura_happiness, g.id])
+	if auras.is_empty():
+		return
+	for gid in ids:
+		var o: Guest = guests[gid]
+		var bonus: float = 0.0
+		for au: Array in auras:
+			if int(au[3]) == o.id:
+				continue
+			var c: Vector2i = au[0]
+			if absi(c.x - o.cell.x) + absi(c.y - o.cell.y) <= int(au[1]):
+				bonus += float(au[2])
+		if bonus != 0.0:
+			o.happiness = clampf(o.happiness + bonus, 0.0, 100.0)
+
+
+## T-086: info om en gæst til UI ({} hvis den ikke findes).
+func guest_info(guest_id: int) -> Dictionary:
+	if not guests.has(guest_id):
+		return {}
+	var g: Guest = guests[guest_id]
+	var its: Array = []
+	for it in g.items:
+		its.append(String(it))
+	return {
+		"id": g.id, "cell": g.cell, "happiness": g.happiness, "money": g.money,
+		"thought": g.thought, "needs": g.needs.duplicate(), "items": its,
+		"nausea": g.nausea, "intensity_tolerance": g.intensity_tolerance,
+	}
 
 
 ## T-085: nøgletal for en attraktion ({} hvis den ikke findes).
