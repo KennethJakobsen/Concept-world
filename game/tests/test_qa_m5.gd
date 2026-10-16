@@ -54,9 +54,12 @@ func _snap(s: ParkSim) -> String:
 
 
 func test_research_unlocks_then_build() -> void:
-	var s := ParkSim.new_from_scenario(_def(), 3)
+	# T-105: milepæle slået fra (ellers låser stars_3 emnet). T-133: banen kræver sving for at kunne startes.
+	var s := ParkSim.new_from_scenario(_def({"milestones": false}), 3)
 	_layout(s)
-	var item: String = "track_turn_right"
+	s.research.unlocked["track_turn_left"] = true
+	s.research.unlocked["track_turn_right"] = true
+	var item: String = "track_lift_up"
 	assert_true(not s.is_unlocked(item))
 	var a: int = s.cmd_start_coaster("wooden_coaster", Vector2i(40, 51), 1)
 	assert_true(a > 0)
@@ -78,6 +81,7 @@ func test_scenario_won_by_bot_with_coaster_and_save_midway() -> void:
 	var s := ParkSim.new_from_scenario(_def(), 7)
 	for p in OVAL:
 		s.research.unlocked[p] = true
+	s.research.unlocked["track_turn_left"] = true  # T-133: required_pieces
 	_layout(s)
 	var finished: Array = []
 	s.scenario_finished.connect(func(won: bool, reason: String) -> void: finished.append([won, reason]))

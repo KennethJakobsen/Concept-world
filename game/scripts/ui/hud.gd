@@ -346,6 +346,7 @@ func _build_ui() -> void:
 	_attr_panel = VBoxContainer.new()
 	_attr_panel.name = "AttractionPanel"
 	inspector.set_overview(&"attraction", _attr_panel)
+	AttractionTabs.register(inspector)  # T-112
 	var av: VBoxContainer = _attr_panel
 	_attr_label = Label.new()
 	av.add_child(_attr_label)
@@ -771,12 +772,6 @@ static func attraction_text(a: Attraction, p_sim: ParkSim) -> String:
 	lines.append("Besøgende: %d" % a.total_visitors)
 	lines.append("Omsætning: $%d" % a.total_revenue)
 	lines.append("Pris: $%d" % a.price)
-	var qs: Dictionary = p_sim.attraction_stats(a.id) if p_sim != null else {}
-	if qs.has("queue_capacity") and int(qs["queue_capacity"]) < 100000:  # T-140: kølængde og ventetid (indtil T-112's kø-fane)
-		lines.append("Kø: %d/%d, ventetid ca. %d s" % [int(qs["queue_length"]), int(qs["queue_capacity"]),
-			int(qs.get("wait_ticks_estimate", 0)) / SimClock.TICKS_PER_SECOND])
-	else:
-		lines.append("Kø: %d" % a.queue.size())
 	return "\n".join(lines)
 
 

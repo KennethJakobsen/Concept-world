@@ -117,8 +117,10 @@ func test_high_track_over_path_and_track_crossing() -> void:
 func test_locked_pieces_rejected() -> void:
 	var s := _sim()
 	s.research.setup(true, ["wooden_coaster"])
-	assert_eq(s.cmd_start_coaster("wooden_coaster", ST, 1) > 0, s.is_unlocked("coaster_station"))
-	s.research.setup(true, ["wooden_coaster", "coaster_station", "track_straight"])
+	# T-133: uden sving (required_pieces) kan banen ikke startes.
+	assert_eq(s.cmd_start_coaster("wooden_coaster", ST, 1) > 0, s.can_complete("wooden_coaster"))
+	s.research.setup(true, ["wooden_coaster", "coaster_station", "track_straight", "track_turn_left",
+		"track_turn_right"])
 	var id: int = s.cmd_start_coaster("wooden_coaster", ST + Vector2i(0, 5), 1)
 	assert_true(id > 0)
 	assert_eq(s.preview_track_piece(id, "track_lift_up")["reason"], "locked")

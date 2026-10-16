@@ -5,7 +5,9 @@ extends Node3D
 @export var move_speed: float = 20.0
 @export var rotate_speed: float = 1.5
 @export var min_distance: float = 8.0
-@export var max_distance: float = 60.0
+@export var max_distance: float = 80.0
+## T-135: XZ-grænse for kamerafokus (tom = ingen grænse). Sættes af ParkView inkl. omgivelsesbæltet.
+var bounds: Rect2 = Rect2()
 
 @onready var _camera: Camera3D = $Camera3D
 var _distance: float = 25.0
@@ -22,6 +24,9 @@ func _process(delta: float) -> void:
 	var dir := (transform.basis * Vector3(input.x, 0.0, input.y))
 	dir.y = 0.0
 	position += dir.normalized() * move_speed * delta if dir.length() > 0.0 else Vector3.ZERO
+	if bounds.has_area():
+		position.x = clampf(position.x, bounds.position.x, bounds.end.x)
+		position.z = clampf(position.z, bounds.position.y, bounds.end.y)
 	if Input.is_action_pressed(&"cam_rotate_left"):
 		rotate_y(rotate_speed * delta)
 	if Input.is_action_pressed(&"cam_rotate_right"):
@@ -40,3 +45,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func _apply_distance() -> void:
 	_camera.position = Vector3(0.0, _distance * 0.8, _distance * 0.6)
 	_camera.look_at(global_position)
+
+
+func set_bounds(r: Rect2) -> void:
+	bounds = r

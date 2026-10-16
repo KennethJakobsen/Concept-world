@@ -9,6 +9,8 @@ var funding_level: int = 0
 var current_item: String = ""
 var progress: float = 0.0
 var priority: String = ""
+## M7 (T-105): emner låst af milepæle (topic_id -> true). Sættes af ParkSim; gemmes ikke.
+var locked_topics: Dictionary = {}
 
 
 func _init(p_def: ResearchDef = null) -> void:
@@ -40,7 +42,7 @@ func set_funding(level: int) -> bool:
 
 
 func set_priority(topic_id: String) -> bool:
-	if topic_id != "" and not def.has_topic(topic_id):
+	if topic_id != "" and (not def.has_topic(topic_id) or locked_topics.has(topic_id)):
 		return false
 	priority = topic_id
 	if progress <= 0.0:
@@ -54,7 +56,7 @@ func pick_next() -> void:
 	var fallback: String = ""
 	for it in def.items:
 		var id: String = it["id"]
-		if unlocked.has(id):
+		if unlocked.has(id) or locked_topics.has(str(it["topic"])):
 			continue
 		if priority != "" and it["topic"] == priority:
 			current_item = id
@@ -62,6 +64,32 @@ func pick_next() -> void:
 		if fallback == "":
 			fallback = id
 	current_item = fallback
+
+
+## Sætter låste emner. Peger nuværende item på et låst emne (uden brugte point), vælges et nyt.
+func set_locked_topics(topics: Dictionary) -> void:
+	locked_topics = topics
+	if locked_topics.has(priority):
+		priority = ""
+	var cur_topic: String = str(def.item(current_item).get("topic", "")) if current_item != "" else ""
+	if current_item == "" or (progress <= 0.0 and locked_topics.has(cur_topic)):
+		pick_next()
+
+
+## Ekstra forskningspoint (milepælsbelønning). Returnerer de ulåste id'er.
+func add_points(points: float) -> Array[String]:
+	var done: Array[String] = []
+	if not enabled or current_item == "" or points <= 0.0:
+		return done
+	progress += points
+	while current_item != "" and progress >= points_needed():
+		progress -= points_needed()
+		unlocked[current_item] = true
+		done.append(current_item)
+		pick_next()
+	if current_item == "":
+		progress = 0.0
+	return done
 
 
 func points_needed() -> float:

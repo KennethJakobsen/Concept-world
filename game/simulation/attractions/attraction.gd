@@ -79,6 +79,11 @@ func is_coaster() -> bool:
 	return def.kind == "coaster"
 
 
+## M7 (T-104): hæveautomat.
+func is_atm() -> bool:
+	return def.kind == "atm"
+
+
 func is_sideshow() -> bool:
 	return def.kind == "sideshow"
 

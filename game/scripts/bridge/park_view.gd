@@ -4,7 +4,6 @@ extends Node3D
 ## Ingen spillogik her – kun visning.
 
 const PATH_SCENE: PackedScene = preload("res://scenes/props/path_tile.tscn")
-const ENTRANCE_SCENE: PackedScene = preload("res://scenes/props/entrance.tscn")
 const GUEST_SCENE: PackedScene = preload("res://scenes/props/guest.tscn")
 const LITTER_SCENE: PackedScene = preload("res://scenes/props/litter.tscn")
 const SMOKE_SCENE: PackedScene = preload("res://scenes/effects/breakdown_smoke.tscn")
@@ -189,9 +188,7 @@ func rebuild() -> void:
 			elif t == ParkWorld.Tile.QUEUE:
 				_set_queue_visual(c, true)
 	refresh_queue_visuals()
-	var ent: Node3D = ENTRANCE_SCENE.instantiate()
-	ent.position = cell_center(w.entrance)
-	_root.add_child(ent)
+	_build_surroundings(w)  # T-135: mur/port/bælte erstatter den gamle entrance.tscn (ingen dobbelt indgang)
 	_rebuilding = true
 	for a in w.attractions:
 		_on_attraction_placed(a)
@@ -210,6 +207,33 @@ func rebuild() -> void:
 	_rebuilding = false
 	sync_attractions()
 	_apply_night(true)
+
+
+## T-135: omgivelser (T-108) med scenariets tema + kameragrænser, så bæltet kan ses.
+func _build_surroundings(w: ParkWorld) -> void:
+	var cfg: Dictionary = SurroundingsRenderer.load_config(scenario_theme())
+	var sr := SurroundingsRenderer.new()
+	sr.name = "Surroundings"
+	_root.add_child(sr)
+	sr.build(w.width, w.height, w.entrance, cfg)
+	var margin: float = float(maxi(4, int(cfg.get("margin_cells", 24))))
+	var cam: Camera3D = get_viewport().get_camera_3d() if is_inside_tree() else null
+	if cam != null and cam.get_parent() is ParkCamera:
+		(cam.get_parent() as ParkCamera).set_bounds(Rect2(-margin * 0.75, -margin * 0.75,
+				w.width + margin * 1.5, w.height + margin * 1.5))
+
+
+## Scenariets surroundings-tema fra content/scenarios/<id>.json ("" = default).
+func scenario_theme() -> String:
+	if sim == null or sim.scenario == null or sim.scenario.def_id == "":
+		return ""
+	var path: String = "res://content/scenarios/%s.json" % sim.scenario.def_id
+	if not FileAccess.file_exists(path):
+		return ""
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if data is Dictionary and (data as Dictionary).get("surroundings") is Dictionary:
+		return str(((data as Dictionary)["surroundings"] as Dictionary).get("theme", ""))
+	return ""
 
 
 func _process(delta: float) -> void:

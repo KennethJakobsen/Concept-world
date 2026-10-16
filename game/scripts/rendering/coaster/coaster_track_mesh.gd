@@ -488,7 +488,7 @@ func set_ghost(ok: bool) -> void:
 	_ghost_mat = StandardMaterial3D.new()
 	_ghost_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_ghost_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_ghost_mat.albedo_color = Color(0.3, 0.95, 0.4, 0.45) if ok else Color(1.0, 0.3, 0.25, 0.45)
+	_ghost_mat.albedo_color = ParkColors.ghost(ok)
 	_ghost_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
 	_apply_ghost()
 

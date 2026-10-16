@@ -108,6 +108,8 @@ var crowd_reroute_ticks: int = 20
 var crowd_ticks: int = 200
 var crowd_decay: float = 0.01
 ## Ekstra A*-vægt på den fulde celle ved omlægning (ADR-005 §1).
+## M7 (T-104): glæde-straf pr. tick på mørke stier (lys < 0,5).
+var dark_path_penalty_per_tick: float = 0.0
 var crowd_reroute_penalty: int = 8
 
 # Personale/affald/dekoration (staff_rules.json, T-035/T-037)
@@ -197,6 +199,7 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 	b.queue_entertained_factor = clampf(float(park.get("queue_entertained_factor", b.queue_entertained_factor)), 0.0, 1.0)
 	b.queue_path_cost = maxi(0, int(park.get("queue_path_cost", b.queue_path_cost)))
 	b.queue_path_refund = maxi(0, int(park.get("queue_path_refund", b.queue_path_refund)))
+	b.dark_path_penalty_per_tick = maxf(0.0, float(park.get("dark_path_penalty_per_tick", b.dark_path_penalty_per_tick)))
 	var qp: Variant = guests.get("queue_patience_ticks", null)
 	if qp is Dictionary:
 		b.queue_patience_min = float(qp.get("min", b.queue_patience_min))

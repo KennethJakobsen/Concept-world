@@ -174,7 +174,7 @@ static func _finish(sim: ParkSim, s: Staff) -> void:
 		Staff.TASK_EMPTY_BIN:
 			var d: Decor = sim.decor.get(s.task_target_id, null)
 			if d != null:
-				d.fill = 0
+				sim.set_bin_fill(d, 0)
 	drop_task(sim, s)
 
 
@@ -216,7 +216,7 @@ static func _find_cleaning(sim: ParkSim, s: Staff) -> void:
 	var bins: Array = []
 	for did: int in sim.decor:
 		var d: Decor = sim.decor[did]
-		if d.def.kind == "bin" and d.fill >= sim.balance.bin_capacity and s.in_radius(d.cell) \
+		if d.def.kind == "bin" and d.fill >= sim.bin_capacity(d) and s.in_radius(d.cell) \
 				and not is_target_reserved(sim, s, Staff.TASK_EMPTY_BIN, d.id):
 			bins.append(d)
 	bins.sort_custom(func(x: Decor, y: Decor) -> bool:

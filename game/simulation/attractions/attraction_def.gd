@@ -39,6 +39,15 @@ extends Resource
 @export var recipes: Array[Dictionary] = []
 ## M7 (T-102): prisvirkninger [{below_ratio, extra_purchase_chance, nausea, thought}].
 @export var price_effects: Array[Dictionary] = []
+## M7 (T-104): hæveautomat (kind "atm").
+@export var withdraw_min: int = 20
+@export var withdraw_max: int = 50
+@export var fee: int = 0
+@export var max_per_visit: int = 2
+@export var range_cells: int = 30
+@export var min_happiness: float = 40.0
+## M7 (T-133): sporstykker der skal være låst op, før banen kan startes (tom = ingen krav).
+@export var required_pieces: Array[String] = []
 
 
 static func from_dict(d: Dictionary) -> AttractionDef:
@@ -92,6 +101,18 @@ static func from_dict(d: Dictionary) -> AttractionDef:
 				def.price_effects.append({"below_ratio": float(e.get("below_ratio", 0.0)),
 					"extra_purchase_chance": clampf(float(e.get("extra_purchase_chance", 0.0)), 0.0, 1.0),
 					"nausea": float(e.get("nausea", 0.0)), "thought": str(e.get("thought", ""))})
+	var wd: Variant = d.get("withdraw", {})
+	if wd is Dictionary:
+		def.withdraw_min = maxi(0, int(wd.get("min", def.withdraw_min)))
+		def.withdraw_max = maxi(def.withdraw_min, int(wd.get("max", def.withdraw_max)))
+	def.fee = maxi(0, int(d.get("fee", 0)))
+	def.max_per_visit = maxi(0, int(d.get("max_per_visit", def.max_per_visit)))
+	def.range_cells = maxi(0, int(d.get("range_cells", def.range_cells)))
+	def.min_happiness = float(d.get("min_happiness", def.min_happiness))
+	var rp: Variant = d.get("required_pieces", [])
+	if rp is Array:
+		for p: Variant in rp:
+			def.required_pieces.append(str(p))
 	return def
 
 
@@ -137,6 +158,9 @@ func to_dict() -> Dictionary:
 		"wet_thirst": wet_thirst, "transport_cost": transport_cost,
 		"config": config.duplicate(true), "recipes": recipes.duplicate(true),
 		"price_effects": price_effects.duplicate(true),
+		"withdraw": {"min": withdraw_min, "max": withdraw_max}, "fee": fee, "max_per_visit": max_per_visit,
+		"range_cells": range_cells, "min_happiness": min_happiness,
+		"required_pieces": required_pieces.duplicate(),
 	}
 
 

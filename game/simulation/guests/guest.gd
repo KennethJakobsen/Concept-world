@@ -46,6 +46,12 @@ var transport_resume_state: int = State.WALKING
 var patience: float = 1050.0
 var queue_index: int = -1
 var blocked_ticks: int = 0
+## M7 (T-104): på vej hjem (tilstand LEAVING) og hvorfor (tired | no_money | unhappy | "").
+var leaving: bool = false
+var leave_reason: String = ""
+## Antal hævninger i hæveautomat dette besøg og bænk-decor-id gæsten sidder på (-1 = ingen).
+var atm_uses: int = 0
+var resting_on: int = -1
 
 
 func is_on_transport() -> bool:
@@ -75,6 +81,7 @@ func to_save() -> Dictionary:
 		"transport_id": transport_id, "transport_dest": SaveCodec.v2i(transport_dest),
 		"transport_resume_state": transport_resume_state,
 		"patience": SaveCodec.f(patience), "queue_index": queue_index, "blocked_ticks": blocked_ticks,
+		"leaving": leaving, "leave_reason": leave_reason, "atm_uses": atm_uses, "resting_on": resting_on,
 	}
 
 
@@ -113,6 +120,10 @@ static func from_save(d: Dictionary) -> Guest:
 	g.patience = SaveCodec.to_f(d.get("patience"), 1050.0)
 	g.queue_index = int(d.get("queue_index", -1))
 	g.blocked_ticks = int(d.get("blocked_ticks", 0))
+	g.leaving = bool(d.get("leaving", g.state == State.LEAVING))
+	g.leave_reason = str(d.get("leave_reason", ""))
+	g.atm_uses = int(d.get("atm_uses", 0))
+	g.resting_on = int(d.get("resting_on", g.target_decor_id if g.state == State.RESTING else -1))
 	var its: Variant = d.get("items", [])
 	if its is Array:
 		for it: Variant in its:

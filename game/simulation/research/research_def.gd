@@ -16,6 +16,8 @@ const DEFAULT_START_UNLOCKED: Array[String] = [
 ## [{id, topic, points}] i forskningsrækkefølge
 @export var items: Array[Dictionary] = []
 @export var start_unlocked: Array[String] = DEFAULT_START_UNLOCKED.duplicate()
+## M7 (T-105): emner der er åbne fra start; øvrige emner, som en milepæl låser op, er låst indtil da.
+@export var start_topics: Array[String] = []
 
 
 static func load_default() -> ResearchDef:
@@ -49,6 +51,9 @@ static func from_dict(d: Dictionary) -> ResearchDef:
 		r.start_unlocked.clear()
 		for s: Variant in d["start_unlocked"]:
 			r.start_unlocked.append(str(s))
+	if d.get("start_topics") is Array:
+		for t: Variant in d["start_topics"]:
+			r.start_topics.append(str(t))
 	return r
 
 

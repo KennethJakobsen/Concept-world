@@ -410,6 +410,19 @@ func restore_attraction(a: Attraction) -> void:
 
 # --- Affald (T-037) ---
 
+# --- Lys (M7, T-104). Sættes af ParkSim (fase + lygter); gemmes ikke. ---
+
+## Dagslys 0..1 (1 = dag, 0 = nat).
+var ambient_light: float = 1.0
+## celle -> lys fra lygter 0..1.
+var lamp_light: Dictionary = {}
+
+
+## Lysniveau 0..1 på cellen: dagslys + lygter (loftet ved 1).
+func light_level(cell: Vector2i) -> float:
+	return clampf(ambient_light + float(lamp_light.get(cell, 0.0)), 0.0, 1.0)
+
+
 func get_litter(cell: Vector2i) -> int:
 	return int(litter.get(cell, 0))
 

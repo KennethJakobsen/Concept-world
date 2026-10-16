@@ -78,7 +78,7 @@ func test_inspector_tabs_and_close() -> void:
 	hud.show_attraction(a.id)
 	assert_true(hud.inspector.is_open())
 	assert_true(hud._attr_panel.visible)
-	assert_eq(hud.inspector.tab_ids(), [Inspector.OVERVIEW, &"econ"] as Array[StringName])
+	assert_true(hud.inspector.tab_ids().has(&"econ"))
 	assert_eq(made[0], 0, "fabrik kaldes først når fanen vises")
 	hud.inspector.select_tab(&"econ")
 	assert_eq(made[0], 1)

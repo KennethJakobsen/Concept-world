@@ -137,6 +137,25 @@ static func _v3_to_v4(d: Dictionary) -> Dictionary:
 				gd["queue_index"] = -1
 			if not gd.has("blocked_ticks"):
 				gd["blocked_ticks"] = 0
+			# T-104: gå hjem, hæveautomat og bænk.
+			if not gd.has("leaving"):
+				gd["leaving"] = int(gd.get("state", 0)) == Guest.State.LEAVING
+			if not gd.has("leave_reason"):
+				gd["leave_reason"] = ""
+			if not gd.has("atm_uses"):
+				gd["atm_uses"] = 0
+			if not gd.has("resting_on"):
+				gd["resting_on"] = int(gd.get("target_decor_id", -1)) if int(gd.get("state", 0)) == Guest.State.RESTING else -1
+	# T-105: milepæle – gamle saves evalueres ved første tick (backfill uden belønning).
+	if not park.has("milestones"):
+		park["milestones"] = []
+	if not park.has("milestones_backfill"):
+		park["milestones_backfill"] = true
+	if not park.has("milestones_days_clean"):
+		park["milestones_days_clean"] = 0
+	for dc: Variant in SaveCodec.arr(park, "decor"):
+		if dc is Dictionary and not (dc as Dictionary).has("fill"):
+			dc["fill"] = 0
 	if park.get("world") is Dictionary:
 		var wd: Dictionary = park["world"]
 		if not wd.has("queue_paths"):

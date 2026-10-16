@@ -24,6 +24,8 @@ const DIR: String = "res://content/scenarios/"
 @export var staff: Array[Dictionary] = []  ## {type: String, cell: Vector2i}
 @export var objectives: Array[Dictionary] = []  ## {type: String, value: float}
 @export var deadline_days: int = 0
+## M7 (T-105): false slår milepæle fra i scenariet.
+@export var milestones: bool = true
 @export var lose: Array[Dictionary] = []  ## {type: String, value: float, days: int}
 
 
@@ -65,6 +67,7 @@ static func from_dict(d: Dictionary) -> ScenarioDef:
 		if o is Dictionary:
 			r.objectives.append({"type": str(o.get("type", "")), "value": float(o.get("value", 0))})
 	r.deadline_days = int(d.get("deadline_days", 0))
+	r.milestones = bool(d.get("milestones", true))
 	for l: Variant in _arr(d, "lose"):
 		if l is Dictionary:
 			r.lose.append({"type": str(l.get("type", "")), "value": float(l.get("value", 0)), "days": maxi(1, int(l.get("days", 1)))})

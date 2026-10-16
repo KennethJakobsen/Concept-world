@@ -37,6 +37,15 @@ signal ride_splash(attraction_id: int, cell: Vector2i)
 signal sales_tick(sales: Dictionary)
 ## M7 (T-103): køens rækkefølge/køsti er ændret (bridge: placér gæster på køpladser).
 signal queue_changed(attraction_id: int)
+## M7 (T-104): hæveautomat, spande, bænke og affald.
+signal atm_used(guest_id: int, attraction_id: int, amount: int)
+signal bin_state_changed(decor_id: int, level: int)
+signal guest_sat(guest_id: int, decor_id: int, seat: int)
+signal guest_stood(guest_id: int)
+signal litter_changed(cell: Vector2i)
+## M7 (T-105): milepæle. Backfill (gamle saves) udsender kun milestones_backfilled (ingen toast).
+signal milestone_achieved(id: String)
+signal milestones_backfilled(ids: Array)
 
 const PHASE_DAWN: StringName = &"dawn"
 const PHASE_DAY: StringName = &"day"
@@ -73,6 +82,7 @@ var staff: Dictionary = {}  ## id -> Staff
 var decor: Dictionary = {}  ## id -> Decor
 ## Forskning (T-066). Slået fra som default (alt låst op); scenarier slår den til.
 var research: Research
+var milestones_state: Milestones
 ## null = sandbox (også ældre saves).
 var scenario: Scenario = null
 var _scenario_defs: Dictionary = {}  ## id -> ScenarioDef registreret før load (tests/mods)
@@ -105,6 +115,8 @@ var _staff_def_cache: Dictionary = {}
 var _decor_def_cache: Dictionary = {}
 var _aura: Dictionary = {}  ## celle -> glæde/tick fra dekoration (cache)
 var _aura_dirty: bool = true
+var _aura_night: Dictionary = {}  ## T-104: aura om natten (lygtens night_aura)
+var _bench_seat: Dictionary = {}  ## T-104: guest_id -> sædeplads (genberegnes fra resting_on)
 var _phase: StringName = &""  ## afledt af day_tick, gemmes ikke
 var _sales: Dictionary = {}  ## building_id -> kr i nuværende tick (T-102)
 var _queues_dirty: bool = true  ## T-103: køkæder skal genberegnes
@@ -131,9 +143,12 @@ func _init(width: int, height: int, p_seed: int, p_balance: Balance = null) -> v
 	world.attraction_placed.connect(_on_attraction_placed)
 	world.tile_changed.connect(_on_tile_changed)
 	world.attraction_removed.connect(_on_attraction_removed)
+	world.litter_changed.connect(_on_world_litter_changed)
 	research = Research.new()
 	research.setup(false)
+	milestones_state = Milestones.load_default()
 	_phase = phase()
+	_update_light()
 
 
 func update(delta: float) -> void:
@@ -232,7 +247,7 @@ func attraction_score() -> float:
 			continue
 		if a.is_ride():
 			raw += _excitement(a) * balance.weight_ride
-		else:
+		elif not a.is_atm():
 			raw += balance.weight_facility
 	return sqrt(maxf(0.0, raw))
 
@@ -677,7 +692,7 @@ func price_value(a: Attraction, g: Guest = null) -> float:
 func cheapest_open_price() -> int:
 	var best: int = -1
 	for a in attractions:
-		if a.is_open and (best < 0 or a.price < best):
+		if a.is_open and not a.is_atm() and (best < 0 or a.price < best):
 			best = a.price
 	return best
 
@@ -807,6 +822,7 @@ func _on_tick(_tick: int) -> void:
 			_check_splash(a, tl_before)
 	_ensure_queues()
 	_rebuild_occupancy()
+	_update_light()
 	var ids: Array = guests.keys()
 	ids.sort()
 	for gid in ids:
@@ -821,6 +837,7 @@ func _on_tick(_tick: int) -> void:
 	StaffAI.tick_all(self)
 	_tick_self_repair()
 	_update_phase()
+	_tick_milestones()
 	if not _sales.is_empty():
 		var sales: Dictionary = _sales
 		_sales = {}
@@ -861,6 +878,7 @@ func _end_day() -> void:
 		if w > 0:
 			economy.charge(w, "wages")
 	_research_day()
+	_milestones_day()
 	economy.close_day(day)
 	_scenario_day()
 	day += 1
@@ -948,9 +966,15 @@ func _set_route(g: Guest, route: Array[Vector2i]) -> void:
 
 func _choose_goal(g: Guest) -> void:
 	g.seeking_need = ""
+	if g.leaving:
+		_start_leaving(g)
+		return
 	var leave_reason: String = _leave_reason(g)
+	if leave_reason == "no_money" and _try_atm(g):
+		return
 	if leave_reason != "":
-		g.thought = leave_reason
+		g.thought = LEAVE_THOUGHT
+		g.leave_reason = leave_reason
 		_start_leaving(g)
 		return
 	g.target_decor_id = -1
@@ -960,7 +984,7 @@ func _choose_goal(g: Guest) -> void:
 		var bench_route: Array[Vector2i] = []
 		for did in _sorted_decor_ids():
 			var d: Decor = decor[did]
-			if d.def.kind != "bench":
+			if d.def.kind != "bench" or bench_free_seats(d) <= 0:
 				continue
 			var route: Array[Vector2i] = _route(g, d.cell)
 			if route.is_empty():
@@ -1078,13 +1102,16 @@ func _try_impulse(g: Guest) -> bool:
 	return true
 
 
-## GDD: glæde < leave_happiness, penge < billigste åbne pris, eller energy >= leave_energy.
+## GDD: glæde < leave_happiness (unhappy), energy >= leave_energy (tired) eller
+## penge < billigste åbne pris (no_money). "" = bliver.
 func _leave_reason(g: Guest) -> String:
+	if g.happiness < balance.leave_happiness:
+		return "unhappy"
+	if float(g.needs.get("energy", 0.0)) >= balance.leave_energy:
+		return "tired"
 	var cheapest: int = cheapest_open_price()
-	if g.happiness < balance.leave_happiness \
-			or (cheapest >= 0 and g.money < cheapest) \
-			or float(g.needs.get("energy", 0.0)) >= balance.leave_energy:
-		return LEAVE_THOUGHT
+	if cheapest >= 0 and g.money < cheapest:
+		return "no_money"
 	return ""
 
 
@@ -1130,6 +1157,9 @@ func _wander_step(g: Guest) -> void:
 
 func _start_leaving(g: Guest) -> void:
 	g.state = Guest.State.LEAVING
+	g.leaving = true
+	g.seeking_need = ""
+	g.target_decor_id = -1
 	g.target_attraction_id = -1
 	var route: Array[Vector2i] = _route(g, world.entrance)
 	if route.is_empty() and g.cell != world.entrance:
@@ -1159,6 +1189,7 @@ func _tick_guest(g: Guest) -> void:
 			if g.rest_ticks_left <= 0 and g.needs.has("energy"):
 				g.needs["energy"] = clampf(g.needs["energy"] + balance.bench_energy_restore, 0.0, 100.0)
 				g.thought = "Dejligt med en pause."
+			_stand_up(g)
 			g.state = Guest.State.WALKING
 			g.target_decor_id = -1
 			_choose_goal(g)
@@ -1208,9 +1239,8 @@ func _arrived(g: Guest) -> void:
 		return
 	if g.target_decor_id >= 0:
 		var bench: Decor = decor.get(g.target_decor_id, null)
-		if bench != null and bench.cell == g.cell:
-			g.state = Guest.State.RESTING
-			g.rest_ticks_left = balance.bench_rest_ticks
+		if bench != null and bench.cell == g.cell and bench_free_seats(bench) > 0:
+			_sit_down(g, bench)
 			return
 		g.target_decor_id = -1
 	if g.target_attraction_id >= 0:
@@ -1292,6 +1322,8 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 		if a.is_transport():  # T-145: forlystelsestur – stig af ved den anden station
 			_exit_at_other_station(g, a)
 		_apply_visit(g, a)
+		if a.is_atm():
+			_atm_withdraw(g, a)
 		if a.def.kind == "shop":
 			_apply_recipes(g, a)
 			_price_effects(g, a)
@@ -1455,6 +1487,8 @@ func guest_info(guest_id: int) -> Dictionary:
 		"thought": g.thought, "needs": g.needs.duplicate(), "items": its,
 		"nausea": g.nausea, "intensity_tolerance": g.intensity_tolerance,
 		"state": guest_state_name(g), "wet_ticks": g.wet_ticks,
+		"leaving": g.leaving, "leave_reason": g.leave_reason, "atm_uses": g.atm_uses,
+		"resting_on": g.resting_on,
 	}
 
 
@@ -1494,6 +1528,10 @@ const M7_THOUGHTS: Dictionary = {
 	"queue_bored": "Det tager for lang tid!",
 	"queue_gave_up": "Jeg gider ikke vente mere.",
 	"crowded": "Her er alt for mange mennesker!",
+	"tired": "Jeg er træt.",
+	"no_money": "Jeg har ikke flere penge.",
+	"unhappy": "Jeg keder mig her.",
+	"dark": "Her er mørkt.",
 }
 
 
@@ -1712,6 +1750,9 @@ func cmd_remove_decor(decor_id: int) -> bool:
 func _remove_decor(decor_id: int) -> void:
 	var d: Decor = decor[decor_id]
 	decor.erase(decor_id)
+	for g: Guest in _guests_sorted():
+		if g.resting_on == decor_id:
+			_stand_up(g)
 	if not d.def.on_path:
 		world.clear_decor_tile(d.cell)
 	_aura_dirty = true
@@ -1738,21 +1779,35 @@ func get_decor(decor_id: int) -> Decor:
 
 ## Glæde/tick fra dekorationers aura på cellen (loftet ved decor_aura_max_per_tick).
 func aura_at(cell: Vector2i) -> float:
-	if _aura_dirty:
-		_aura_dirty = false
-		_aura = {}
-		for did in _sorted_decor_ids():
-			var d: Decor = decor[did]
-			if d.def.happiness_aura <= 0.0:
-				continue
-			var r: int = d.def.aura_radius
-			for dy in range(-r, r + 1):
-				for dx in range(-r, r + 1):
-					if absi(dx) + absi(dy) > r:
-						continue
-					var c: Vector2i = d.cell + Vector2i(dx, dy)
-					_aura[c] = float(_aura.get(c, 0.0)) + d.def.happiness_aura * balance.aura_scale_per_tick
-	return minf(float(_aura.get(cell, 0.0)), balance.decor_aura_max_per_tick)
+	_rebuild_decor_caches()
+	var src: Dictionary = _aura_night if world.ambient_light < 0.5 else _aura
+	return minf(float(src.get(cell, 0.0)), balance.decor_aura_max_per_tick)
+
+
+## Aura (dag/nat) og lygternes lys. Genberegnes når dekorationen ændres.
+func _rebuild_decor_caches() -> void:
+	if not _aura_dirty:
+		return
+	_aura_dirty = false
+	_aura = {}
+	_aura_night = {}
+	world.lamp_light = {}
+	for did in _sorted_decor_ids():
+		var d: Decor = decor[did]
+		var r: int = d.def.aura_radius
+		var day_a: float = d.def.happiness_aura
+		var night_a: float = maxf(day_a, d.def.night_aura)
+		for dy in range(-r, r + 1):
+			for dx in range(-r, r + 1):
+				if absi(dx) + absi(dy) > r:
+					continue
+				var c: Vector2i = d.cell + Vector2i(dx, dy)
+				if day_a > 0.0:
+					_aura[c] = float(_aura.get(c, 0.0)) + day_a * balance.aura_scale_per_tick
+				if night_a > 0.0:
+					_aura_night[c] = float(_aura_night.get(c, 0.0)) + night_a * balance.aura_scale_per_tick
+				if d.def.kind == "lamp":
+					world.lamp_light[c] = 1.0
 
 
 ## Aura, underholdere og beskidte stier.
@@ -1770,6 +1825,10 @@ func _apply_surroundings(g: Guest) -> void:
 			and world.get_litter(g.cell) >= balance.dirty_threshold:
 		delta -= balance.happiness_penalty_dirty_per_tick
 		g.thought = balance.thought_dirty
+	if (g.state == Guest.State.WALKING or g.state == Guest.State.LEAVING) \
+			and balance.dark_path_penalty_per_tick > 0.0 and world.get_tile(g.cell) == ParkWorld.Tile.PATH \
+			and world.light_level(g.cell) < 0.5:
+		delta -= balance.dark_path_penalty_per_tick
 	if delta != 0.0:
 		g.happiness = clampf(g.happiness + delta, 0.0, 100.0)
 
@@ -1780,7 +1839,7 @@ func _bin_near(cell: Vector2i) -> Decor:
 	var best_d: int = 0
 	for did in _sorted_decor_ids():
 		var d: Decor = decor[did]
-		if d.def.kind != "bin" or d.fill >= balance.bin_capacity:
+		if d.def.kind != "bin" or d.fill >= bin_capacity(d):
 			continue
 		var dist: int = absi(d.cell.x - cell.x) + absi(d.cell.y - cell.y)
 		if dist <= balance.bin_radius and (best == null or dist < best_d):
@@ -1793,12 +1852,17 @@ func _bin_near(cell: Vector2i) -> Decor:
 ## spand i nærheden fyldes, ellers (eller med lille sandsynlighed) affald på stien.
 func _drop_litter(g: Guest) -> void:
 	var bin: Decor = _bin_near(g.cell)
+	if bin == null:
+		var full: Decor = _full_bin_near(g.cell)
+		if full != null:  # T-104: overløb – affaldet lægges ved den fulde spand
+			world.set_litter(full.cell, mini(world.get_litter(full.cell) + 1, balance.litter_max_per_cell))
+			return
 	var chance: float = balance.litter_chance_with_bin if bin != null else balance.litter_chance_after_shop
 	if rng.randf() < chance:
 		if world.is_walkable(g.cell):
 			world.set_litter(g.cell, mini(world.get_litter(g.cell) + 1, balance.litter_max_per_cell))
 	elif bin != null:
-		bin.fill += 1
+		set_bin_fill(bin, bin.fill + 1)
 
 
 func _break(a: Attraction) -> void:
@@ -1873,6 +1937,8 @@ func cmd_set_research_funding(level: int) -> bool:
 
 ## "" = ingen prioritet.
 func cmd_set_research_priority(topic_id: String) -> bool:
+	if topic_id != "" and not topic_available(topic_id):
+		return false
 	return research.set_priority(topic_id)
 
 
@@ -1918,6 +1984,7 @@ static func new_from_scenario(def: ScenarioDef, p_seed: int, p_balance: Balance 
 	sim.research.setup(def.research_enabled, def.unlocked)
 	if not def.is_sandbox():
 		sim.scenario = Scenario.new(def)
+	sim._sync_topic_locks()
 	return sim
 
 
@@ -2068,7 +2135,7 @@ func cmd_start_coaster(def_id: String, station_cell: Vector2i, heading: int) -> 
 	var sys: StringName = def.track_system()
 	var sid: String = CoasterContent.station_id(sys)
 	var st: TrackPieceDef = CoasterContent.pieces(sys).get(sid, null)
-	if st == null or not is_unlocked(def_id) or not is_unlocked(sid):
+	if st == null or not is_unlocked(def_id) or not is_unlocked(sid) or not can_complete(def_id):
 		return -1
 	var cost: int = def.build_cost + st.cost
 	if not economy.can_afford(cost):
@@ -2445,6 +2512,9 @@ func _park_to_save() -> Dictionary:
 		"next_staff_id": _next_staff_id,
 		"next_decor_id": _next_decor_id,
 		"research": research.to_save(),
+		"milestones": milestones_state.achieved.duplicate(),
+		"milestones_backfill": milestones_state.backfill,
+		"milestones_days_clean": milestones_state.days_clean,
 		"scenario": scenario.to_save() if scenario != null else null,
 		"config": {
 			"spawn_interval_ticks": spawn_interval_ticks, "max_guests": max_guests,
@@ -2521,6 +2591,12 @@ func _park_load(park: Dictionary) -> void:
 		if sdef == null and sid != "":
 			sdef = ScenarioDef.find(sid)
 		scenario = Scenario.from_save(sc, sdef)
+	milestones_state.achieved.clear()
+	for mid: Variant in SaveCodec.arr(park, "milestones"):
+		milestones_state.mark(str(mid))
+	milestones_state.backfill = bool(park.get("milestones_backfill", false))
+	milestones_state.days_clean = int(park.get("milestones_days_clean", 0))
+	_sync_topic_locks()
 	_aura_dirty = true
 	_reachable_dirty = true
 	_queues_dirty = true
@@ -2530,7 +2606,9 @@ func _park_load(park: Dictionary) -> void:
 		for i in a.queue.size():
 			if guests.has(int(a.queue[i])):
 				(guests[int(a.queue[i])] as Guest).queue_index = i  # også migrerede saves
+	_rebuild_bench_seats()
 	_phase = phase()
+	_update_light()
 
 
 func _staff_to_save() -> Array:
@@ -2547,3 +2625,344 @@ func _decor_to_save() -> Array:
 	for did in _sorted_decor_ids():
 		out.append((decor[did] as Decor).to_save())
 	return out
+
+
+# --- M7 (T-104): hæveautomat, spande, bænke, lys og affald ---
+
+func _on_world_litter_changed(cell: Vector2i, _amount: int) -> void:
+	litter_changed.emit(cell)
+
+
+func _guests_sorted() -> Array[Guest]:
+	var ids: Array = guests.keys()
+	ids.sort()
+	var out: Array[Guest] = []
+	for gid in ids:
+		out.append(guests[gid])
+	return out
+
+
+## Nærmeste brugbare hæveautomat inden for range_cells sti-celler (kun til gæster uden penge).
+func _try_atm(g: Guest) -> bool:
+	var best: Attraction = null
+	var best_route: Array[Vector2i] = []
+	for a in attractions:
+		if not a.is_atm() or not a.is_open or a.broken or g.rejected_ids.has(a.id) \
+				or g.atm_uses >= a.def.max_per_visit or g.happiness < a.def.min_happiness or is_queue_full(a):
+			continue
+		var route: Array[Vector2i] = _route(g, approach_cell(a))
+		if route.is_empty() or route.size() - 1 > a.def.range_cells:
+			continue
+		if best == null or route.size() < best_route.size():
+			best = a
+			best_route = route
+	if best == null:
+		return false
+	_go_to(g, best, best_route)
+	return true
+
+
+## Hævning (sim-RNG): gæsten får withdraw min..max og betaler gebyret til parken ("atm_fees").
+func _atm_withdraw(g: Guest, a: Attraction) -> void:
+	var amount: int = rng.randi_range(a.def.withdraw_min, a.def.withdraw_max)
+	g.money += amount
+	var fee: int = mini(a.def.fee, g.money)
+	if fee > 0:
+		g.money -= fee
+		economy.earn(fee, "atm_fees")
+		a.total_revenue += fee
+		a.revenue_today += fee
+	g.atm_uses += 1
+	g.rejected_ids.clear()
+	atm_used.emit(g.id, a.id, amount)
+
+
+## Spandens kapacitet: decor-def'ens capacity, ellers balance.bin_capacity.
+func bin_capacity(d: Decor) -> int:
+	return d.def.capacity if d.def.capacity > 0 else balance.bin_capacity
+
+
+## 0/1/2 = under 50 % / mindst 50 % / fuld.
+func bin_level(d: Decor) -> int:
+	var cap: int = maxi(1, bin_capacity(d))
+	if d.fill >= cap:
+		return 2
+	return 1 if d.fill * 2 >= cap else 0
+
+
+func set_bin_fill(d: Decor, value: int) -> void:
+	var before: int = bin_level(d)
+	d.fill = clampi(value, 0, bin_capacity(d))
+	var after: int = bin_level(d)
+	if after != before:
+		bin_state_changed.emit(d.id, after)
+
+
+## Nærmeste FULDE spand inden for bin_radius (til overløb), ellers null.
+func _full_bin_near(cell: Vector2i) -> Decor:
+	var best: Decor = null
+	var best_d: int = 0
+	for did in _sorted_decor_ids():
+		var d: Decor = decor[did]
+		if d.def.kind != "bin" or d.fill < bin_capacity(d):
+			continue
+		var dist: int = absi(d.cell.x - cell.x) + absi(d.cell.y - cell.y)
+		if dist <= balance.bin_radius and (best == null or dist < best_d):
+			best = d
+			best_d = dist
+	return best
+
+
+## Gæste-id'er på bænken (sorteret).
+func bench_occupants(d: Decor) -> Array[int]:
+	var out: Array[int] = []
+	for g in _guests_sorted():
+		if g.resting_on == d.id:
+			out.append(g.id)
+	return out
+
+
+func bench_free_seats(d: Decor) -> int:
+	return maxi(0, d.def.seats - bench_occupants(d).size())
+
+
+## Sædeplads for en siddende gæst (-1 hvis ikke siddende).
+func bench_seat(guest_id: int) -> int:
+	return int(_bench_seat.get(guest_id, -1))
+
+
+func _sit_down(g: Guest, d: Decor) -> void:
+	var taken: Dictionary = {}
+	for gid in bench_occupants(d):
+		taken[int(_bench_seat.get(gid, -1))] = true
+	var seat: int = 0
+	while taken.has(seat):
+		seat += 1
+	g.state = Guest.State.RESTING
+	g.rest_ticks_left = balance.bench_rest_ticks
+	g.resting_on = d.id
+	g.target_decor_id = d.id
+	_bench_seat[g.id] = seat
+	guest_sat.emit(g.id, d.id, seat)
+
+
+func _stand_up(g: Guest) -> void:
+	if g.resting_on < 0:
+		return
+	g.resting_on = -1
+	_bench_seat.erase(g.id)
+	guest_stood.emit(g.id)
+
+
+## Genberegner sædepladser fra resting_on (efter load).
+func _rebuild_bench_seats() -> void:
+	_bench_seat = {}
+	var next: Dictionary = {}
+	for g in _guests_sorted():
+		if g.resting_on >= 0:
+			var s: int = int(next.get(g.resting_on, 0))
+			_bench_seat[g.id] = s
+			next[g.resting_on] = s + 1
+
+
+## {id, def_id, kind, cell, fill, capacity, fill_ratio, level, seats, occupants} ({} hvis ukendt).
+func decor_info(decor_id: int) -> Dictionary:
+	var d: Decor = decor.get(decor_id, null)
+	if d == null:
+		return {}
+	var cap: int = bin_capacity(d) if d.def.kind == "bin" else 0
+	return {
+		"id": d.id, "def_id": d.def.id, "kind": d.def.kind, "cell": d.cell, "fill": d.fill,
+		"capacity": cap, "fill_ratio": float(d.fill) / float(cap) if cap > 0 else 0.0,
+		"level": bin_level(d) if d.def.kind == "bin" else 0,
+		"seats": d.def.seats, "occupants": bench_occupants(d) if d.def.kind == "bench" else ([] as Array[int]),
+	}
+
+
+## Dagslys efter fase: dag 1, gry/skumring 0,5, nat 0. Lygter lyser cellerne i aura_radius op.
+func _update_light() -> void:
+	_rebuild_decor_caches()
+	match phase():
+		PHASE_DAY:
+			world.ambient_light = 1.0
+		PHASE_NIGHT:
+			world.ambient_light = 0.0
+		_:
+			world.ambient_light = 0.5
+
+
+func light_level(cell: Vector2i) -> float:
+	return world.light_level(cell)
+
+
+## Affaldsstykker på cellen [{kind: "litter"|"vomit", index}] – index 0..n-1 til deterministisk placering.
+func litter_at(cell: Vector2i) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var total: int = world.get_litter(cell)
+	var vomit: int = mini(world.get_vomit(cell), total)
+	for i in total:
+		out.append({"kind": "litter" if i < total - vomit else "vomit", "index": i})
+	return out
+
+
+# --- M7 (T-105): milepæle ---
+
+## Aktive når et scenarie med forskning kører, og scenariet ikke har "milestones": false.
+## Sandbox: alt er åbent, og der gives ingen belønning.
+func milestones_enabled() -> bool:
+	if scenario == null or not research.enabled:
+		return false
+	return scenario.def == null or scenario.def.milestones
+
+
+## Er forskningsemnet åbent? (altid sandt, når milepæle er slået fra)
+func topic_available(topic_id: String) -> bool:
+	return not _locked_topics().has(topic_id)
+
+
+## Milepælen der åbner emnet ("" hvis emnet ikke er låst af en milepæl).
+func topic_locked_by(topic_id: String) -> String:
+	return milestones_state.milestone_for_topic(topic_id) if not topic_available(topic_id) else ""
+
+
+func _locked_topics() -> Dictionary:
+	var out: Dictionary = {}
+	if not milestones_enabled():
+		return out
+	var gated: Dictionary = milestones_state.gated_topics()
+	for t: String in gated:
+		if not research.def.start_topics.has(t) and not milestones_state.is_achieved(str(gated[t])):
+			out[t] = true
+	return out
+
+
+func _sync_topic_locks() -> void:
+	research.set_locked_topics(_locked_topics())
+
+
+## Aktuel værdi for en milepælsbetingelse.
+func milestone_measure(condition: String) -> float:
+	match condition:
+		"total_guests":
+			return float(_next_guest_id - 1)
+		"rides_open":
+			var n: int = 0
+			for a in attractions:
+				if a.is_ride() and not a.broken and not a.building and is_operating(a):
+					n += 1
+			return float(n)
+		"reputation":
+			return reputation
+		"coaster_built":
+			for a in attractions:
+				if a.def.kind == "coaster" and a.track != null and not a.building:
+					return 1.0
+			return 0.0
+		"total_revenue":
+			return float(_total_revenue())
+		"days_clean":
+			return float(milestones_state.days_clean)
+	return 0.0
+
+
+## Samlede indtægter (entré, billetter, hæveautomat-gebyrer) for hele parkens levetid.
+func _total_revenue() -> int:
+	var cats: Array[String] = ["entry", "tickets", "atm_fees"]
+	var total: int = 0
+	for h: Dictionary in economy.history:
+		for c in cats:
+			total += maxi(0, int((h["totals"] as Dictionary).get(c, 0)))
+	for c in cats:
+		total += maxi(0, int(economy.today.get(c, 0)))
+	return total
+
+
+func _milestone_progress(m: MilestoneDef) -> float:
+	if milestones_state.is_achieved(m.id):
+		return 1.0
+	if m.target <= 0.0:
+		return 1.0
+	return clampf(milestone_measure(m.condition) / m.target, 0.0, 1.0)
+
+
+## [{id, name, achieved, progress 0..1, reward, condition, target, enabled}].
+func milestones() -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	var on: bool = milestones_enabled()
+	for m in milestones_state.defs:
+		out.append({"id": m.id, "name": m.name, "achieved": milestones_state.is_achieved(m.id),
+			"progress": _milestone_progress(m), "reward": m.reward.duplicate(true),
+			"condition": m.condition, "target": m.target, "enabled": on})
+	return out
+
+
+func _tick_milestones() -> void:
+	if milestones_state.backfill:
+		_backfill_milestones()
+	if not milestones_enabled() or clock.tick % 20 != 0:
+		return
+	_evaluate_milestones()
+
+
+func _evaluate_milestones() -> void:
+	for m in milestones_state.defs:
+		if not milestones_state.is_achieved(m.id) and _milestone_progress(m) >= 1.0:
+			_achieve(m)
+
+
+func _achieve(m: MilestoneDef) -> void:
+	milestones_state.mark(m.id)
+	var money: int = int(m.reward.get("money", 0))
+	if money > 0:
+		economy.earn(money, "rewards")
+	if m.unlock_topic() != "":
+		_sync_topic_locks()
+	var pts: float = float(m.reward.get("research_points", 0.0))
+	for id in research.add_points(pts):
+		research_unlocked.emit(id)
+	milestone_achieved.emit(m.id)
+
+
+func _milestones_day() -> void:
+	if world.total_litter() <= milestones_state.clean_max_litter:
+		milestones_state.days_clean += 1
+	else:
+		milestones_state.days_clean = 0
+	if milestones_enabled():
+		_evaluate_milestones()
+
+
+## Beslutning 7: beregnelige betingelser markeres uden penge/point; kun emner låses op.
+func _backfill_milestones() -> void:
+	milestones_state.backfill = false
+	if not milestones_enabled():
+		return
+	var ids: Array = []
+	for m in milestones_state.defs:
+		if milestones_state.is_achieved(m.id) or not m.is_backfillable():
+			continue
+		if m.target <= 0.0 or milestone_measure(m.condition) >= m.target:
+			milestones_state.mark(m.id)
+			ids.append(m.id)
+	_sync_topic_locks()
+	milestones_backfilled.emit(ids)
+
+
+# --- M7 (T-133): påkrævede stykker ---
+
+## Påkrævede stykker (AttractionDef.required_pieces), der endnu ikke er låst op.
+func missing_pieces(def_id: String) -> Array[String]:
+	var out: Array[String] = []
+	var def: AttractionDef = get_def(def_id)
+	if def == null:
+		return out
+	for pid in def.required_pieces:
+		if not is_unlocked(pid):
+			out.append(pid)
+	return out
+
+
+## Kan sporbanen startes og lukkes med de oplåste stykker? (false for ukendte/ikke-sporbaner)
+func can_complete(def_id: String) -> bool:
+	var def: AttractionDef = get_def(def_id)
+	return def != null and def.is_tracked() and missing_pieces(def_id).is_empty()

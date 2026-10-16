@@ -88,6 +88,6 @@ func test_queued_guests_stand_on_separate_slots() -> void:
 		for p: Vector3 in seen:
 			assert_true(p.distance_to(n.position) > 0.2, "ingen overlap i køen")
 		seen.append(n.position)
-	assert_true(Hud.attraction_text(a, s).contains("ventetid"), "kølinje med ventetid")
+	assert_true(AttractionTabs.queue_text(s.attraction_stats(a.id), -1.0).contains("Ventetid"), "kølinje med ventetid (T-112: Kø-fanen)")
 	bt.free()
 	view.free()
