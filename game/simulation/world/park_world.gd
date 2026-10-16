@@ -19,6 +19,8 @@ var _tiles: PackedInt32Array = PackedInt32Array()
 var _next_attraction_id: int = 1
 ## Affald pr. sti-celle (kun celler med > 0).
 var litter: Dictionary = {}  ## Vector2i -> int
+## M6 (T-084): hvor meget af affaldet på cellen der er opkast (≤ litter[cell]).
+var vomit: Dictionary = {}  ## Vector2i -> int
 ## T-068: banestykker pr. celle: Vector2i -> Array af [level, attraction_id]. Afledt; gemmes ikke.
 var _track: Dictionary = {}
 
@@ -225,7 +227,8 @@ func remove_attraction(attraction_id: int) -> Attraction:
 ## Attraktioner gemmes af ParkSim (de kræver defs); her kun grid-state.
 func to_save() -> Dictionary:
 	return {"width": width, "height": height, "entrance": SaveCodec.v2i(entrance),
-		"tiles": Array(_tiles), "next_attraction_id": _next_attraction_id, "litter": _litter_to_save()}
+		"tiles": Array(_tiles), "next_attraction_id": _next_attraction_id, "litter": _litter_to_save(),
+		"vomit": _cells_to_save(vomit)}
 
 
 ## Sætter grid-state uden at udsende tile_changed (visning genopbygges af bridge efter load).
@@ -240,6 +243,13 @@ func load_save(d: Dictionary) -> void:
 	for e: Variant in SaveCodec.arr(d, "litter"):
 		if e is Array and (e as Array).size() >= 3 and int(e[2]) > 0:
 			litter[Vector2i(int(e[0]), int(e[1]))] = int(e[2])
+	vomit.clear()
+	for e: Variant in SaveCodec.arr(d, "vomit"):
+		if e is Array and (e as Array).size() >= 3 and int(e[2]) > 0:
+			var vc := Vector2i(int(e[0]), int(e[1]))
+			var n: int = mini(int(e[2]), get_litter(vc))
+			if n > 0:
+				vomit[vc] = n
 
 
 ## Tilføjer en indlæst attraktion uden at ændre tiles/udsende signaler.
@@ -261,6 +271,11 @@ func set_litter(cell: Vector2i, amount: int) -> void:
 		amount = 0
 	else:
 		litter[cell] = amount
+	if get_vomit(cell) > amount:
+		if amount <= 0:
+			vomit.erase(cell)
+		else:
+			vomit[cell] = amount
 	if before != amount:
 		litter_changed.emit(cell, amount)
 
@@ -272,13 +287,40 @@ func total_litter() -> int:
 	return n
 
 
+func get_vomit(cell: Vector2i) -> int:
+	return int(vomit.get(cell, 0))
+
+
+## Lægger opkast (affaldstype "vomit") på cellen; tæller også som affald. Returnerer lagt mængde.
+func add_vomit(cell: Vector2i, amount: int, max_per_cell: int) -> int:
+	var before: int = get_litter(cell)
+	var after: int = mini(before + maxi(0, amount), maxi(max_per_cell, before))
+	var added: int = after - before
+	if added <= 0:
+		return 0
+	vomit[cell] = get_vomit(cell) + added
+	set_litter(cell, after)
+	return added
+
+
+func total_vomit() -> int:
+	var n: int = 0
+	for c: Vector2i in vomit:
+		n += int(vomit[c])
+	return n
+
+
 ## Grid-sti-mål: [[x, y, n], ...] sorteret for stabil output.
 func _litter_to_save() -> Array:
-	var cells: Array = litter.keys()
+	return _cells_to_save(litter)
+
+
+static func _cells_to_save(src: Dictionary) -> Array:
+	var cells: Array = src.keys()
 	cells.sort()
 	var out: Array = []
 	for c: Vector2i in cells:
-		out.append([c.x, c.y, litter[c]])
+		out.append([c.x, c.y, src[c]])
 	return out
 
 

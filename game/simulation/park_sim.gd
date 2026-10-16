@@ -24,6 +24,8 @@ signal research_unlocked(item_id: String)
 signal scenario_finished(won: bool, reason: String)
 ## T-068: banen er ændret (stykke lagt/fjernet, færdig).
 signal coaster_changed(coaster_id: int)
+## T-084 (M6): gæsten kastede op på cellen (bridge: effekt + lyd).
+signal guest_vomited(guest_id: int, cell: Vector2i)
 
 const PHASE_DAWN: StringName = &"dawn"
 const PHASE_DAY: StringName = &"day"
@@ -31,6 +33,7 @@ const PHASE_DUSK: StringName = &"dusk"
 const PHASE_NIGHT: StringName = &"night"
 const WARN_BROKEN_NO_MECHANIC: StringName = &"broken_no_mechanic"
 const WARN_RESEARCH_DONE: StringName = &"research_done"
+const WARN_GUEST_VOMIT: StringName = &"guest_vomit"
 
 const NEED_THOUGHTS: Dictionary = {
 	"hunger": "Jeg er sulten!",
@@ -288,6 +291,7 @@ func get_stats() -> Dictionary:
 		"staff": staff.size(),
 		"broken": broken_count(),
 		"litter": world.total_litter(),
+		"vomit": world.total_vomit(),
 	}
 
 
@@ -480,6 +484,8 @@ func _update_needs(g: Guest) -> bool:
 			if before <= th:
 				crossed = true
 	g.happiness = clampf(g.happiness - over * balance.happiness_decay_when_need_over_threshold, 0.0, 100.0)
+	if g.nausea > 0.0:
+		g.nausea = maxf(0.0, g.nausea - balance.nausea_decay)
 	if g.state != Guest.State.RIDING:
 		_apply_surroundings(g)
 	if g.state == Guest.State.QUEUING and g.happiness < balance.leave_happiness:
@@ -518,6 +524,7 @@ func _try_spawn() -> void:
 	need_keys.sort()
 	for k: String in need_keys:
 		g.needs[k] = rng.randf_range(0.0, balance.need_start_max)
+	g.intensity_tolerance = rng.randf_range(balance.intensity_tolerance_min, balance.intensity_tolerance_max)
 	g.happiness = balance.happiness_start
 	var fee: int = mini(entry_fee, g.money)
 	g.money -= fee
@@ -597,18 +604,20 @@ func _choose_goal(g: Guest) -> void:
 					and not path_finder.find_path(g.cell, a.entrance_cell).is_empty():
 				options.append(a)
 		if not options.is_empty():
-			# Vægtet efter excitement (min. vægt 1).
+			# Vægtet efter excitement (min. vægt 1); for tamme forlystelser vægtes ned (T-084).
 			var total: int = 0
 			for o in options:
-				total += maxi(1, _excitement(o))
+				total += _ride_weight(g, o)
 			var r: int = rng.randi_range(0, total - 1)
 			var a: Attraction = options[options.size() - 1]
 			for o in options:
-				r -= maxi(1, _excitement(o))
+				r -= _ride_weight(g, o)
 				if r < 0:
 					a = o
 					break
 			_go_to(g, a, path_finder.find_path(g.cell, a.entrance_cell))
+			if _too_tame(g, a):
+				g.thought = TOO_TAME_THOUGHT
 			return
 		if g.wander_steps < wander_steps_max:
 			g.state = Guest.State.WALKING
@@ -633,7 +642,7 @@ func _leave_reason(g: Guest) -> String:
 func _usable(g: Guest, a: Attraction) -> bool:
 	if not a.is_open or a.broken or g.rejected_ids.has(a.id) or a.price > g.money:
 		return false
-	if a.is_coaster() and _too_intense(g, a):
+	if a.is_ride() and _too_intense(g, a):
 		g.thought = TOO_INTENSE_THOUGHT
 		g.rejected_ids.append(a.id)
 		return false
@@ -756,7 +765,7 @@ func _try_enter(g: Guest, a: Attraction) -> String:
 		reason = balance.thought_broken
 	elif not a.is_open:
 		reason = "Den er lukket!"
-	elif a.is_coaster() and _too_intense(g, a):
+	elif a.is_ride() and _too_intense(g, a):
 		reason = TOO_INTENSE_THOUGHT
 	elif a.price > price_value(a, g):
 		reason = TOO_EXPENSIVE_THOUGHT
@@ -802,8 +811,8 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 			g.rides_left -= 1
 		g.target_attraction_id = -1
 		_choose_goal(g)
-		if a.is_coaster():
-			_maybe_sick(g, a)
+		if a.is_ride():
+			_after_ride_nausea(g, a)
 	if a.is_ride() and not guest_ids.is_empty() and a.def.reliability < 1.0 \
 			and rng.randf() >= a.effective_reliability():
 		_break(a)
@@ -1190,6 +1199,8 @@ func _scenario_day() -> void:
 
 const TOO_INTENSE_THOUGHT: String = "Den er for vild for mig!"
 const SICK_THOUGHT: String = "Jeg har kvalme!"
+const TOO_TAME_THOUGHT: String = "Den er for tam for mig."
+const VOMIT_THOUGHT: String = "Jeg kastede op..."
 
 
 ## Excitement på 0..100-skala (rutsjebane: ratings × excitement_scale fra data).
@@ -1197,24 +1208,51 @@ func _excitement(a: Attraction) -> int:
 	return a.excitement_value(float(CoasterContent.ratings().get("excitement_scale", 10.0)))
 
 
-## Gæstens maks-intensitet: deterministisk ud fra id inden for guest_tolerance (ingen RNG-træk).
-func guest_intensity_max(g: Guest) -> float:
-	var tol: Dictionary = CoasterContent.ratings().get("guest_tolerance", {})
-	var lo: float = float(tol.get("intensity_pref_min", 3.0))
-	var hi: float = float(tol.get("intensity_pref_max", 8.0))
-	return lo + (hi - lo) * fposmod(float(g.id) * 0.6180339887, 1.0)
+## Vægt i forlystelsesvalget: excitement (min. 1), divideret ned hvis den er for tam.
+func _ride_weight(g: Guest, a: Attraction) -> int:
+	var w: int = maxi(1, _excitement(a))
+	if _too_tame(g, a):
+		w = maxi(1, w / balance.too_tame_divisor)
+	return w
 
 
+func _rating_scale() -> float:
+	return float(CoasterContent.ratings().get("excitement_scale", 10.0))
+
+
+## Intensitet over gæstens tolerance → fravælges ("too_intense").
 func _too_intense(g: Guest, a: Attraction) -> bool:
-	return float(a.ratings.get("intensity", 0.0)) > guest_intensity_max(g)
+	return a.intensity_value(_rating_scale()) > g.intensity_tolerance
 
 
-func _maybe_sick(g: Guest, a: Attraction) -> void:
-	var r: Dictionary = CoasterContent.ratings()
-	var chance: float = float(a.ratings.get("nausea", 0.0)) * float(r.get("sick_chance_per_nausea", 0.0))
-	if chance > 0.0 and rng.randf() < chance:
-		g.thought = SICK_THOUGHT
-		g.happiness = clampf(g.happiness - float(r.get("sick_happiness_penalty", 10.0)), 0.0, 100.0)
+## Intensitet under tolerance − margin → vægtes ned ("too_tame").
+func _too_tame(g: Guest, a: Attraction) -> bool:
+	return a.intensity_value(_rating_scale()) < g.intensity_tolerance - balance.too_tame_margin
+
+
+## Efter en tur: kvalme stiger; over tærsklen kan gæsten kaste op (sim-RNG).
+func _after_ride_nausea(g: Guest, a: Attraction) -> void:
+	var add: float = a.nausea_value(_rating_scale()) * balance.nausea_per_point
+	if add <= 0.0:
+		return
+	g.nausea = clampf(g.nausea + add, 0.0, 100.0)
+	if g.nausea < balance.vomit_threshold:
+		return
+	g.thought = SICK_THOUGHT
+	var chance: float = (g.nausea - balance.vomit_threshold) / maxf(1e-6, 100.0 - balance.vomit_threshold)
+	if rng.randf() < chance:
+		_vomit(g)
+
+
+func _vomit(g: Guest) -> void:
+	var c: Vector2i = g.cell
+	if balance.vomit_litter > 0 and world.is_walkable(c):
+		world.add_vomit(c, balance.vomit_litter, maxi(balance.litter_max_per_cell, balance.vomit_litter))
+	g.happiness = clampf(g.happiness - balance.vomit_happiness, 0.0, 100.0)
+	g.nausea = 0.0
+	g.thought = VOMIT_THOUGHT
+	guest_vomited.emit(g.id, c)
+	warning.emit(WARN_GUEST_VOMIT, {"cell": c, "guest_id": g.id})
 
 
 func _train_of(a: Attraction) -> Dictionary:

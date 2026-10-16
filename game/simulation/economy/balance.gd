@@ -51,6 +51,18 @@ var reject_happiness_penalty: float = 2.0
 ## Glæde-gevinst ved at få dækket et behov over tærsklen.
 var need_relief_happiness: float = 5.0
 
+## M6 (T-084): intensitet/kvalme/opkast (guests.json).
+var intensity_tolerance_min: float = 10.0
+var intensity_tolerance_max: float = 90.0
+## Forlystelser med intensity < tolerance − too_tame_margin vægtes ned (÷ too_tame_divisor).
+var too_tame_margin: float = 40.0
+var too_tame_divisor: int = 4
+var nausea_per_point: float = 0.5
+var nausea_decay: float = 0.01
+var vomit_threshold: float = 60.0
+var vomit_happiness: float = 15.0
+var vomit_litter: int = 2
+
 
 # Tiltrækning/omdømme (park.json, T-029). has_park = false → fast spawn-interval (legacy).
 var has_park: bool = false
@@ -185,6 +197,17 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 	b.excitement_value = float(guests.get("excitement_value", b.excitement_value))
 	b.reject_happiness_penalty = float(guests.get("reject_happiness_penalty", b.reject_happiness_penalty))
 	b.need_relief_happiness = float(guests.get("need_relief_happiness", b.need_relief_happiness))
+	var tol: Variant = guests.get("intensity_tolerance", null)
+	if tol is Dictionary:
+		b.intensity_tolerance_min = float(tol.get("min", b.intensity_tolerance_min))
+		b.intensity_tolerance_max = float(tol.get("max", b.intensity_tolerance_max))
+	b.too_tame_margin = float(guests.get("too_tame_margin", b.too_tame_margin))
+	b.too_tame_divisor = maxi(1, int(guests.get("too_tame_divisor", b.too_tame_divisor)))
+	b.nausea_per_point = float(guests.get("nausea_per_point", b.nausea_per_point))
+	b.nausea_decay = float(guests.get("nausea_decay", b.nausea_decay))
+	b.vomit_threshold = clampf(float(guests.get("vomit_threshold", b.vomit_threshold)), 0.0, 99.0)
+	b.vomit_happiness = float(guests.get("vomit_happiness", b.vomit_happiness))
+	b.vomit_litter = maxi(0, int(guests.get("vomit_litter", b.vomit_litter)))
 	return b
 
 

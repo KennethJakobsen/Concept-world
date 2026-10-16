@@ -176,7 +176,7 @@ func test_determinism_with_research() -> void:
 func test_migration_v1_adds_m5_keys() -> void:
 	var v1: Dictionary = {"save_version": 1, "park": {"attractions": [{"id": 1}]}}
 	var m: Dictionary = SaveMigrations.migrate(v1)
-	assert_eq(m["save_version"], 2)
+	assert_eq(m["save_version"], SaveMigrations.CURRENT)
 	assert_eq(m["park"]["research"], {})
 	assert_true(m["park"].has("scenario") and m["park"]["scenario"] == null)
 	assert_eq(m["park"]["attractions"][0]["cells"], [])

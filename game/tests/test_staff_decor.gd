@@ -90,7 +90,7 @@ func test_broken_dissolves_queue_with_thought() -> void:
 
 
 func test_inspection_raises_reliability() -> void:
-	var s := _sim({"mechanic_inspect_interval_ticks": 10}, 0.5)
+	var s := _sim({"mechanic_inspect_interval_ticks": 10}, 0.999)  # T-084: undgå nedbrud (nulstiller bonus) ved RNG-skift
 	var a: Attraction = s.cmd_place_attraction("r", Vector2i(15, 8))
 	s.cmd_hire_staff("mechanic", Vector2i(15, 12))
 	_step(s, 100)

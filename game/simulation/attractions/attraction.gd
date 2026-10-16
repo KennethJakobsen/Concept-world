@@ -71,6 +71,20 @@ func excitement_value(scale: float = 10.0) -> int:
 	return def.excitement
 
 
+## Intensitet 0..100 (rutsjebane: ratings × scale, ellers data).
+func intensity_value(scale: float = 10.0) -> float:
+	if is_coaster():
+		return float(ratings.get("intensity", 0.0)) * scale
+	return def.intensity
+
+
+## Kvalme 0..100 (rutsjebane: ratings × scale, ellers data).
+func nausea_value(scale: float = 10.0) -> float:
+	if is_coaster():
+		return float(ratings.get("nausea", 0.0)) * scale
+	return def.nausea
+
+
 ## Byggepris inkl. banestykker.
 func build_value() -> int:
 	return def.build_cost + (track.total_cost() if track != null else 0)

@@ -20,6 +20,9 @@ extends Resource
 ## Rutsjebane (T-068): tog-id og maks højde i niveauer.
 @export var train: String = ""
 @export var max_height: int = 8
+## M6 (T-084): intensitet og kvalme 0..100 (rutsjebaner: ratings × 10).
+@export var intensity: float = 0.0
+@export var nausea: float = 0.0
 
 
 static func from_dict(d: Dictionary) -> AttractionDef:
@@ -44,6 +47,8 @@ static func from_dict(d: Dictionary) -> AttractionDef:
 	def.repair_ticks = int(d.get("repair_ticks", 150))
 	def.train = str(d.get("train", ""))
 	def.max_height = int(d.get("max_height", 8))
+	def.intensity = clampf(float(d.get("intensity", 0.0)), 0.0, 100.0)
+	def.nausea = clampf(float(d.get("nausea", 0.0)), 0.0, 100.0)
 	return def
 
 
@@ -65,4 +70,5 @@ func to_dict() -> Dictionary:
 		"excitement": excitement, "satisfies": satisfies.duplicate(), "model": model,
 		"reliability": reliability, "repair_ticks": repair_ticks,
 		"train": train, "max_height": max_height,
+		"intensity": intensity, "nausea": nausea,
 	}

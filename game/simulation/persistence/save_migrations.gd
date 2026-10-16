@@ -3,7 +3,7 @@ extends RefCounted
 ## Versionstrin for savefiler. Tilføj et trin pr. ny save_version:
 ##   1) hæv CURRENT, 2) tilføj `static func _v<N>_to_v<N+1>(d) -> Dictionary`, 3) registrér i _step().
 
-const CURRENT: int = 2
+const CURRENT: int = 3
 
 
 ## Migrerer en (evt. ældre) save til CURRENT. Returnerer {} hvis versionen er ukendt/nyere.
@@ -27,6 +27,8 @@ static func _step(from_version: int, d: Dictionary) -> Dictionary:
 			return _v0_to_v1(d)
 		1:
 			return _v1_to_v2(d)
+		2:
+			return _v2_to_v3(d)
 	push_error("SaveMigrations: intet trin fra v%d" % from_version)
 	return {}
 
@@ -69,5 +71,33 @@ static func _v1_to_v2(d: Dictionary) -> Dictionary:
 				ad["track"] = null
 			if not ad.has("ratings"):
 				ad["ratings"] = {}
+	out["park"] = park
+	return out
+
+
+## v2 → v3 (M6, én version for hele milepælen – senere M6-tasks udvider dette trin):
+## gæsters tolerance/kvalme/ting, præmier på attraktioner, affaldstype (opkast-liste).
+static func _v2_to_v3(d: Dictionary) -> Dictionary:
+	var out: Dictionary = d.duplicate(true)
+	var park: Dictionary = SaveCodec.dict(out, "park")
+	for g: Variant in SaveCodec.arr(park, "guests"):
+		if g is Dictionary:
+			var gd: Dictionary = g
+			if not gd.has("intensity_tolerance"):
+				gd["intensity_tolerance"] = 50.0
+			if not gd.has("nausea"):
+				gd["nausea"] = 0.0
+			if not gd.has("items"):
+				gd["items"] = []
+	for a: Variant in SaveCodec.arr(park, "attractions"):
+		if a is Dictionary:
+			var ad: Dictionary = a
+			if not ad.has("prizes_won"):
+				ad["prizes_won"] = 0
+	# Affald gemmes som [[x, y, n]] uden type; opkast ligger i en separat liste (alt gammelt = "litter").
+	if park.get("world") is Dictionary:
+		var wd: Dictionary = park["world"]
+		if not wd.has("vomit"):
+			wd["vomit"] = []
 	out["park"] = park
 	return out

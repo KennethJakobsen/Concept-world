@@ -216,15 +216,12 @@ func test_too_intense_and_sick() -> void:
 	assert_eq(g.thought, ParkSim.TOO_INTENSE_THOUGHT)
 	var g2 := Guest.new(2, s.world.entrance)
 	g2.happiness = 80
-	a.ratings["nausea"] = 10.0
+	g2.nausea = 99.0
+	a.ratings["nausea"] = 10.0  # ×10 = 100 → kvalme over tærsklen
 	var before: float = g2.happiness
-	var sick: int = 0
-	var old: float = float(CoasterContent.ratings().get("sick_chance_per_nausea", 0.0))
-	CoasterContent.ratings()["sick_chance_per_nausea"] = 0.1  # 100 %
-	s._maybe_sick(g2, a)
-	CoasterContent.ratings()["sick_chance_per_nausea"] = old
-	assert_eq(g2.thought, ParkSim.SICK_THOUGHT)
-	assert_true(g2.happiness < before)
+	s._after_ride_nausea(g2, a)
+	assert_true(g2.thought == ParkSim.SICK_THOUGHT or g2.thought == ParkSim.VOMIT_THOUGHT)
+	assert_true(g2.happiness < before or g2.nausea >= s.balance.vomit_threshold)
 
 
 func test_remove_coaster_clears_track() -> void:

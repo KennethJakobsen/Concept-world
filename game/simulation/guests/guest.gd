@@ -30,6 +30,11 @@ var target_decor_id: int = -1
 var rest_ticks_left: int = 0
 ## T-043: antal sti-celler til affaldet smides (0 = bærer intet).
 var litter_steps_left: int = 0
+## M6 (T-084): maks. intensitet gæsten vil køre (0..100) og kvalme (0..100).
+var intensity_tolerance: float = 50.0
+var nausea: float = 0.0
+## M6 (T-086): bærbare ting (maks. én af hver).
+var items: Array[StringName] = []
 
 
 func _init(p_id: int, p_cell: Vector2i) -> void:
@@ -50,7 +55,16 @@ func to_save() -> Dictionary:
 		"seeking_need": seeking_need, "paid": paid,
 		"target_decor_id": target_decor_id, "rest_ticks_left": rest_ticks_left,
 		"litter_steps_left": litter_steps_left,
+		"intensity_tolerance": SaveCodec.f(intensity_tolerance), "nausea": SaveCodec.f(nausea),
+		"items": _items_to_save(),
 	}
+
+
+func _items_to_save() -> Array:
+	var out: Array = []
+	for it in items:
+		out.append(str(it))
+	return out
 
 
 static func from_save(d: Dictionary) -> Guest:
@@ -72,4 +86,12 @@ static func from_save(d: Dictionary) -> Guest:
 	g.target_decor_id = int(d.get("target_decor_id", -1))
 	g.rest_ticks_left = int(d.get("rest_ticks_left", 0))
 	g.litter_steps_left = int(d.get("litter_steps_left", 0))
+	g.intensity_tolerance = SaveCodec.to_f(d.get("intensity_tolerance"), 50.0)
+	g.nausea = SaveCodec.to_f(d.get("nausea"), 0.0)
+	var its: Variant = d.get("items", [])
+	if its is Array:
+		for it: Variant in its:
+			var sn := StringName(str(it))
+			if not g.items.has(sn):
+				g.items.append(sn)
 	return g
