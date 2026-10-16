@@ -6,6 +6,8 @@ signal tile_changed(cell: Vector2i, tile: int)
 signal attraction_placed(attraction: Attraction)
 signal attraction_removed(attraction: Attraction)
 signal litter_changed(cell: Vector2i, amount: int)
+## T-091: transportkanter er ændret.
+signal links_changed
 
 enum Tile { GRASS, PATH, ATTRACTION, ENTRANCE, DECOR }  ## DECOR = græs-dekoration (træ/blomster)
 
@@ -23,6 +25,9 @@ var litter: Dictionary = {}  ## Vector2i -> int
 var vomit: Dictionary = {}  ## Vector2i -> int
 ## T-068: banestykker pr. celle: Vector2i -> Array af [level, attraction_id]. Afledt; gemmes ikke.
 var _track: Dictionary = {}
+
+## T-091: transportkanter i stigrafen: Vector2i -> Array[{to, cost, owner_id}]. Afledt; gemmes ikke.
+var _links: Dictionary = {}
 
 ## Over dette niveau (>=) må banen ligge over stier/bygninger/decor.
 const TRACK_CLEARANCE: int = 2
@@ -133,6 +138,50 @@ func blocks_track(cell: Vector2i, level: int) -> bool:
 	return false
 
 
+# --- Transportkanter (T-091, ADR-004 §4) ---
+
+## Tovejskant mellem to gåbare celler (stationsindgange) ejet af en transport-attraktion.
+func add_link(a: Vector2i, b: Vector2i, cost: float, owner_id: int) -> void:
+	_add_half_link(a, b, cost, owner_id)
+	_add_half_link(b, a, cost, owner_id)
+	links_changed.emit()
+
+
+func _add_half_link(a: Vector2i, b: Vector2i, cost: float, owner_id: int) -> void:
+	var l: Array = _links.get(a, [])
+	l.append({"to": b, "cost": cost, "owner_id": owner_id})
+	l.sort_custom(func(x: Dictionary, y: Dictionary) -> bool:
+		return int(x["owner_id"]) < int(y["owner_id"]) \
+			or (int(x["owner_id"]) == int(y["owner_id"]) and (x["to"] as Vector2i) < (y["to"] as Vector2i)))
+	_links[a] = l
+
+
+func remove_links(owner_id: int) -> void:
+	var changed: bool = false
+	for c: Vector2i in _links.keys():
+		var l: Array = (_links[c] as Array).filter(func(e: Dictionary) -> bool: return int(e["owner_id"]) != owner_id)
+		if l.size() != (_links[c] as Array).size():
+			changed = true
+		if l.is_empty():
+			_links.erase(c)
+		else:
+			_links[c] = l
+	if changed:
+		links_changed.emit()
+
+
+## Kanter fra cellen, sorteret efter owner_id (kopier).
+func links_from(cell: Vector2i) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for e: Dictionary in _links.get(cell, []):
+		out.append(e.duplicate())
+	return out
+
+
+func has_links() -> bool:
+	return not _links.is_empty()
+
+
 ## Placerer en rutsjebane-attraktion (stationen lægges af kalderen). Indgangen bliver sti.
 func place_coaster(def: AttractionDef, station: Vector2i, entrance_cell: Vector2i) -> Attraction:
 	var a := Attraction.new(_next_attraction_id, def, station)
@@ -213,6 +262,7 @@ func remove_attraction(attraction_id: int) -> Attraction:
 		attractions.remove_at(i)
 		if a.track != null:
 			clear_track(a.id)
+			remove_links(a.id)
 		else:
 			for y in a.def.footprint.y:
 				for x in a.def.footprint.x:

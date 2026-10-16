@@ -117,6 +117,8 @@ func _init(width: int, height: int, p_seed: int, p_balance: Balance = null) -> v
 	world = ParkWorld.new(width, height)
 	clock = SimClock.new()
 	path_finder = PathFinder.new(world)
+	path_finder.link_usable = link_usable
+	path_finder.link_price = _link_price
 	rng = RandomNumberGenerator.new()
 	rng.seed = p_seed
 	clock.ticked.connect(_on_tick)
@@ -184,6 +186,8 @@ func cmd_set_open(attraction_id: int, open: bool) -> bool:
 	if a == null:
 		return false
 	a.is_open = open
+	if a.is_transport():
+		path_finder.invalidate()
 	if open:
 		for g: Guest in guests.values():
 			g.rejected_ids.erase(attraction_id)
@@ -221,8 +225,13 @@ func is_reachable(a: Attraction) -> bool:
 		_reachable[world.entrance] = true
 		while not frontier.is_empty():
 			var c: Vector2i = frontier.pop_back()
+			var nbrs: Array[Vector2i] = []
 			for d in DIRS:
-				var n: Vector2i = c + d
+				nbrs.append(c + d)
+			for e: Dictionary in world.links_from(c):
+				if link_usable(int(e["owner_id"])):
+					nbrs.append(e["to"])
+			for n in nbrs:
 				if not _reachable.has(n) and world.is_walkable(n):
 					_reachable[n] = true
 					frontier.append(n)
@@ -426,6 +435,7 @@ func _on_attraction_removed(a: Attraction) -> void:
 			g.paid = 0
 			g.state = Guest.State.WALKING
 			g.target_attraction_id = -1
+			g.transport_id = -1
 			_choose_goal(g)
 	attraction_removed.emit(a.id)
 
@@ -520,9 +530,10 @@ func _update_needs(g: Guest) -> bool:
 		_apply_surroundings(g)
 	if g.state == Guest.State.QUEUING and g.happiness < balance.leave_happiness:
 		# T-033: utilfredse gæster opgiver køen og går hjem (betalt billet refunderes ikke).
-		var q: Attraction = get_attraction(g.target_attraction_id)
+		var q: Attraction = get_attraction(g.transport_id if g.transport_id >= 0 else g.target_attraction_id)
 		if q != null:
 			q.queue.erase(g.id)
+		g.transport_id = -1
 		g.paid = 0
 		g.state = Guest.State.WALKING
 		_choose_goal(g)
@@ -587,7 +598,7 @@ func _choose_goal(g: Guest) -> void:
 			var d: Decor = decor[did]
 			if d.def.kind != "bench":
 				continue
-			var route: Array[Vector2i] = path_finder.find_path(g.cell, d.cell)
+			var route: Array[Vector2i] = _route(g, d.cell)
 			if route.is_empty():
 				continue
 			if bench == null or route.size() < bench_route.size():
@@ -613,7 +624,7 @@ func _choose_goal(g: Guest) -> void:
 		for a in attractions:
 			if not a.satisfies_need(need) or not _usable(g, a):
 				continue
-			var route: Array[Vector2i] = path_finder.find_path(g.cell, a.entrance_cell)
+			var route: Array[Vector2i] = _route(g, a.entrance_cell)
 			if route.is_empty():
 				continue
 			if best == null or route.size() < best_route.size():
@@ -631,7 +642,7 @@ func _choose_goal(g: Guest) -> void:
 		var options: Array[Attraction] = []
 		for a in attractions:
 			if (a.is_ride() or a.is_sideshow()) and _usable(g, a) \
-					and not path_finder.find_path(g.cell, a.entrance_cell).is_empty():
+					and not _route(g, a.entrance_cell).is_empty():
 				options.append(a)
 		if not options.is_empty():
 			# Vægtet efter excitement (min. vægt 1); for tamme forlystelser vægtes ned (T-084).
@@ -645,7 +656,7 @@ func _choose_goal(g: Guest) -> void:
 				if r < 0:
 					a = o
 					break
-			_go_to(g, a, path_finder.find_path(g.cell, a.entrance_cell))
+			_go_to(g, a, _route(g, a.entrance_cell))
 			if _too_tame(g, a):
 				g.thought = TOO_TAME_THOUGHT
 			return
@@ -710,7 +721,7 @@ func _wander_step(g: Guest) -> void:
 func _start_leaving(g: Guest) -> void:
 	g.state = Guest.State.LEAVING
 	g.target_attraction_id = -1
-	var route: Array[Vector2i] = path_finder.find_path(g.cell, world.entrance)
+	var route: Array[Vector2i] = _route(g, world.entrance)
 	if route.is_empty() and g.cell != world.entrance:
 		_remove_guest(g)  # fanget uden vej hjem – fjernes
 		return
@@ -745,6 +756,9 @@ func _tick_guest(g: Guest) -> void:
 				_choose_goal(g)
 			else:
 				_start_leaving(g)
+			return
+		if absi(g.next_cell.x - g.cell.x) + absi(g.next_cell.y - g.cell.y) > 1:
+			_board_transport(g)
 			return
 		g.progress += guest_speed
 		if g.progress < 1.0 - 1e-6:
@@ -825,7 +839,7 @@ func _on_ride_started(a: Attraction) -> void:
 	for gid in a.riders:
 		if guests.has(gid):
 			(guests[gid] as Guest).state = Guest.State.RIDING
-	if a.is_ride():
+	if a.is_ride() or a.is_transport():
 		ride_cycle_started.emit(a.id)
 
 
@@ -834,6 +848,9 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 		if not guests.has(gid):
 			continue
 		var g: Guest = guests[gid]
+		if a.is_transport():
+			_finish_transport(g, a)
+			continue
 		_apply_visit(g, a)
 		if a.def.kind == "shop":
 			if a.def.carry_item != "":
@@ -849,7 +866,7 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 			_get_wet(g, a)
 		if a.is_ride():
 			_after_ride_nausea(g, a)
-	if a.is_ride() and not guest_ids.is_empty() and a.def.reliability < 1.0 \
+	if (a.is_ride() or a.is_transport()) and not guest_ids.is_empty() and a.def.reliability < 1.0 \
 			and rng.randf() >= a.effective_reliability():
 		_break(a)
 
@@ -969,6 +986,7 @@ func guest_info(guest_id: int) -> Dictionary:
 		"id": g.id, "cell": g.cell, "happiness": g.happiness, "money": g.money,
 		"thought": g.thought, "needs": g.needs.duplicate(), "items": its,
 		"nausea": g.nausea, "intensity_tolerance": g.intensity_tolerance,
+		"state": guest_state_name(g), "wet_ticks": g.wet_ticks,
 	}
 
 
@@ -984,6 +1002,8 @@ func attraction_stats(attraction_id: int) -> Dictionary:
 		"intensity": a.intensity_value(_rating_scale()), "nausea": a.nausea_value(_rating_scale()),
 		"excitement": _excitement(a), "win_chance": a.def.win_chance,
 		"prizes_won": a.prizes_won, "prize_cost_total": a.prize_cost_total,
+		"riders_today": a.riders_today,
+		"splashes": a.profile.splashes if a.profile != null else 0,
 	}
 
 
@@ -1198,6 +1218,8 @@ func _drop_litter(g: Guest) -> void:
 func _break(a: Attraction) -> void:
 	a.broken = true
 	a.reliability_bonus = 0.0
+	if a.is_transport():
+		path_finder.invalidate()
 	var q: Array = a.queue.duplicate()
 	a.queue.clear()
 	for gid in q:
@@ -1210,6 +1232,7 @@ func _break(a: Attraction) -> void:
 			g.paid = 0
 		g.state = Guest.State.WALKING
 		g.target_attraction_id = -1
+		g.transport_id = -1
 		_choose_goal(g)
 		g.thought = balance.thought_broken
 	a.self_repair_elapsed = 0
@@ -1220,6 +1243,8 @@ func _break(a: Attraction) -> void:
 
 func _repair(a: Attraction) -> void:
 	a.broken = false
+	if a.is_transport():
+		path_finder.invalidate()
 	a.mechanic_id = -1
 	a.self_repair_elapsed = 0
 	for g: Guest in guests.values():
@@ -1574,9 +1599,18 @@ func cmd_finish_coaster(coaster_id: int) -> Array[String]:
 	if a == null:
 		return ["no_coaster"] as Array[String]
 	var errs: Array[String] = a.track.validate(_world_blocked.bind(a), _train_of(a))
+	if errs.is_empty() and a.is_transport():
+		var ex: String = _transport_exit_error(a)
+		if ex != "":
+			errs.append(ex)
 	if not errs.is_empty():
 		return errs
 	a.building = false
+	if a.is_transport():
+		var exit: Vector2i = transport_exit_cell(a)
+		if world.get_tile(exit) != ParkWorld.Tile.PATH:
+			world._set_tile(exit, ParkWorld.Tile.PATH)
+		_register_links(a)
 	_apply_profile(a)
 	a.is_open = true
 	for g: Guest in guests.values():
@@ -1613,6 +1647,118 @@ func _restore_coaster(a: Attraction) -> void:
 		world.add_track_cell(p.cell, a.track.low_level(p), a.id)
 	if not a.building and a.track.is_complete():
 		_apply_profile(a)
+		if a.is_transport():
+			_register_links(a)
+
+
+# --- Transport (T-091) ---
+
+const TRANSPORT_NO_MONEY_THOUGHT: String = "Jeg har ikke råd til svævebanen."
+
+
+## Indgangscellen ved endestationen (venstre for stationen i kørselsretningen, som startindgangen).
+func transport_exit_cell(a: Attraction) -> Vector2i:
+	if a == null or a.track == null:
+		return Vector2i(-1, -1)
+	var p: TrackPiece = a.track.end_station()
+	if p == null:
+		return Vector2i(-1, -1)
+	return p.cell + TrackPiece.dir(p.heading + 3)
+
+
+func _transport_exit_error(a: Attraction) -> String:
+	var c: Vector2i = transport_exit_cell(a)
+	var t: int = world.get_tile(c)
+	if (t != ParkWorld.Tile.GRASS and t != ParkWorld.Tile.PATH) or world.has_low_track(c) \
+			or world.get_attraction_by_entrance(c) != null or world.get_attraction_at(c) != null:
+		return "exit_blocked"
+	if absi(c.x - a.entrance_cell.x) + absi(c.y - a.entrance_cell.y) <= 1:
+		return "stations_too_close"
+	return ""
+
+
+func _register_links(a: Attraction) -> void:
+	world.remove_links(a.id)
+	world.add_link(a.entrance_cell, transport_exit_cell(a), a.def.transport_cost, a.id)
+	_reachable_dirty = true
+
+
+## Kan kanten for owner_id bruges (åben, færdig, ikke brudt ned)?
+func link_usable(owner_id: int) -> bool:
+	var a: Attraction = get_attraction(owner_id)
+	return a != null and a.is_transport() and a.is_open and not a.broken and not a.building
+
+
+func _link_price(owner_id: int) -> int:
+	var a: Attraction = get_attraction(owner_id)
+	return a.price if a != null else 0
+
+
+## Gæsterute: transportkanter bruges kun, hvis gæsten har råd til billetten.
+func _route(g: Guest, to: Vector2i) -> Array[Vector2i]:
+	return path_finder.find_path(g.cell, to, g.money)
+
+
+## Gæsten står ved en stationsindgang og næste rute-skridt er kanten til den anden station.
+func _board_transport(g: Guest) -> void:
+	var a: Attraction = null
+	for e: Dictionary in world.links_from(g.cell):
+		if e["to"] == g.next_cell and link_usable(int(e["owner_id"])):
+			a = get_attraction(int(e["owner_id"]))
+			break
+	if a == null or a.price > g.money or is_queue_full(a):
+		if a != null and a.price > g.money:
+			g.thought = TRANSPORT_NO_MONEY_THOUGHT
+		g.next_cell = g.cell
+		g.path.clear()
+		g.progress = 0.0
+		if g.state == Guest.State.LEAVING:
+			_start_leaving(g)
+		else:
+			_choose_goal(g)
+		return
+	g.money -= a.price
+	g.paid = a.price
+	economy.earn(a.price, "tickets")
+	purchase_made.emit(g.id, a.id, a.price)
+	a.total_revenue += a.price
+	a.total_visitors += 1
+	a.riders_today += 1
+	g.transport_id = a.id
+	g.transport_dest = g.next_cell
+	g.transport_resume_state = g.state
+	g.progress = 0.0
+	g.state = Guest.State.QUEUING
+	a.enqueue(g.id)
+
+
+## Turen er slut: gæsten står ved den anden stations indgang og fortsætter sin rute.
+func _finish_transport(g: Guest, a: Attraction) -> void:
+	for k: String in a.def.satisfies:
+		if g.needs.has(k):
+			g.needs[k] = clampf(g.needs[k] + float(a.def.satisfies[k]), 0.0, 100.0)
+	g.paid = 0
+	g.cell = g.transport_dest
+	g.progress = 0.0
+	g.state = g.transport_resume_state
+	g.transport_id = -1
+	g.next_cell = g.cell if g.path.is_empty() else g.path.pop_front()
+
+
+## Tilstandsnavn til bridge/UI (&"riding_transport" når gæsten sidder i svævebanen).
+func guest_state_name(g: Guest) -> StringName:
+	if g.transport_id >= 0:
+		return &"riding_transport" if g.state == Guest.State.RIDING else &"queuing_transport"
+	match g.state:
+		Guest.State.QUEUING:
+			return &"queuing"
+		Guest.State.RIDING:
+			return &"riding"
+		Guest.State.LEAVING:
+			return &"leaving"
+		Guest.State.RESTING:
+			return &"resting"
+	return &"walking"
 
 
 # --- Save/load (T-036) ---
