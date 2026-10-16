@@ -140,7 +140,7 @@ static func _centerline_slopes(piece: Dictionary, def: Dictionary, samples: int,
 		var t3 := t2 * t
 		var y := (2 * t3 - 3 * t2 + 1) * lvl + (t3 - 2 * t2 + t) * L * m0 \
 			+ (-2 * t3 + 3 * t2) * (lvl + rise) + (t3 - t2) * L * m1
-		p.y = y
+		p.y = clampf(y, minf(lvl, lvl + rise), maxf(lvl, lvl + rise))
 		pts[i] = p
 	# Eksakte endepunkter (undgå afrundingsstøj ved samlinger).
 	pts[0].y = lvl
@@ -168,15 +168,24 @@ static func full_centerline(pieces: Array, defs: Dictionary, samples: int = SAMP
 		var m0 := s
 		var m1 := s
 		if i > 0 or closed:
-			m0 = (s + slopes[posmod(i - 1, cnt)]) * 0.5
+			m0 = _joint_slope(slopes[posmod(i - 1, cnt)], s)
 		if i < cnt - 1 or closed:
-			m1 = (s + slopes[(i + 1) % cnt]) * 0.5
+			m1 = _joint_slope(s, slopes[(i + 1) % cnt])
 		var seg := _centerline_slopes(p, df, samples, m0, m1)
 		var start := 0 if out.is_empty() else 1
 		for k in range(start, seg.size()):
 			out.append(seg[k])
 			piece_index.append(i)
 	return out
+
+
+## T-120: monoton hældning i en samling. Skifter fortegnet, eller er det ene
+## stykke fladt, er hældningen 0 – ellers kan Hermite-kurven skyde under
+## niveauet (f.eks. under terræn efter et fald, der ender i niveau 0).
+static func _joint_slope(a: float, b: float) -> float:
+	if a * b <= 0.0:
+		return 0.0
+	return (a + b) * 0.5
 
 
 static func _def_for(piece: Dictionary, defs: Dictionary) -> Dictionary:

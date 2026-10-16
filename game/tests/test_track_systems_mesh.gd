@@ -81,3 +81,15 @@ func test_stations() -> void:
 			var sm := (mi as MeshInstance3D).material_override as StandardMaterial3D
 			assert_true(sm != null and (sm.albedo_texture != null or sm.emission_enabled), "%s/%s tekstur" % [s, mi.name])
 		n.free()
+
+
+## T-120: fald ned til niveau 0 efterfulgt af fladt stykke må ikke dykke under terræn.
+func test_flume_drop_never_below_ground() -> void:
+	var defs := CoasterTrackMesh.load_defs()
+	var ids := ["flume_station", "flume_lift_up", "flume_lift_up", "flume_drop", "flume_straight", "flume_straight"]
+	var pieces := _chain(ids, defs, 0)
+	var line := CoasterTrackMesh.full_centerline(pieces, defs)
+	var min_y := INF
+	for p: Vector3 in line:
+		min_y = minf(min_y, p.y)
+	assert_true(min_y >= -1e-4, "centerline under terræn: %f" % min_y)
