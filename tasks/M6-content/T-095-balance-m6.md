@@ -16,3 +16,5 @@ Justering af intensity/nausea, præmier, ting og sporpriser (kontrakt §8). Se `
 
 ## Log
 - 2026-10-15 – architect: oprettet
+
+- 2026-10-16 – orkestrator: T-088 opfølgning – lyd-id `vomit` mangler i content/audio.json; tilføj her.
