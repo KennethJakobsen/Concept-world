@@ -571,15 +571,16 @@ func _build_pirate_ship() -> void:
 		var tag := "F" if s > 0 else "B"
 		stick(_root, "Leg%sL" % tag, Vector3(-1.2, 0.1, z), Vector3(0, pivot_y, z), 0.07, m("red", METAL), 8)
 		stick(_root, "Leg%sR" % tag, Vector3(1.2, 0.1, z), Vector3(0, pivot_y, z), 0.07, m("red", METAL), 8)
-		stick(_root, "Brace%s" % tag, Vector3(-0.62, 1.55, z), Vector3(0.62, 1.55, z), 0.035, lib("steel"), 6)
+		# T-099: bindebjælken ligger ved jorden mellem fødderne (uden for skibets svingområde).
+		stick(_root, "Brace%s" % tag, Vector3(-1.1, 0.16, z), Vector3(1.1, 0.16, z), 0.035, lib("steel"), 6)
 		put(_root, "FootL" + tag, box(0.26, 0.08, 0.26, lib("steel")), Vector3(-1.2, 0.14, z))
 		put(_root, "FootR" + tag, box(0.26, 0.08, 0.26, lib("steel")), Vector3(1.2, 0.14, z))
 		put(_root, "Hub" + tag, cyl(0.12, 0.12, 0.1, lib("steel"), 12), Vector3(0, pivot_y, z), Vector3(90, 0, 0))
 	put(_root, "Axle", cyl(0.06, 0.06, 1.7, lib("steel"), 8), Vector3(0, pivot_y, 0), Vector3(90, 0, 0))
 	# Påstigningsplatform.
-	put(_root, "Platform", box(1.6, 0.18, 0.32, lib("wood_dark")), Vector3(0, 0.19, 0.6))
-	for k in 3:
-		put(_root, "Step%d" % k, box(0.4, 0.06, 0.12, lib("wood_dark")), Vector3(1.0, 0.13 + 0.05 * float(k), 0.8 - 0.1 * float(k)))
+	# T-099: lav platform foran skroget (z >= 0.56), så skibet går fri af den i alle gyngefaser.
+	put(_root, "Platform", box(1.4, 0.08, 0.26, lib("wood_dark")), Vector3(0, 0.14, 0.69))
+	put(_root, "PlatformEdge", box(1.4, 0.03, 0.03, m("yellow", PANEL)), Vector3(0, 0.19, 0.575))
 	booth(Vector3(-1.6, 0.1, 0.65), 0.0, "red")
 	var sw := osc(_root, "Swing", Vector3(0, pivot_y, 0), 1, 0, deg_to_rad(26.0), 1.4, Vector3(0, 0, 1))
 	var arm := 2.25
@@ -938,7 +939,7 @@ func _build_coconut_shy() -> void:
 	for k in 3:
 		var a := TAU * float(k) / 3.0
 		put(t, "Leaf%d" % k, prism(0.12, 0.4, 0.02, m("green", CANVAS)), Vector3(cos(a) * 0.15, 0.95, sin(a) * 0.15), Vector3(0, -rad_to_deg(a), -70))
-	put(t, "Ball", sph(0.1, m("red"), false, 10), Vector3(0.95, 0.1, 0.25))
+	put(t, "Ball", sph(0.1, m("red"), false, 10), Vector3(0.3, 0.1, 0.22))
 
 
 func _build_shooting_gallery() -> void:

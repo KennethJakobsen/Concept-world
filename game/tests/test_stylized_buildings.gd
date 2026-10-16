@@ -111,3 +111,46 @@ func test_m6_rides_animate() -> void:
 				moved = true
 		assert_true(moved, id + ": bevæger sig, når den kører")
 		b.free()
+
+
+func _xf_to(n: Node, root: Node) -> Transform3D:
+	var x := Transform3D.IDENTITY
+	while n != root:
+		x = (n as Node3D).transform * x
+		n = n.get_parent()
+	return x
+
+
+## T-099: piratskibet går fri af stel, afstivning og platform i alle gyngefaser.
+func test_pirate_ship_swing_clearance() -> void:
+	var b: Node3D = (load("res://scenes/props/pirate_ship.tscn") as PackedScene).instantiate()
+	var sw: Node3D = b.get_node("Swing")
+	var statics: Array = []
+	for mi: MeshInstance3D in b.find_children("*", "MeshInstance3D", true, false):
+		if not sw.is_ancestor_of(mi) and not String(mi.name) in ["Base", "Axle", "HubF", "HubB"]:
+			statics.append([String(mi.name), _xf_to(mi, b) * mi.mesh.get_aabb()])
+	var amp := rad_to_deg(float(sw.get("amplitude")))
+	for k in 9:
+		var deg := lerpf(-amp, amp, float(k) / 8.0)
+		sw.rotation = Vector3(0, 0, deg_to_rad(deg))
+		for mi: MeshInstance3D in sw.find_children("*", "MeshInstance3D", true, false):
+			if String(mi.name).begins_with("Arm"):
+				continue
+			var xf := _xf_to(mi, b)
+			for v: Vector3 in mi.mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]:
+				var p := xf * v
+				for s: Array in statics:
+					assert_true(not (s[1] as AABB).grow(0.03).has_point(p), "%.0f°: %s rammer %s" % [deg, mi.name, s[0]])
+	b.free()
+
+
+## T-099: kastebolden ligger på kokosnøddebodens tag, ikke ude over kanten.
+func test_coconut_ball_on_roof() -> void:
+	var b: Node3D = (load("res://scenes/props/coconut_shy.tscn") as PackedScene).instantiate()
+	var ball: MeshInstance3D = b.get_node("Theme/Ball")
+	var roof: MeshInstance3D = b.get_node("Roof")
+	var bb := _xf_to(ball, b) * ball.mesh.get_aabb()
+	var rb := _xf_to(roof, b) * roof.mesh.get_aabb()
+	assert_true(bb.position.x >= rb.position.x and bb.end.x <= rb.end.x, "bold inden for taget i x")
+	assert_true(bb.position.z >= rb.position.z and bb.end.z <= rb.end.z, "bold inden for taget i z")
+	b.free()
