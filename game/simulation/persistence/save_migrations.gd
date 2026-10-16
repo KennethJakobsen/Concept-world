@@ -94,6 +94,8 @@ static func _v2_to_v3(d: Dictionary) -> Dictionary:
 			var ad: Dictionary = a
 			if not ad.has("prizes_won"):
 				ad["prizes_won"] = 0
+			if not ad.has("prize_cost_total"):
+				ad["prize_cost_total"] = 0
 	# Affald gemmes som [[x, y, n]] uden type; opkast ligger i en separat liste (alt gammelt = "litter").
 	if park.get("world") is Dictionary:
 		var wd: Dictionary = park["world"]

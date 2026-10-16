@@ -16,6 +16,9 @@ var is_open: bool = true
 var price: int = 0
 var total_visitors: int = 0
 var total_revenue: int = 0
+## M6 (T-085): sideshow-gevinster og samlet præmieudgift.
+var prizes_won: int = 0
+var prize_cost_total: int = 0
 
 enum Status { OPERATING, BROKEN, CLOSED }
 ## I stykker (T-037). Kører ingen nye ture før en mekaniker har repareret.
@@ -53,6 +56,10 @@ var load_ticks: int = 0
 
 func is_coaster() -> bool:
 	return def.kind == "coaster"
+
+
+func is_sideshow() -> bool:
+	return def.kind == "sideshow"
 
 
 ## Forlystelse (ride eller rutsjebane).
@@ -165,6 +172,7 @@ func to_save() -> Dictionary:
 		"cells": SaveCodec.v2i_array(cells), "track": track.to_save() if track != null else null,
 		"ratings": SaveCodec.float_dict(ratings), "building": building,
 		"entrance_cell": SaveCodec.v2i(entrance_cell),
+		"prizes_won": prizes_won, "prize_cost_total": prize_cost_total,
 	}
 
 
@@ -191,4 +199,6 @@ static func from_save(d: Dictionary, p_def: AttractionDef) -> Attraction:
 		a.track = CoasterTrack.from_save(tr, {}, p_def.max_height)
 	a.ratings = SaveCodec.to_float_dict(d.get("ratings", {}))
 	a.building = bool(d.get("building", false))
+	a.prizes_won = int(d.get("prizes_won", 0))
+	a.prize_cost_total = int(d.get("prize_cost_total", 0))
 	return a

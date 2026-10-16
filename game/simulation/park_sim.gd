@@ -26,6 +26,8 @@ signal scenario_finished(won: bool, reason: String)
 signal coaster_changed(coaster_id: int)
 ## T-084 (M6): gæsten kastede op på cellen (bridge: effekt + lyd).
 signal guest_vomited(guest_id: int, cell: Vector2i)
+## T-085 (M6): gæsten vandt en præmie i et sideshow.
+signal prize_won(guest_id: int, attraction_id: int, item_id: String)
 
 const PHASE_DAWN: StringName = &"dawn"
 const PHASE_DAY: StringName = &"day"
@@ -600,7 +602,7 @@ func _choose_goal(g: Guest) -> void:
 	if g.rides_left > 0:
 		var options: Array[Attraction] = []
 		for a in attractions:
-			if a.is_ride() and _usable(g, a) \
+			if (a.is_ride() or a.is_sideshow()) and _usable(g, a) \
 					and not path_finder.find_path(g.cell, a.entrance_cell).is_empty():
 				options.append(a)
 		if not options.is_empty():
@@ -807,7 +809,9 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 		_apply_visit(g, a)
 		if a.def.kind == "shop":
 			g.litter_steps_left = rng.randi_range(1, maxi(1, balance.litter_carry_cells))
-		if a.is_ride():
+		if a.is_sideshow():
+			_sideshow_result(g, a)
+		if a.is_ride() or a.is_sideshow():
 			g.rides_left -= 1
 		g.target_attraction_id = -1
 		_choose_goal(g)
@@ -823,12 +827,77 @@ func _apply_visit(g: Guest, a: Attraction) -> void:
 	for k: String in a.def.satisfies:
 		if g.needs.has(k):
 			g.needs[k] = clampf(g.needs[k] + float(a.def.satisfies[k]), 0.0, 100.0)
-	var gain: float = _excitement(a) + (balance.need_relief_happiness if relieved else 0.0)
+	# Sideshow: glæden afgøres af gevinst/tab (_sideshow_result).
+	var gain: float = (0.0 if a.is_sideshow() else float(_excitement(a))) \
+		+ (balance.need_relief_happiness if relieved else 0.0)
 	g.happiness = clampf(g.happiness + gain, 0.0, 100.0)
 	g.paid = 0
 	g.seeking_need = ""
 	g.rejected_ids.clear()
 	g.thought = "Det var godt!" if relieved else ("Sjovt!" if a.is_ride() else "")
+
+
+const PRIZE_THOUGHT: String = "Jeg vandt en præmie!"
+const NO_PRIZE_THOUGHT: String = "Øv, ingen præmie."
+
+
+## T-085: sim-RNG afgør gevinst. Gevinst → præmieudgift, glæde og bærbar ting; tab → excitement som glæde.
+func _sideshow_result(g: Guest, a: Attraction) -> void:
+	if a.def.win_chance > 0.0 and rng.randf() < a.def.win_chance:
+		a.prizes_won += 1
+		if a.def.prize_cost > 0:
+			economy.charge(a.def.prize_cost, "prizes")
+			a.prize_cost_total += a.def.prize_cost
+		g.happiness = clampf(g.happiness + a.def.prize_happiness, 0.0, 100.0)
+		g.thought = PRIZE_THOUGHT
+		if a.def.prize_item != "":
+			_give_item(g, StringName(a.def.prize_item))
+		prize_won.emit(g.id, a.id, a.def.prize_item)
+	else:
+		g.happiness = clampf(g.happiness + float(a.def.excitement), 0.0, 100.0)
+		g.thought = NO_PRIZE_THOUGHT
+
+
+## Giver gæsten en bærbar ting (maks. én af hver). T-086 udvider (item_gained m.m.).
+func _give_item(g: Guest, item_id: StringName) -> bool:
+	if g.items.has(item_id):
+		return false
+	g.items.append(item_id)
+	return true
+
+
+## T-085: nøgletal for en attraktion ({} hvis den ikke findes).
+func attraction_stats(attraction_id: int) -> Dictionary:
+	var a: Attraction = get_attraction(attraction_id)
+	if a == null:
+		return {}
+	return {
+		"id": a.id, "def_id": a.def.id, "kind": a.def.kind, "price": a.price,
+		"total_visitors": a.total_visitors, "total_revenue": a.total_revenue,
+		"queue": a.queue.size(), "riders": a.riders.size(), "broken": a.broken, "is_open": a.is_open,
+		"intensity": a.intensity_value(_rating_scale()), "nausea": a.nausea_value(_rating_scale()),
+		"excitement": _excitement(a), "win_chance": a.def.win_chance,
+		"prizes_won": a.prizes_won, "prize_cost_total": a.prize_cost_total,
+	}
+
+
+## T-085: økonomi pr. kategori. Alle Economy.CATEGORIES er med (0 som default).
+func finance_report() -> Dictionary:
+	var today: Dictionary = {}
+	for c in Economy.CATEGORIES:
+		today[c] = 0
+	for k: Variant in economy.today:
+		today[str(k)] = int(economy.today[k])
+	var hist: Array = []
+	for h in economy.history:
+		var t: Dictionary = {}
+		for c in Economy.CATEGORIES:
+			t[c] = 0
+		var ht: Dictionary = h["totals"]
+		for k: Variant in ht:
+			t[str(k)] = int(ht[k])
+		hist.append({"day": h["day"], "totals": t, "net": h["net"]})
+	return {"categories": Economy.CATEGORIES.duplicate(), "money": economy.money, "today": today, "history": hist}
 
 
 # --- Personale, nedbrud, affald, dekoration (T-037) ---

@@ -23,6 +23,11 @@ extends Resource
 ## M6 (T-084): intensitet og kvalme 0..100 (rutsjebaner: ratings × 10).
 @export var intensity: float = 0.0
 @export var nausea: float = 0.0
+## M6 (T-085): sideshow-præmier.
+@export var win_chance: float = 0.0
+@export var prize_cost: int = 0
+@export var prize_happiness: float = 0.0
+@export var prize_item: String = ""
 
 
 static func from_dict(d: Dictionary) -> AttractionDef:
@@ -49,6 +54,10 @@ static func from_dict(d: Dictionary) -> AttractionDef:
 	def.max_height = int(d.get("max_height", 8))
 	def.intensity = clampf(float(d.get("intensity", 0.0)), 0.0, 100.0)
 	def.nausea = clampf(float(d.get("nausea", 0.0)), 0.0, 100.0)
+	def.win_chance = clampf(float(d.get("win_chance", 0.0)), 0.0, 1.0)
+	def.prize_cost = maxi(0, int(d.get("prize_cost", 0)))
+	def.prize_happiness = float(d.get("prize_happiness", 0.0))
+	def.prize_item = str(d.get("prize_item", ""))
 	return def
 
 
@@ -71,4 +80,6 @@ func to_dict() -> Dictionary:
 		"reliability": reliability, "repair_ticks": repair_ticks,
 		"train": train, "max_height": max_height,
 		"intensity": intensity, "nausea": nausea,
+		"win_chance": win_chance, "prize_cost": prize_cost, "prize_happiness": prize_happiness,
+		"prize_item": prize_item,
 	}

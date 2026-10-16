@@ -1,9 +1,12 @@
 class_name Economy
 extends RefCounted
 ## Parkens penge og bogføring pr. kategori og dag.
-## Kategorier (brugt af ParkSim): "build", "path", "refund", "entry", "tickets", "running".
+## Kategorier (brugt af ParkSim): se CATEGORIES.
 
 signal money_changed(money: int)
+
+const CATEGORIES: Array[String] = ["entry", "tickets", "build", "path", "decor", "refund", "running",
+	"wages", "repairs", "research", "prizes"]
 
 var money: int = 0
 ## Dagens totaler: kategori -> int (indtægter positive, udgifter negative).
