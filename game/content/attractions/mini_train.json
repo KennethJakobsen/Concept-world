@@ -15,7 +15,7 @@
  "satisfies": {
   "energy": -5
  },
- "model": "res://scenes/props/coaster_station.tscn",
+ "model": "res://scenes/props/train_station.tscn",
  "reliability": 0.975,
  "repair_ticks": 180,
  "train": "mini_loco",

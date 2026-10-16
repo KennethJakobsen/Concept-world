@@ -3,6 +3,6 @@
  "start": {"money": 15000, "loan": 0, "reputation": 50, "paths": [[24,47],[24,46],[24,45],[24,44],[24,43],[25,45]],
    "attractions": [{"def": "carousel", "origin": [25, 42]}, {"def": "drinks_stand", "origin": [23, 45]}], "decor": [{"def": "bench", "cell": [24, 44]}], "staff": [],
    "unlocked": ["ferris_wheel", "swing_ride", "ice_cream_stand"], "research_enabled": true, "entry_fee": 8},
- "objectives": [{"type": "guests_in_park", "value": 120}, {"type": "reputation_min", "value": 60}],
+ "objectives": [{"type": "guests_in_park", "value": 115}, {"type": "reputation_min", "value": 60}],
  "deadline_days": 40,
  "lose": [{"type": "money_below", "value": -5000, "days": 5}]}

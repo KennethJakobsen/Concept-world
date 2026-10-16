@@ -15,7 +15,7 @@
  "satisfies": {
   "energy": 5
  },
- "model": "res://scenes/props/coaster_station.tscn",
+ "model": "res://scenes/props/flume_station.tscn",
  "reliability": 0.975,
  "repair_ticks": 180,
  "train": "log_boat",

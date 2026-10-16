@@ -201,9 +201,9 @@ Man vinder, når alle mål er opfyldt samme dag. Man taber, hvis fristen udløbe
 
 | Scenarie | Start | Mål | Frist | Tab |
 |---|---|---|---|---|
-| 1 Grøn eng (48×48) | 15000, omd. 50, karrusel+drikkebod | 150 gæster, omdømme ≥ 60 | 40 dage | penge < -5000 i 5 dage |
+| 1 Grøn eng (48×48) | 15000, omd. 50, karrusel+drikkebod | 115 gæster, omdømme ≥ 60 | 40 dage | penge < -5000 i 5 dage |
 | 2 Floddalen (64×64) | 12000, omd. 45, karrusel | rutsjebane-excitement ≥ 5,0, ≥ 5 forlystelser, penge ≥ 20000 | 60 dage | penge < -5000 i 3 dage, omd. < 20 i 5 dage |
-| 3 Bjergtoppen (64×64) | 8000, omd. 35, tom | 350 gæster, parkværdi ≥ 60000, excitement ≥ 7,0, omdømme ≥ 75 | 90 dage | penge < -3000 i 3 dage, omd. < 15 i 4 dage |
+| 3 Bjergtoppen (64×64) | 12000, omd. 35, tom | 75 gæster, parkværdi ≥ 92000, excitement ≥ 4,6, omdømme ≥ 52 | 90 dage | penge < -3000 i 3 dage, omd. < 15 i 4 dage |
 
 ### Rutsjebane (`coaster/`, `attractions/wooden_coaster.json`)
 - Træ-rutsjebanen har en grundpris på 1000, og hvert stykke koster ekstra: station 300, lige 40, sving 60, op/ned 70, kædelift 120. Billetten koster 8 og driften 300 pr. dag. Toget har 3 vogne med 4 pladser hver (12 i alt), og max højde er 8 niveauer.
@@ -245,15 +245,16 @@ Typekoder: **D** = data plus en prop (eksisterende sim). **A–E** = kræver ny 
 | coffee_stand | Kaffekoppen | shop | 1×1 | 300 | 2 | 3 | thirst -40, energy -20 | shops, 120 | Bod i en kæmpe dampende kop | D (energy findes allerede i satisfies) |
 | balloon_stand | Ballonbåsen | shop | 1×1 | 220 | 2 | 2 | glæde. Gæsten bærer ballon | shops, 100 | Klase af kæmpe balloner | E (vare/glæde-effekt). D-light: kun excitement 10 |
 | souvenir_shop | Mindebutikken | shop | 2×1 | 500 | 3 | 5 | glæde. Gæsten bærer souvenir | shops, 200 | Kæmpe snekugle med parken i | E. D-light som ovenfor |
-| coconut_shy | Kokoskasteriet | sideshow | 2×1 | 350 | 3 | 2 | glæde, præmie med 25 % chance | ny topic sideshows, 80 | Tre kæmpe kokosnødder på pinde | D (gevinst = excitement). Præmier = D (ny mekanik) |
-| shooting_gallery | Skydeteltet | sideshow | 2×1 | 450 | 3 | 3 | glæde, præmie 20 % | sideshows, 140 | Stribet telt med kæmpe blikand på taget | D/D som ovenfor |
+| coconut_shy | Kokoskasteriet | sideshow | 2×1 | 350 | 3 | 3 | glæde, præmie med 25 % chance | ny topic sideshows, 80 | Tre kæmpe kokosnødder på pinde | D (gevinst = excitement). Præmier = D (ny mekanik) |
+| shooting_gallery | Skydeteltet | sideshow | 2×1 | 450 | 3 | 4 | glæde, præmie 20 % | sideshows, 140 | Stribet telt med kæmpe blikand på taget | D/D som ovenfor |
 | hook_a_duck | Andefiskeriet | sideshow | 1×1 | 250 | 2 | 2 | glæde, præmie 50 % (lav værdi) | sideshows, 60 | Kæmpe gul and med fiskestang | D/D som ovenfor |
-| strength_tester | Kraftklokken | sideshow | 1×1 | 300 | 1 | 2 | glæde, energy +5 | sideshows, 120 | Høj skala med kæmpe klokke og hammer | D/D som ovenfor |
+| strength_tester | Kraftklokken | sideshow | 1×1 | 300 | 1 | 3 | glæde, energy +5 | sideshows, 120 | Høj skala med kæmpe klokke og hammer | D/D som ovenfor |
 
 ### Ny mekanik (kræver sim-tasks)
 - **A – Vandbane:** spor med vand-segmenter (lav friktion og plask-sektion), giver thirst -10 og en "våd"-tilstand. Bygger på coaster-sporet fra ADR-003. Størst opgave.
 - **B – Intensity/nausea:** to nye felter (default 0), en gæstetolerance pr. gæst og et kvalmebehov, der giver opkast (affald) og glædetab. Uden dette ligner forlystelserne hinanden for meget. Det kræver også, at save-formatet migreres (felt-defaults).
 - **C – Transport:** to stationer, og gæsten bruger forbindelsen som sti i pathfinding. Kan udskydes.
+- **Sideshow-balance (T-095):** tab-glæde (excitement) 14/15/16/16 og intensity 25/30/15/35 (kokos/skyde/and/kraft), så de ikke er "for tamme" for alle. Drift 25/30/15/15 pr. dag, præmieudgift 5/8/1/3. Forventet margin pr. besøg ca. +1,75/+2,4/+1,5/+2,1 før drift; positiv netto i balance-målingen.
 - **D – Sideshow-præmier:** `kind: "sideshow"` plus `win_chance`, `prize_cost` og `prize_happiness`. Parkens udgift pr. gevinst giver en lille risiko i økonomien, og gæsten bærer en synlig præmie.
 - **E – Varer, der bæres:** ballon og souvenir er en tilstand på gæsten med glæde-aura. Ballonen kan flyve væk.
 

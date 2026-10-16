@@ -112,6 +112,22 @@
    "generator": "procedural",
    "description": "Loop (~35 s, 110 BPM, 4/4): munter tivoli-melodi i C-dur, A-A'-B-A' sektioner med I-vi-IV-V / IV-V-iii-vi progression, oom-pah bas, let percussion.",
    "loop": true
+  },
+  "vomit": {
+   "bus": "SFX",
+   "volume_db": -14,
+   "generator": "procedural",
+   "description": "Kort klask: lavpasfiltreret stoej med nedadgaaende pitch 400->120 Hz, 0.3 s.",
+   "max_distance": 20,
+   "min_interval_s": 2.0
+  },
+  "splash": {
+   "bus": "SFX",
+   "volume_db": -10,
+   "generator": "procedural",
+   "description": "Vandplask: hvid stoej med hurtig attack og 0.6 s decay, baandpas 800-4000 Hz.",
+   "max_distance": 30,
+   "min_interval_s": 1.0
   }
  }
 }

@@ -15,7 +15,7 @@
  "satisfies": {
   "energy": -10
  },
- "model": "res://scenes/props/coaster_station.tscn",
+ "model": "res://scenes/props/monorail_station.tscn",
  "reliability": 0.975,
  "repair_ticks": 180,
  "train": "monorail_cabin",

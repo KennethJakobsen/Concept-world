@@ -124,7 +124,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-099 | Bug: M6-props mangler teksturer/detaljer, showcase viser kun 3 | graphics | ✅ done |
 | T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | review |
 | T-094 | UI: spor-faner, fejltekster og info | ui | review |
-| T-095 | Balance: M6-indhold | designer | todo |
+| T-095 | Balance: M6-indhold | designer | review |
 | T-096 | M6 verifikation | qa | todo |
 
 Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/T-088/T-089 · 4) T-090→T-091, T-092 · 5) T-093/T-094, derefter T-095 · 6) T-096.
