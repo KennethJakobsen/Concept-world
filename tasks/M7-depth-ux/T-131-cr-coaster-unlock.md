@@ -18,3 +18,4 @@ Regel: En bane må kun kunne startes, når der er låst stykker nok op til at lu
 ## Log
 - 2026-10-16 – orkestrator: oprettet ud fra brugerens rapport
 - 2026-10-16 – bruger: ikke en bug (sving kan forskes) men et ændringsønske. f8ab4cb revertet (3c86cce). Løsning (A gråtonet indtil sving er forsket / B advarsel i byggemenu / C andet) afventer brugeren. Designerens forslag om højere excitement-mål (~5.0) i Floddalen/Bjergtoppen tages med.
+- 2026-10-16 – bruger: valgt A – banen er gråtonet, indtil de nødvendige stykker er forsket, med tekst der beskriver forskningskravet (f.eks. "Kræver forskning: Rutsjebaner – sving"). Gælder alle sporbaner. Kræver formentlig ui (byggekort) + evt. sim-API for "kan lukkes"; architect fordeler ved M7-start.
