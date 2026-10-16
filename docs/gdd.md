@@ -255,6 +255,7 @@ Typekoder: **D** = data plus en prop (eksisterende sim). **A–E** = kræver ny 
 - **B – Intensity/nausea:** to nye felter (default 0), en gæstetolerance pr. gæst og et kvalmebehov, der giver opkast (affald) og glædetab. Uden dette ligner forlystelserne hinanden for meget. Det kræver også, at save-formatet migreres (felt-defaults).
 - **C – Transport:** to stationer, og gæsten bruger forbindelsen som sti i pathfinding. Kan udskydes.
 - **Sideshow-balance (T-095):** tab-glæde (excitement) 14/15/16/16 og intensity 25/30/15/35 (kokos/skyde/and/kraft), så de ikke er "for tamme" for alle. Drift 25/30/15/15 pr. dag, præmieudgift 5/8/1/3. Forventet margin pr. besøg ca. +1,75/+2,4/+1,5/+2,1 før drift; positiv netto i balance-målingen.
+- **Impulskøb (T-119, `guests.json` "impulse"):** base_chance 0.35, radius 12 sti-celler, min. glæde 40, price_sensitivity 1.0. Chance = base × glæde/100 × (1 − pris/penge). Det gælder kun shops med `carry_item`, og hver gæst køber højst én af hver ting. Ca. 17 % af gæsterne køber en ballon og ca. 11 % en souvenir, mens besøgene på forlystelserne falder 1–5 %.
 - **D – Sideshow-præmier:** `kind: "sideshow"` plus `win_chance`, `prize_cost` og `prize_happiness`. Parkens udgift pr. gevinst giver en lille risiko i økonomien, og gæsten bærer en synlig præmie.
 - **E – Varer, der bæres:** ballon og souvenir er en tilstand på gæsten med glæde-aura. Ballonen kan flyve væk.
 
