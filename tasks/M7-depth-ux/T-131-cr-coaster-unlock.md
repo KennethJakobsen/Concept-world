@@ -1,7 +1,7 @@
-# T-131: Bug: rutsjebane kan ikke færdiggøres i scenarier (kun lige spor låst op)
+# T-131: Ændringsønske: rutsjebane kan ikke færdiggøres i scenarier (kun lige spor låst op)
 
-- **Status:** in-progress
-- **Milepæl:** M6
+- **Status:** todo
+- **Milepæl:** M7
 - **Agent:** designer
 - **Afhænger af:** T-065, T-095
 
@@ -17,3 +17,4 @@ Regel: En bane må kun kunne startes, når der er låst stykker nok op til at lu
 
 ## Log
 - 2026-10-16 – orkestrator: oprettet ud fra brugerens rapport
+- 2026-10-16 – bruger: ikke en bug (sving kan forskes) men et ændringsønske. f8ab4cb revertet (3c86cce). Løsning (A gråtonet indtil sving er forsket / B advarsel i byggemenu / C andet) afventer brugeren. Designerens forslag om højere excitement-mål (~5.0) i Floddalen/Bjergtoppen tages med.

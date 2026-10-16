@@ -125,7 +125,6 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-119 | Sim: impulskøb i butikker uden behov | simulation | ✅ done |
 | T-120 | Bug: tømmerrenden går under terræn ved fald | simulation | review |
 | T-130 | Bug: tømmerrende "mangler en station" ved færdiggørelse | simulation | review |
-| T-131 | Bug: rutsjebane kan ikke færdiggøres i scenarier | designer | in-progress |
 | T-132 | Bug: stier kan ikke fjernes | gameplay | review |
 | T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | review |
 | T-094 | UI: spor-faner, fejltekster og info | ui | review |
@@ -140,6 +139,7 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 |---|---|---|---|
 | T-097 | Design: GDD-afsnit for M7 | designer | review |
 | T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | review |
+| T-131 | Ændringsønske: rutsjebane kan startes uden stykker til at lukke den | designer | todo |
 | T-100 | Data: config, opskrifter, kø/gæste-parametre, ATM, milepæle, omgivelser | designer | todo |
 | T-101 | UI: UX-fundament (skærmzoner, tooltips, indstillinger) | ui | todo |
 | T-102 | Sim: config, opskrifter, prisvirkninger, salg + save v4 | simulation | todo |
