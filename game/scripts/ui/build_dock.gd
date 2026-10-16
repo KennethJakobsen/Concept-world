@@ -7,6 +7,7 @@ extends PanelContainer
 
 signal category_selected(cat: String)
 signal card_pressed(id: String)
+signal layout_changed  ## T-141: kortpanelet åbnet/lukket -> Hud skal genplacere docken
 
 const CATEGORIES: Array[String] = ["paths", "rides", "shops", "decor", "staff", "coaster"]
 const CATEGORY_NAMES: Dictionary = {"paths": "Stier", "rides": "Forlystelser", "shops": "Butikker",
@@ -244,6 +245,24 @@ func set_category(cat: String) -> void:
 	_apply_page()
 
 
+## Dockens aktuelle minimumsstørrelse beregnet fra de synlige dele (T-141). Bruges af Hud.layout i
+## stedet for den cachede get_combined_minimum_size(), som kan være forældet i samme frame som
+## kortpanelet skjules/vises – det fik docken til at blive hængende, hvor panelet havde været.
+func dock_size() -> Vector2:
+	var out := Vector2.ZERO
+	for c: Node in get_node("V").get_children():
+		var ctl := c as Control
+		if ctl == null or not ctl.visible:
+			continue
+		var m: Vector2 = ctl.get_combined_minimum_size()
+		out.x = maxf(out.x, m.x)
+		out.y += m.y
+	var sb: StyleBox = get_theme_stylebox("panel")
+	if sb != null:
+		out += sb.get_minimum_size()
+	return out
+
+
 func cards_open() -> bool:
 	return card_panel != null and card_panel.visible
 
@@ -252,6 +271,7 @@ func close_cards() -> void:
 	card_panel.visible = false
 	for c: String in cat_buttons:
 		(cat_buttons[c] as Button).set_pressed_no_signal(false)
+	layout_changed.emit()
 
 
 ## Antal kolonner/rækker (sat af Hud.layout ud fra vinduesstørrelsen).

@@ -11,6 +11,7 @@ extends Node
 const HIGHLIGHT_SCRIPT: Script = preload("res://scripts/rendering/cell_highlight.gd")
 const SPEEDS: Array[float] = [0.5, 1.0, 2.0, 4.0, 8.0]
 const TOOL_PATH: String = "path"
+const TOOL_QUEUE: String = "queue_path"  ## T-140: køsti (træk for flere, højreklik fjerner)
 const TOOL_REMOVE: String = "remove"
 const TOOL_SELECT: String = "select"
 const KEY_TOOLS: Dictionary = {
@@ -107,7 +108,7 @@ static func tool_content_id(t: String) -> String:
 		return t.substr(PREFIX_COASTER.length())
 	if t.begins_with(PREFIX_DECOR):
 		return t.substr(PREFIX_DECOR.length())
-	if t == TOOL_PATH or t == TOOL_REMOVE or t == TOOL_SELECT or t.contains(":"):
+	if t == TOOL_PATH or t == TOOL_QUEUE or t == TOOL_REMOVE or t == TOOL_SELECT or t.contains(":"):
 		return ""
 	return t
 
@@ -384,7 +385,7 @@ func _update_preview() -> void:
 	if (tool == TOOL_REMOVE or tool == TOOL_SELECT) and _drag_staff < 0:
 		var a: Attraction = w.get_attraction_at(origin)
 		if a == null:
-			if tool == TOOL_REMOVE and w.get_tile(origin) == ParkWorld.Tile.PATH:
+			if tool == TOOL_REMOVE and (w.get_tile(origin) == ParkWorld.Tile.PATH or w.is_queue(origin)):
 				_ensure_highlights(1)
 				_highlights[0].show_at(origin, false)  # rød = fjernes
 			return
@@ -408,6 +409,10 @@ func _update_preview() -> void:
 			for x in fp.x:
 				_highlights[i].show_at(origin + Vector2i(x, y), valid)
 				i += 1
+	elif tool == TOOL_QUEUE and w.in_bounds(origin):
+		var removing_q: bool = _dragging == 2 or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+		_highlights[0].show_at(origin, not removing_q and w.can_place_path(origin)
+			and _view.sim.economy.can_afford(_view.sim.balance.queue_path_cost))
 	elif w.in_bounds(origin):
 		var removing: bool = _dragging == 2 or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 		_highlights[0].show_at(origin, w.can_place_path(origin) and not removing)  # rød ved fjern
@@ -440,9 +445,26 @@ func move_staff(staff_id: int, cell: Vector2i) -> bool:
 	return _view.sim.cmd_move_staff(staff_id, cell)
 
 
-## Fjerner stien på cellen (T-132). Indgangsceller giver en forklarende besked.
+## T-140: køsti på græs; den kobles til den forlystelse, hvis indgang kæden starter ved.
+func place_queue_path(cell: Vector2i) -> bool:
+	if not _view.sim.cmd_place_queue_path(cell):
+		return false
+	_view.spawn_floating_text(ParkView.cell_center(cell), "-%d" % _view.sim.balance.queue_path_cost, Color(1, 0.4, 0.4))
+	return true
+
+
+func remove_queue_path_at(cell: Vector2i) -> bool:
+	if not _view.sim.cmd_remove_queue_path(cell):
+		return false
+	_view.spawn_floating_text(ParkView.cell_center(cell), "+%d" % _view.sim.balance.queue_path_refund, Color(0.4, 1, 0.4))
+	return true
+
+
+## Fjerner stien (eller køstien) på cellen (T-132). Indgangsceller giver en forklarende besked.
 func remove_path_at(cell: Vector2i) -> bool:
 	var w: ParkWorld = _view.sim.world
+	if w.is_queue(cell):
+		return remove_queue_path_at(cell)
 	if w.get_tile(cell) != ParkWorld.Tile.PATH:
 		return false
 	if w.get_attraction_by_entrance(cell) != null:
@@ -507,9 +529,15 @@ func _apply_drag() -> void:
 		return
 	_last_drag_cell = cell
 	if _dragging == 1:
-		_view.sim.cmd_place_path(cell)
+		if tool == TOOL_QUEUE:
+			place_queue_path(cell)
+		else:
+			_view.sim.cmd_place_path(cell)
 	elif _dragging == 2:
-		remove_path_at(cell)
+		if tool == TOOL_QUEUE:
+			remove_queue_path_at(cell)
+		else:
+			remove_path_at(cell)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -531,7 +559,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if mb.button_index == MOUSE_BUTTON_LEFT:
 			var cell: Vector2i = _picker.cell_under_mouse(_camera)
-			if tool == TOOL_PATH:
+			if tool == TOOL_PATH or tool == TOOL_QUEUE:
 				_dragging = 1
 				_last_drag_cell = GridPicker.INVALID
 				_apply_drag()

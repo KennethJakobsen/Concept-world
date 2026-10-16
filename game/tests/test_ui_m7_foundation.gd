@@ -223,3 +223,44 @@ func test_layout_zones_inside_1024x600() -> void:
 	var dock: Control = hud.build_dock
 	assert_true(hud.alert_tray.position.y + hud.alert_tray.size.y <= dock.position.y, "varsler over dokken")
 	hud.free()
+
+
+## T-141: docken skal falde tilbage til bunden, når kortpanelet lukkes (klik igen, Esc, værktøj).
+func test_dock_returns_to_bottom_after_close() -> void:
+	var hud := _hud()
+	var vp := Vector2(1280, 720)
+	hud.layout(vp)
+	var dock: BuildDock = hud.build_dock
+	dock.close_cards()
+	var closed_y: float = dock.position.y
+	assert_true(absf(dock.position.y + dock.size.y - (vp.y - 12.0)) < 1.0, "dock i bunden")
+	dock.cat_buttons["rides"].emit_signal("pressed")
+	assert_true(dock.cards_open())
+	assert_true(dock.position.y < closed_y, "panel åbent -> dock løftet")
+	dock.cat_buttons["rides"].emit_signal("pressed")  # klik igen
+	assert_true(not dock.cards_open())
+	assert_eq(dock.position.y, closed_y)
+	assert_true(absf(dock.position.y + dock.size.y - (vp.y - 12.0)) < 1.0)
+	hud.set_tab("shops")
+	assert_true(dock.cards_open())
+	hud.handle_escape()  # Esc
+	assert_true(not dock.cards_open())
+	assert_eq(dock.position.y, closed_y)
+	hud.free()
+
+
+## T-142: dagskift (længere/kortere tekst) må ikke flytte dock eller top-bar.
+func test_layout_stable_across_day_change() -> void:
+	var hud := _hud()
+	var vp := Vector2(1280, 720)
+	hud.layout(vp)
+	var dock_pos: Vector2 = hud.build_dock.position
+	var top_pos: Vector2 = hud.top_bar.position
+	for d in [9, 10, 100]:
+		hud.sim.day = d
+		hud.refresh()
+		hud.top_bar.clock_label.text = "23:59" if d % 2 == 0 else "00:00"
+		assert_eq(hud.build_dock.position, dock_pos)
+		assert_eq(hud.top_bar.position, top_pos)
+		assert_true(hud.top_bar.size.x <= vp.x)
+	hud.free()

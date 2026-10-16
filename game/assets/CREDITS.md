@@ -36,6 +36,7 @@ Alle **egne**, ingen tredjepartsassets. Licens: samme som projektet.
   `game/tools/gen_ui_icons.gd` og rasteriseret af Godot. Genkør: `cd game && godot --headless --script res://tools/gen_ui_icons.gd`.
 - `ui/thumbs/<content_id>.png` (160×120, transparent): renderet i Compatibility fra vores egne prop-scener af `game/tools/render_thumbs.gd`.
   Genkør (ikke headless): `cd game && godot --rendering-method gl_compatibility --script res://tools/render_thumbs.gd -- <kontaktark.png>`.
-  `atm` har ingen prop-scene endnu, så UI'et bruger fallback-ikonet.
+  `atm` er renderet fra `scenes/props/atm.tscn` (T-107).
+- T-107: `scenes/props/atm.tscn`, køsti-rækværk, skrald, spand-fyld, gæstemængde og svævetal er procedurelle/egne (CC0, ingen eksterne assets).
 
-- `ui/logo/*` – Concept-world-logo (T-139). Eget arbejde (håndskrevet SVG), CC0. Ordmærket er konverteret til paths fra systemfonten Georgia (kun brugt som tegneudgangspunkt, ingen font distribueres).
+- `ui/logo/*` – Concept-world-logo (T-139). Eget arbejde (håndskrevet SVG), CC0. v2 (T-143): genereret af `ui/logo/src/gen_logo.py`; ordmærket er egne, håndtegnede monoline-bogstavformer (ingen font brugt).

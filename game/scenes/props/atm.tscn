@@ -1,0 +1,102 @@
+[gd_scene format=3]
+
+[ext_resource type="Material" path="res://assets/materials/metal.tres" id="mat_metal"]
+
+[sub_resource type="StandardMaterial3D" id="m_body"]
+albedo_color = Color(0.2, 0.42, 0.62, 1)
+roughness = 0.6
+
+[sub_resource type="StandardMaterial3D" id="m_dark"]
+albedo_color = Color(0.12, 0.12, 0.15, 1)
+roughness = 0.5
+
+[sub_resource type="StandardMaterial3D" id="m_screen"]
+albedo_color = Color(0.3, 0.85, 0.75, 1)
+emission_enabled = true
+emission = Color(0.2, 0.8, 0.7, 1)
+emission_energy_multiplier = 0.8
+
+[sub_resource type="StandardMaterial3D" id="m_gold"]
+albedo_color = Color(0.95, 0.76, 0.28, 1)
+roughness = 0.4
+metallic = 0.5
+
+[sub_resource type="StandardMaterial3D" id="m_red"]
+albedo_color = Color(0.86, 0.3, 0.28, 1)
+roughness = 0.7
+
+[sub_resource type="BoxMesh" id="body"]
+material = SubResource("m_body")
+size = Vector3(0.5, 1.0, 0.4)
+
+[sub_resource type="BoxMesh" id="base"]
+material = ExtResource("mat_metal")
+size = Vector3(0.62, 0.06, 0.52)
+
+[sub_resource type="BoxMesh" id="hood"]
+material = SubResource("m_red")
+size = Vector3(0.6, 0.06, 0.52)
+
+[sub_resource type="BoxMesh" id="screen"]
+material = SubResource("m_screen")
+size = Vector3(0.26, 0.18, 0.02)
+
+[sub_resource type="BoxMesh" id="keypad"]
+material = SubResource("m_dark")
+size = Vector3(0.22, 0.04, 0.12)
+
+[sub_resource type="BoxMesh" id="slot"]
+material = SubResource("m_dark")
+size = Vector3(0.22, 0.03, 0.02)
+
+[sub_resource type="CylinderMesh" id="coin"]
+material = SubResource("m_gold")
+top_radius = 0.16
+bottom_radius = 0.16
+height = 0.04
+radial_segments = 16
+rings = 1
+
+[sub_resource type="CylinderMesh" id="pole"]
+material = ExtResource("mat_metal")
+top_radius = 0.02
+bottom_radius = 0.02
+height = 0.3
+radial_segments = 6
+rings = 1
+
+[node name="Atm" type="Node3D"]
+
+[node name="Base" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.03, 0)
+mesh = SubResource("base")
+
+[node name="Body" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.56, 0)
+mesh = SubResource("body")
+
+[node name="Hood" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.09, 0.02)
+mesh = SubResource("hood")
+
+[node name="Screen" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.82, 0.205)
+mesh = SubResource("screen")
+
+[node name="Keypad" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.94, -0.34, 0, 0.34, 0.94, 0, 0.6, 0.23)
+mesh = SubResource("keypad")
+
+[node name="Slot" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0.205)
+mesh = SubResource("slot")
+
+[node name="Theme" type="Node3D" parent="."]
+
+[node name="Pole" type="MeshInstance3D" parent="Theme"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.27, 0)
+mesh = SubResource("pole")
+
+[node name="Coin" type="MeshInstance3D" parent="Theme"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 1.55, 0)
+mesh = SubResource("coin")

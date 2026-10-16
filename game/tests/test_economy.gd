@@ -123,7 +123,7 @@ func test_real_content_parses() -> void:
 		if f.ends_with(".json"):
 			var d := AttractionDef.from_json("res://content/attractions/" + f)
 			assert_true(d != null and d.id != "", f)
-			assert_true(d.kind in ["ride", "shop", "toilet", "coaster", "sideshow", "flume", "train", "transport"], f)
+			assert_true(d.kind in ["ride", "shop", "toilet", "coaster", "sideshow", "flume", "train", "transport", "atm"], f)
 			n += 1
 	assert_true(n > 0)
 	var s := ParkSim.new(30, 30, 1)

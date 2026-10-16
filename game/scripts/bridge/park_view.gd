@@ -57,6 +57,8 @@ var _rebuilding: bool = false      ## undertryk effekter/lyd mens scenen genopby
 var _root: Node3D                  ## alle visnings-noder (genskabes ved rebuild)
 var _coasters: Dictionary = {}     ## coaster id -> CoasterVis (T-070)
 var _piece_defs: Dictionary = {}
+var _queues: Dictionary = {}       ## T-140: Vector2i -> QueuePathVisual
+var _queue_refreshing: bool = false
 
 
 ## Visningsdata for én rutsjebane.
@@ -71,6 +73,8 @@ class CoasterVis:
 	var at_end: bool = false       ## svævebanen: kabinen holder ved endestationen
 	var leg_running: bool = false
 	var leg_reverse: bool = false  ## svævebanen: denne tur kører end → start
+	var idle_t: float = 0.0        ## T-144: tomgangspendul mellem ture uden passagerer
+	var idle_wait: float = 0.0     ## T-144: ophold (i tur-andele) ved stationen før næste tomgangstur
 
 
 func _ready() -> void:
@@ -130,6 +134,7 @@ func setup(p_sim: ParkSim) -> void:
 	sim.prize_won.connect(_on_prize_won)
 	sim.item_gained.connect(_on_item_changed)
 	sim.item_lost.connect(_on_item_lost)
+	sim.queue_changed.connect(_on_queue_changed)
 	_tod_vis = sim.time_of_day()
 	_on_phase_changed(sim.phase())
 	rebuild()
@@ -146,7 +151,7 @@ func _disconnect() -> void:
 			[sim.litter_swept, _on_litter_swept], [sim.ride_cycle_started, _on_ride_cycle_started],
 			[sim.coaster_changed, _on_coaster_changed], [sim.guest_vomited, _on_guest_vomited],
 			[sim.prize_won, _on_prize_won], [sim.item_gained, _on_item_changed], [sim.item_lost, _on_item_lost],
-			[sim.ride_splash, _on_ride_splash]]:
+			[sim.ride_splash, _on_ride_splash], [sim.queue_changed, _on_queue_changed]]:
 		var sig: Signal = pair[0]
 		if sig.is_connected(pair[1]):
 			sig.disconnect(pair[1])
@@ -161,6 +166,7 @@ func rebuild() -> void:
 	_root.name = "Content"
 	add_child(_root)
 	_paths.clear()
+	_queues.clear()
 	_attractions.clear()
 	_guests.clear()
 	_last_thought.clear()
@@ -179,8 +185,12 @@ func rebuild() -> void:
 	for y in w.height:
 		for x in w.width:
 			var c := Vector2i(x, y)
-			if w.get_tile(c) == ParkWorld.Tile.PATH:
-				_on_tile_changed(c, ParkWorld.Tile.PATH)
+			var t: int = w.get_tile(c)
+			if t == ParkWorld.Tile.PATH:
+				_on_tile_changed(c, t)
+			elif t == ParkWorld.Tile.QUEUE:
+				_set_queue_visual(c, true)
+	refresh_queue_visuals()
 	var ent: Node3D = ENTRANCE_SCENE.instantiate()
 	ent.position = cell_center(w.entrance)
 	_root.add_child(ent)
@@ -543,6 +553,10 @@ func _model_scene(def: Resource) -> PackedScene:
 # --- Signal-handlere ---
 
 func _on_tile_changed(cell: Vector2i, tile: int) -> void:
+	var had_queue: bool = _queues.has(cell)
+	_set_queue_visual(cell, tile == ParkWorld.Tile.QUEUE)
+	if had_queue or tile == ParkWorld.Tile.QUEUE or _queue_near(cell):
+		refresh_queue_visuals()
 	if tile == ParkWorld.Tile.PATH:
 		if not _paths.has(cell):
 			var n: Node3D = PATH_SCENE.instantiate()
@@ -552,6 +566,67 @@ func _on_tile_changed(cell: Vector2i, tile: int) -> void:
 	elif _paths.has(cell):
 		(_paths[cell] as Node3D).queue_free()
 		_paths.erase(cell)
+
+
+# --- Køstier (T-140, ADR-005 §2) ---
+
+func _set_queue_visual(cell: Vector2i, on: bool) -> void:
+	if on and not _queues.has(cell):
+		var q := QueuePathVisual.new()
+		q.name = "Queue_%d_%d" % [cell.x, cell.y]
+		q.position = cell_center(cell)
+		_root.add_child(q)
+		_queues[cell] = q
+	elif not on and _queues.has(cell):
+		(_queues[cell] as Node3D).queue_free()
+		_queues.erase(cell)
+
+
+func _queue_near(cell: Vector2i) -> bool:
+	for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+		if _queues.has(cell + d):
+			return true
+	return false
+
+
+func _on_queue_changed(_attraction_id: int) -> void:
+	refresh_queue_visuals()
+
+
+## Rækværkets åbninger: en køkæde åbner mod forgænger (indgangen for den forreste celle) og
+## efterfølger (stien ved køens ende). Løse køceller åbner mod andre køceller.
+func refresh_queue_visuals() -> void:
+	if _queue_refreshing or _queues.is_empty():
+		return
+	_queue_refreshing = true
+	var links: Dictionary = {}  ## cell -> Array[Vector2i] (forbundne naboer)
+	for a: Attraction in sim.world.attractions:
+		if a.is_transport():
+			continue
+		var approach: Vector2i = sim.approach_cell(a)
+		var chain: Array[Vector2i] = a.queue_cells
+		for i in chain.size():
+			var nb: Array[Vector2i] = [a.entrance_cell if i == 0 else chain[i - 1]]
+			if i + 1 < chain.size():
+				nb.append(chain[i + 1])
+			elif approach != a.entrance_cell:
+				nb.append(approach)
+			links[chain[i]] = nb
+	for c: Vector2i in _queues:
+		var mask: int
+		if links.has(c):
+			var nb: Array[Vector2i] = links[c]
+			mask = QueuePathVisual.mask_from(c, func(n: Vector2i) -> bool: return nb.has(n))
+		else:
+			mask = QueuePathVisual.mask_from(c, func(n: Vector2i) -> bool: return _queues.has(n))
+		var q: QueuePathVisual = _queues[c]
+		if q.connections != mask or q._parts.get_child_count() == 0:
+			q.set_connections(mask)
+	_queue_refreshing = false
+
+
+func queue_visual(cell: Vector2i) -> QueuePathVisual:
+	return _queues.get(cell, null)
 
 
 func _on_attraction_placed(a: Attraction) -> void:
@@ -774,7 +849,21 @@ func _update_guest(n: Node3D, g: Guest) -> void:
 			n.position = dn.position + Vector3(0, -0.15, 0)  # sidder (sænket) ved bænken
 			n.rotation.y = 0.0
 			return
-	_update_walker(n, g.cell, g.next_cell, g.progress, g.id)
+	# T-140 (ADR-005): sim'ens visningsposition – køplads langs køstien eller bane på stien.
+	var p: Vector2 = sim.guest_position(g.id)
+	var pos := Vector3(p.x, 0.0, p.y)
+	var dir: Vector3 = Vector3.ZERO
+	if g.state == Guest.State.QUEUING and g.transport_id < 0 and g.queue_index >= 0:
+		var a: Attraction = sim.get_attraction(g.target_attraction_id)
+		if a != null:
+			var front: Vector2 = sim.queue_slot_position(a, g.queue_index - 1) if g.queue_index > 0 \
+				else Vector2(a.entrance_cell) + Vector2(0.5, 0.5)
+			dir = Vector3(front.x - p.x, 0.0, front.y - p.y)
+	else:
+		dir = cell_center(g.next_cell) - cell_center(g.cell)
+	n.position = pos
+	if dir.length_squared() > 0.0001:
+		n.rotation.y = atan2(dir.x, dir.z)
 
 
 func _update_walker(n: Node3D, cell: Vector2i, next_cell: Vector2i, progress: float, seed_id: int) -> void:
@@ -934,32 +1023,51 @@ func update_coasters(delta: float) -> void:
 		if cv.train == null or a == null or a.profile == null:
 			continue
 		var p: float = a.ride_progress()
+		var run_ticks: int = maxi(1, a.ride_ticks() - a.load_ticks)
+		var step: float = 0.0 if sim.clock.paused else delta * sim.clock.speed / (run_ticks * SimClock.TICK_DELTA)
 		if p <= 0.0 or a.broken:
 			cv.vis_t = p
 		else:
-			var run_ticks: int = maxi(1, a.ride_ticks() - a.load_ticks)
-			var step: float = 0.0 if sim.clock.paused else delta * sim.clock.speed / (run_ticks * SimClock.TICK_DELTA)
 			var tick_t: float = 1.0 / run_ticks
 			# Fremskriv visningen, men højst én tick foran sim'en; spring hvis den halter.
 			cv.vis_t = clampf(cv.vis_t + step, p, minf(1.0, p + tick_t)) if absf(cv.vis_t - p) <= 2.0 * tick_t else p
 		if a.is_transport():
-			_pose_train(cv, a, _transport_leg(cv, p > 0.0 and not a.broken))
+			var idle: float = step if a.is_open and not a.broken else 0.0
+			_pose_train(cv, a, _transport_leg(cv, p > 0.0 and not a.broken, idle,
+				float(a.load_ticks) / run_ticks))
 			continue
 		_pose_train(cv, a, cv.vis_t)
 
 
 ## Svævebanen kører pendul: hver anden tur fra endestationen tilbage til start.
 ## Mellem ture holder kabinen ved den station, hvor den sidst stoppede.
-func _transport_leg(cv: CoasterVis, running: bool) -> float:
+## T-144: simulationen kører kun banen, når gæster rider (som genvej). Uden passagerer
+## pendler kabinen i tomgang (idle_step = tur-andel pr. frame, 0 = lukket/pause/i stykker),
+## så en åben svævebane altid ses køre. Ren visning – ændrer ikke simulationen.
+func _transport_leg(cv: CoasterVis, running: bool, idle_step: float = 0.0, dwell: float = 0.0) -> float:
 	if running and not cv.leg_running:
 		cv.leg_running = true
+		# En tomgangstur, der er mere end halvvejs, regnes som ankommet.
+		if cv.idle_t > 0.5:
+			cv.at_end = not cv.at_end
+		cv.idle_t = 0.0
 		cv.leg_reverse = cv.at_end
 	elif not running and cv.leg_running:
 		cv.leg_running = false
 		cv.at_end = not cv.leg_reverse
-	if not running:
-		return 1.0 if cv.at_end else 0.0
-	return 1.0 - cv.vis_t if cv.leg_reverse else cv.vis_t
+		cv.idle_wait = dwell
+	if running:
+		return 1.0 - cv.vis_t if cv.leg_reverse else cv.vis_t
+	if idle_step > 0.0:
+		if cv.idle_wait > 0.0:
+			cv.idle_wait = maxf(0.0, cv.idle_wait - idle_step)
+		else:
+			cv.idle_t += idle_step
+			if cv.idle_t >= 1.0:
+				cv.idle_t = 0.0
+				cv.at_end = not cv.at_end
+				cv.idle_wait = dwell
+	return 1.0 - cv.idle_t if cv.at_end else cv.idle_t
 
 
 ## Visnings-t for svævebanens kabine (0 = start, 1 = endestation). Til tests.
@@ -969,7 +1077,7 @@ func transport_leg_t(coaster_id: int) -> float:
 		return -1.0
 	if cv.leg_running:
 		return 1.0 - cv.vis_t if cv.leg_reverse else cv.vis_t
-	return 1.0 if cv.at_end else 0.0
+	return 1.0 - cv.idle_t if cv.at_end else cv.idle_t
 
 
 func _pose_train(cv: CoasterVis, a: Attraction, t: float) -> void:

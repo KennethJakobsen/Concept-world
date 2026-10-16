@@ -39,16 +39,16 @@ static func _assign_repairs(sim: ParkSim) -> void:
 		ids.sort()
 		for sid in ids:
 			var s: Staff = sim.staff[sid]
-			if s.def.id != MECHANIC or s.task == Staff.TASK_REPAIR or not s.in_radius(a.entrance_cell):
+			if s.def.id != MECHANIC or s.task == Staff.TASK_REPAIR or not s.in_radius(sim.approach_cell(a)):
 				continue
-			var route: Array[Vector2i] = sim.path_finder.find_path(s.cell, a.entrance_cell)
+			var route: Array[Vector2i] = sim.path_finder.find_path(s.cell, sim.approach_cell(a))
 			if route.is_empty():
 				continue
 			if best == null or route.size() < best_route.size():
 				best = s
 				best_route = route
 		if best != null:
-			_set_task(best, Staff.TASK_REPAIR, a.id, a.entrance_cell, best_route)
+			_set_task(best, Staff.TASK_REPAIR, a.id, sim.approach_cell(a), best_route)
 			a.mechanic_id = best.id
 
 
@@ -192,7 +192,7 @@ static func _find_task(sim: ParkSim, s: Staff) -> void:
 static func _find_inspection(sim: ParkSim, s: Staff) -> void:
 	var best: Attraction = null
 	for a: Attraction in sim.attractions:
-		if a.def.kind != "ride" or a.broken or a.def.reliability >= 1.0 or not s.in_radius(a.entrance_cell):
+		if a.def.kind != "ride" or a.broken or a.def.reliability >= 1.0 or not s.in_radius(sim.approach_cell(a)):
 			continue
 		if is_target_reserved(sim, s, Staff.TASK_INSPECT, a.id):
 			continue
@@ -200,11 +200,11 @@ static func _find_inspection(sim: ParkSim, s: Staff) -> void:
 			best = a
 	if best == null:
 		return
-	var route: Array[Vector2i] = sim.path_finder.find_path(s.cell, best.entrance_cell)
+	var route: Array[Vector2i] = sim.path_finder.find_path(s.cell, sim.approach_cell(best))
 	if route.is_empty():
 		s.since_inspect = 0  # prøv igen senere
 		return
-	_set_task(s, Staff.TASK_INSPECT, best.id, best.entrance_cell, route)
+	_set_task(s, Staff.TASK_INSPECT, best.id, sim.approach_cell(best), route)
 
 
 static func _dist(a: Vector2i, b: Vector2i) -> int:

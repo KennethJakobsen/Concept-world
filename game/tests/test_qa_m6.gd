@@ -114,7 +114,7 @@ func test_v1_fixture_loads_as_v3() -> void:
 	var s := ParkSim.from_save(d)
 	assert_true(s != null)
 	_step(s, 200)
-	assert_eq(int(s.to_save()["save_version"]), 3)
+	assert_eq(int(s.to_save()["save_version"]), SaveMigrations.CURRENT)
 
 
 func test_v2_save_loads_as_v3() -> void:
@@ -135,4 +135,4 @@ func test_v2_save_loads_as_v3() -> void:
 	assert_true(s != null)
 	assert_eq(s.attractions.size(), 18)
 	_step(s, 500)
-	assert_eq(int(s.to_save()["save_version"]), 3)
+	assert_eq(int(s.to_save()["save_version"]), SaveMigrations.CURRENT)

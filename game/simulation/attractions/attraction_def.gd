@@ -33,6 +33,12 @@ extends Resource
 @export var wet_thirst: float = 0.0
 ## T-091: transport – vægt for kanten i stigrafen.
 @export var transport_cost: float = 4.0
+## M7 (T-102): justerbar konfiguration {capacity|ride_ticks|speed: {min,max,default}}.
+@export var config: Dictionary = {}
+## M7 (T-102): valgfrie opskrifter (shops) [{id, name, cost_per_sale, satisfies, happiness, price_tolerance}].
+@export var recipes: Array[Dictionary] = []
+## M7 (T-102): prisvirkninger [{below_ratio, extra_purchase_chance, nausea, thought}].
+@export var price_effects: Array[Dictionary] = []
 
 
 static func from_dict(d: Dictionary) -> AttractionDef:
@@ -66,7 +72,45 @@ static func from_dict(d: Dictionary) -> AttractionDef:
 	def.carry_item = str(d.get("carry_item", ""))
 	def.wet_thirst = float(d.get("wet_thirst", 0.0))
 	def.transport_cost = maxf(0.0, float(d.get("transport_cost", 4.0)))
+	var cfg: Variant = d.get("config", {})
+	if cfg is Dictionary:
+		for k: Variant in cfg:
+			var e: Variant = cfg[k]
+			if e is Dictionary:
+				var lo: float = float(e.get("min", 0.0))
+				var hi: float = maxf(lo, float(e.get("max", lo)))
+				def.config[str(k)] = {"min": lo, "max": hi, "default": clampf(float(e.get("default", lo)), lo, hi)}
+	var rec: Variant = d.get("recipes", [])
+	if rec is Array:
+		for r: Variant in rec:
+			if r is Dictionary and str(r.get("id", "")) != "":
+				def.recipes.append(_recipe(r))
+	var pe: Variant = d.get("price_effects", [])
+	if pe is Array:
+		for e: Variant in pe:
+			if e is Dictionary:
+				def.price_effects.append({"below_ratio": float(e.get("below_ratio", 0.0)),
+					"extra_purchase_chance": clampf(float(e.get("extra_purchase_chance", 0.0)), 0.0, 1.0),
+					"nausea": float(e.get("nausea", 0.0)), "thought": str(e.get("thought", ""))})
 	return def
+
+
+static func _recipe(r: Dictionary) -> Dictionary:
+	var sat: Dictionary = {}
+	var rs: Variant = r.get("satisfies", {})
+	if rs is Dictionary:
+		for k: Variant in rs:
+			sat[str(k)] = float(rs[k])
+	return {"id": str(r["id"]), "name": str(r.get("name", r["id"])),
+		"cost_per_sale": maxf(0.0, float(r.get("cost_per_sale", 0.0))), "satisfies": sat,
+		"happiness": float(r.get("happiness", 0.0)), "price_tolerance": float(r.get("price_tolerance", 0.0))}
+
+
+func recipe(recipe_id: String) -> Dictionary:
+	for r in recipes:
+		if str(r["id"]) == recipe_id:
+			return r
+	return {}
 
 
 static func from_json(path: String) -> AttractionDef:
@@ -91,6 +135,8 @@ func to_dict() -> Dictionary:
 		"win_chance": win_chance, "prize_cost": prize_cost, "prize_happiness": prize_happiness,
 		"prize_item": prize_item, "carry_item": carry_item,
 		"wet_thirst": wet_thirst, "transport_cost": transport_cost,
+		"config": config.duplicate(true), "recipes": recipes.duplicate(true),
+		"price_effects": price_effects.duplicate(true),
 	}
 
 

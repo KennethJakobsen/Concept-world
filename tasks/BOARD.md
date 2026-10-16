@@ -144,12 +144,12 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-131 | Ændringsønske: rutsjebane kan startes uden stykker til at lukke den | designer | review |
 | T-100 | Data: config, opskrifter, kø/gæste-parametre, ATM, milepæle, omgivelser | designer | review |
 | T-101 | UI: UX-fundament (skærmzoner, tooltips, indstillinger) | ui | review |
-| T-102 | Sim: config, opskrifter, prisvirkninger, salg + save v4 | simulation | todo |
-| T-103 | Sim: køstier, tålmodighed, ledig frem for optaget, gæstemasse | simulation | todo |
+| T-102 | Sim: config, opskrifter, prisvirkninger, salg + save v4 | simulation | review |
+| T-103 | Sim: køstier, tålmodighed, ledig frem for optaget, gæstemasse | simulation | review |
 | T-104 | Sim: gå hjem, hæveautomat, spande, bænke og lys | simulation | todo |
 | T-105 | Sim: milepæle, der låser forskningsgrene op | simulation | todo |
 | T-106 | Sim: flyt (også sporbaner), sælg-refusion og fortryd | simulation | todo |
-| T-107 | Grafik: skrald, spande, bænke, ATM, køsti, svævetal og gæstemængde | graphics | todo |
+| T-107 | Grafik: skrald, spande, bænke, ATM, køsti, svævetal og gæstemængde | graphics | review |
 | T-108 | Grafik: mur, port og omgivelser | graphics | review |
 | T-109 | Grafik: kort-overlays og farveblind-palet | graphics | todo |
 | T-110 | Gameplay: køsti-, flyt-, rotér- og fortryd-værktøjer | gameplay | todo |
@@ -167,6 +167,11 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-137 | Grafik: UI-ikoner og prop-miniaturer | graphics | review |
 | T-138 | UI: fælles tema og billedbaseret byggemenu | ui | review |
 | T-139 | Design: logo i Tivoli-skilt-stilen | designer | review |
+| T-140 | Gameplay: køsti-værktøj og gæstemasse i scenen (prioriteret) | gameplay | review |
+| T-141 | Bug: byggedock svæver efter undermenu lukkes | ui | review |
+| T-142 | Bug: menuen hopper ved dagskift | ui | review |
+| T-143 | Design: logo v2 – mere sammenhængende | designer | review |
+| T-144 | Bug: svævebanen kører ikke | gameplay | review |
 | T-118 | M7 verifikation | qa | todo |
 
 M7 startet 2026-10-16. Runde 1 (T-100, T-101, T-108, T-121, T-131) på review. Kendt: 2 tests fejler på `atm` indtil T-104/T-107.

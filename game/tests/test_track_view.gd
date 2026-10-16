@@ -143,3 +143,39 @@ func test_transport_cabin_pendulum() -> void:
 	r[2].free()
 	r[3].free()
 	view.free()
+
+
+## T-144: en åben svævebane uden passagerer (gæsterne går hellere) pendler i tomgang,
+## så kabinen ses køre; lukket eller i stykker står den stille.
+func test_transport_cabin_idles_without_riders() -> void:
+	var r: Array = _tool_setup()
+	var view: ParkView = r[0]
+	var s: ParkSim = r[1]
+	var id: int = s.cmd_start_coaster("monorail", Vector2i(5, 5), 1)
+	for i in 8:
+		assert_true(s.cmd_place_track_piece(id, "monorail_straight"))
+	assert_true(s.cmd_place_track_piece(id, "monorail_station_end"))
+	for c: Vector2i in [Vector2i(4, 5), Vector2i(4, 6), Vector2i(4, 4)]:
+		s.cmd_place_path(c)
+	assert_eq(s.cmd_finish_coaster(id), [] as Array[String])
+	var a: Attraction = s.get_attraction(id)
+	s.clock.paused = false
+	assert_true(view.coaster_train(id) != null, "kabine findes")
+	assert_true(a.riders.is_empty())
+	view.update_coasters(0.3)
+	var t1: float = view.transport_leg_t(id)
+	assert_true(t1 > 0.0 and t1 < 1.0, "tomgang kører uden passagerer: %f" % t1)
+	var reached: bool = false
+	for i in 400:
+		view.update_coasters(0.1)
+		if view.transport_leg_t(id) < t1 and view.transport_leg_t(id) > 0.0:
+			reached = true  # på vej tilbage fra endestationen
+			break
+	assert_true(reached, "pendler tilbage")
+	a.is_open = false
+	var tc: float = view.transport_leg_t(id)
+	view.update_coasters(0.5)
+	assert_eq(view.transport_leg_t(id), tc, "lukket: står stille")
+	r[2].free()
+	r[3].free()
+	view.free()

@@ -92,6 +92,23 @@ var max_guests_per_capacity: float = 2.0
 var queue_max_cycles: float = 3.0
 ## T-033: glæde-tab når en gæst opgiver en fuld kø.
 var queue_full_happiness_penalty: float = 1.0
+## M7 (T-103, ADR-005): køstier, tålmodighed, belægning.
+var queue_slots_per_cell: int = 2
+var queue_default_max: int = 4
+var queue_entertained_factor: float = 0.5
+var queue_path_cost: int = 15
+var queue_path_refund: int = 7
+var queue_patience_min: float = 600.0
+var queue_patience_max: float = 1500.0
+var queue_impatient_decay: float = 0.02
+var queue_abandon_happiness: float = 10.0
+var queue_weight_cells: float = 3.0
+var max_guests_per_cell: int = 6
+var crowd_reroute_ticks: int = 20
+var crowd_ticks: int = 200
+var crowd_decay: float = 0.01
+## Ekstra A*-vægt på den fulde celle ved omlægning (ADR-005 §1).
+var crowd_reroute_penalty: int = 8
 
 # Personale/affald/dekoration (staff_rules.json, T-035/T-037)
 var litter_chance_after_shop: float = 0.5
@@ -175,6 +192,22 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 	b.max_guests_per_capacity = float(park.get("max_guests_per_capacity", b.max_guests_per_capacity))
 	b.queue_max_cycles = float(park.get("queue_max_cycles", b.queue_max_cycles))
 	b.queue_full_happiness_penalty = float(park.get("queue_full_happiness_penalty", b.queue_full_happiness_penalty))
+	b.queue_slots_per_cell = maxi(1, int(park.get("queue_slots_per_cell", b.queue_slots_per_cell)))
+	b.queue_default_max = maxi(0, int(park.get("queue_default_max", b.queue_default_max)))
+	b.queue_entertained_factor = clampf(float(park.get("queue_entertained_factor", b.queue_entertained_factor)), 0.0, 1.0)
+	b.queue_path_cost = maxi(0, int(park.get("queue_path_cost", b.queue_path_cost)))
+	b.queue_path_refund = maxi(0, int(park.get("queue_path_refund", b.queue_path_refund)))
+	var qp: Variant = guests.get("queue_patience_ticks", null)
+	if qp is Dictionary:
+		b.queue_patience_min = float(qp.get("min", b.queue_patience_min))
+		b.queue_patience_max = maxf(b.queue_patience_min, float(qp.get("max", b.queue_patience_max)))
+	b.queue_impatient_decay = maxf(0.0, float(guests.get("queue_impatient_decay", b.queue_impatient_decay)))
+	b.queue_abandon_happiness = maxf(0.0, float(guests.get("queue_abandon_happiness", b.queue_abandon_happiness)))
+	b.queue_weight_cells = maxf(0.0, float(guests.get("queue_weight_cells", b.queue_weight_cells)))
+	b.max_guests_per_cell = maxi(1, int(guests.get("max_guests_per_cell", b.max_guests_per_cell)))
+	b.crowd_reroute_ticks = maxi(1, int(guests.get("crowd_reroute_ticks", b.crowd_reroute_ticks)))
+	b.crowd_ticks = maxi(1, int(guests.get("crowd_ticks", b.crowd_ticks)))
+	b.crowd_decay = maxf(0.0, float(guests.get("crowd_decay", b.crowd_decay)))
 	b.start_money = int(economy.get("start_money", b.start_money))
 	b.entry_fee = int(economy.get("entry_fee", b.entry_fee))
 	b.path_cost = int(economy.get("path_cost", b.path_cost))

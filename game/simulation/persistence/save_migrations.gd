@@ -3,7 +3,7 @@ extends RefCounted
 ## Versionstrin for savefiler. Tilføj et trin pr. ny save_version:
 ##   1) hæv CURRENT, 2) tilføj `static func _v<N>_to_v<N+1>(d) -> Dictionary`, 3) registrér i _step().
 
-const CURRENT: int = 3
+const CURRENT: int = 4
 
 
 ## Migrerer en (evt. ældre) save til CURRENT. Returnerer {} hvis versionen er ukendt/nyere.
@@ -29,6 +29,8 @@ static func _step(from_version: int, d: Dictionary) -> Dictionary:
 			return _v1_to_v2(d)
 		2:
 			return _v2_to_v3(d)
+		3:
+			return _v3_to_v4(d)
 	push_error("SaveMigrations: intet trin fra v%d" % from_version)
 	return {}
 
@@ -109,5 +111,35 @@ static func _v2_to_v3(d: Dictionary) -> Dictionary:
 		var wd: Dictionary = park["world"]
 		if not wd.has("vomit"):
 			wd["vomit"] = []
+	out["park"] = park
+	return out
+
+
+## v3 → v4 (M7, én version for hele milepælen – senere M7-tasks (T-104..T-106) udvider dette trin):
+## T-102: config/opskrifter/salgshistorik på attraktioner. T-103: køstier (QUEUE-tiles ligger i
+## world.tiles, ingen ekstra felter) og gæsters tålmodighed/køplads/blokering.
+static func _v3_to_v4(d: Dictionary) -> Dictionary:
+	var out: Dictionary = d.duplicate(true)
+	var park: Dictionary = SaveCodec.dict(out, "park")
+	for a: Variant in SaveCodec.arr(park, "attractions"):
+		if a is Dictionary:
+			var ad: Dictionary = a
+			for k: String in ["config", "recipes", "customers_today", "revenue_days", "payback_day"]:
+				if not ad.has(k):
+					ad[k] = {"config": {}, "recipes": [], "customers_today": 0, "revenue_days": [],
+						"payback_day": -1}[k]
+	for g: Variant in SaveCodec.arr(park, "guests"):
+		if g is Dictionary:
+			var gd: Dictionary = g
+			if not gd.has("patience"):
+				gd["patience"] = 1050.0
+			if not gd.has("queue_index"):
+				gd["queue_index"] = -1
+			if not gd.has("blocked_ticks"):
+				gd["blocked_ticks"] = 0
+	if park.get("world") is Dictionary:
+		var wd: Dictionary = park["world"]
+		if not wd.has("queue_paths"):
+			wd["queue_paths"] = []
 	out["park"] = park
 	return out

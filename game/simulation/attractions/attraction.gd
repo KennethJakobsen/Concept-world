@@ -54,6 +54,25 @@ var ride_ticks_override: int = 0
 var load_ticks: int = 0
 ## T-091: passagerer i dag (nulstilles ved dagsskifte).
 var riders_today: int = 0
+## M7 (T-102): ændrede config-nøgler (resten = def.config default).
+var config: Dictionary = {}
+## M7 (T-102): slåede-til opskrifter (shops).
+var recipes: Array[String] = []
+var customers_today: int = 0
+var revenue_today: int = 0
+## Omsætning de sidste (op til) 7 afsluttede dage, ældst først.
+var revenue_days: PackedInt32Array = PackedInt32Array()
+var payback_day: int = -1
+var upkeep_total: int = 0
+var supplies_total: int = 0
+## Brøkdel af varekøb, der endnu ikke er bogført (kr < 1).
+var supplies_frac: float = 0.0
+## Config låst ved turstart (gemmes ikke; tom = brug aktuel).
+var _locked: Dictionary = {}
+## M7 (T-103): køsti fra indgang til ende (afledt af verden, gemmes ikke).
+var queue_cells: Array[Vector2i] = []
+## Køens rækkefølge er ændret siden sidste queue_changed.
+var queue_dirty: bool = false
 
 
 func is_coaster() -> bool:
@@ -80,28 +99,88 @@ func is_ride() -> bool:
 
 
 func ride_ticks() -> int:
-	return ride_ticks_override if ride_ticks_override > 0 else def.ride_ticks
+	if ride_ticks_override > 0:
+		return ride_ticks_override
+	return int(round(cfg("ride_ticks"))) if def.config.has("ride_ticks") else def.ride_ticks
+
+
+## M7: config-værdi (låst under en tur). Ukendt nøgle → def-værdi/1.0.
+func cfg(key: String) -> float:
+	if _locked.has(key):
+		return float(_locked[key])
+	return cfg_current(key)
+
+
+func cfg_current(key: String) -> float:
+	var e: Dictionary = def.config.get(key, {})
+	if e.is_empty():
+		match key:
+			"capacity":
+				return float(def.capacity)
+			"ride_ticks":
+				return float(def.ride_ticks)
+		return 1.0
+	return clampf(float(config.get(key, e["default"])), float(e["min"]), float(e["max"]))
+
+
+func _cfg_ratio(key: String) -> float:
+	var e: Dictionary = def.config.get(key, {})
+	if e.is_empty() or not config.has(key) or float(e["default"]) == 0.0:
+		return 1.0
+	return cfg_current(key) / float(e["default"])
+
+
+func effective_capacity() -> int:
+	return maxi(1, int(round(cfg("capacity")))) if def.config.has("capacity") else def.capacity
+
+
+## GDD §1: drift × (0.7 + 0.3 × cap/default).
+func upkeep_per_day() -> int:
+	if not config.has("capacity"):
+		return def.running_cost_per_day
+	return int(round(def.running_cost_per_day * (0.7 + 0.3 * _cfg_ratio("capacity"))))
+
+
+func _speed() -> float:
+	return cfg("speed") if config.has("speed") or _locked.has("speed") else 1.0
+
+
+## Multiplikator på excitement: turlængde og hastighed (1.0 uden ændringer).
+func excitement_mult() -> float:
+	var m: float = 1.0
+	if def.config.has("ride_ticks"):
+		var e: Dictionary = def.config["ride_ticks"]
+		var rt: float = cfg("ride_ticks")
+		if rt != float(e["default"]):
+			m *= clampf(0.85 + 0.15 * rt / float(e["default"]), 0.85, 1.15)
+	return m * _speed()
+
+
+func intensity_mult() -> float:
+	var sp: float = _speed()
+	return sp * sp
 
 
 ## Excitement på 0..100-skalaen (rutsjebane: ratings × scale).
 func excitement_value(scale: float = 10.0) -> int:
 	if is_coaster():
 		return int(round(float(ratings.get("excitement", 0.0)) * scale))
-	return def.excitement
+	var m: float = excitement_mult()
+	return def.excitement if m == 1.0 else int(round(def.excitement * m))
 
 
 ## Intensitet 0..100 (rutsjebane: ratings × scale, ellers data).
 func intensity_value(scale: float = 10.0) -> float:
 	if is_coaster():
 		return float(ratings.get("intensity", 0.0)) * scale
-	return def.intensity
+	return def.intensity * intensity_mult()
 
 
 ## Kvalme 0..100 (rutsjebane: ratings × scale, ellers data).
 func nausea_value(scale: float = 10.0) -> float:
 	if is_coaster():
 		return float(ratings.get("nausea", 0.0)) * scale
-	return def.nausea
+	return def.nausea * intensity_mult()
 
 
 ## Byggepris inkl. banestykker.
@@ -125,8 +204,13 @@ func ride_progress_at(tl: int) -> float:
 	var elapsed: int = total - tl - load_ticks
 	return clampf(float(elapsed) / float(run), 0.0, 1.0)
 
+## GDD §1: tab pr. tur × hastighed.
 func effective_reliability() -> float:
-	return minf(1.0, def.reliability + reliability_bonus)
+	var base: float = def.reliability
+	var sp: float = _speed()
+	if sp != 1.0:
+		base = clampf(1.0 - (1.0 - base) * sp, 0.0, 1.0)
+	return minf(1.0, base + reliability_bonus)
 
 
 func _init(p_id: int, p_def: AttractionDef, p_origin: Vector2i) -> void:
@@ -155,6 +239,19 @@ func occupies(cell: Vector2i) -> bool:
 
 func enqueue(guest_id: int) -> void:
 	queue.append(guest_id)
+	queue_dirty = true
+
+
+func dequeue(guest_id: int) -> void:
+	if queue.has(guest_id):
+		queue.erase(guest_id)
+		queue_dirty = true
+
+
+func clear_queue() -> void:
+	if not queue.is_empty():
+		queue.clear()
+		queue_dirty = true
 
 
 func tick() -> void:
@@ -166,12 +263,17 @@ func tick() -> void:
 			var done: Array = riders.duplicate()
 			riders.clear()
 			ride_finished.emit(done)
+			_locked = {}
 		return
 	if queue.is_empty():
 		return
-	var n: int = mini(def.capacity, queue.size())
+	_locked = {}
+	for k: String in def.config:
+		_locked[k] = cfg_current(k)
+	var n: int = mini(effective_capacity(), queue.size())
 	for i in n:
 		riders.append(queue.pop_front())
+	queue_dirty = true
 	ticks_left = ride_ticks()
 	ride_started.emit()
 
@@ -191,6 +293,11 @@ func to_save() -> Dictionary:
 		"entrance_cell": SaveCodec.v2i(entrance_cell),
 		"prizes_won": prizes_won, "prize_cost_total": prize_cost_total,
 		"riders_today": riders_today,
+		"config": SaveCodec.float_dict(config), "recipes": recipes.duplicate(),
+		"customers_today": customers_today, "revenue_today": revenue_today,
+		"revenue_days": Array(revenue_days), "payback_day": payback_day,
+		"upkeep_total": upkeep_total, "supplies_total": supplies_total,
+		"supplies_frac": SaveCodec.f(supplies_frac), "locked_config": SaveCodec.float_dict(_locked),
 	}
 
 
@@ -221,4 +328,19 @@ static func from_save(d: Dictionary, p_def: AttractionDef) -> Attraction:
 	a.prizes_won = int(d.get("prizes_won", 0))
 	a.prize_cost_total = int(d.get("prize_cost_total", 0))
 	a.riders_today = int(d.get("riders_today", 0))
+	a.config = SaveCodec.to_float_dict(d.get("config", {}))
+	var rl: Variant = d.get("recipes", [])
+	if rl is Array:
+		for r: Variant in rl:
+			if not a.recipes.has(str(r)):
+				a.recipes.append(str(r))
+	a.customers_today = int(d.get("customers_today", 0))
+	a.revenue_today = int(d.get("revenue_today", 0))
+	for v: Variant in SaveCodec.arr(d, "revenue_days"):
+		a.revenue_days.append(int(v))
+	a.payback_day = int(d.get("payback_day", -1))
+	a.upkeep_total = int(d.get("upkeep_total", 0))
+	a.supplies_total = int(d.get("supplies_total", 0))
+	a.supplies_frac = SaveCodec.to_f(d.get("supplies_frac"), 0.0)
+	a._locked = SaveCodec.to_float_dict(d.get("locked_config", {}))
 	return a

@@ -58,7 +58,12 @@ func _h(a: Vector2i, b: Vector2i) -> int:
 	return absi(a.x - b.x) + absi(a.y - b.y)
 
 
-func _astar(from: Vector2i, to: Vector2i) -> Array[Vector2i]:
+## M7 (ADR-005 §1): A* hvor `avoid` koster +penalty (ingen cache, ingen transport). Cellen er ikke forbudt.
+func find_path_avoiding(from: Vector2i, to: Vector2i, avoid: Vector2i, penalty: int) -> Array[Vector2i]:
+	return _astar(from, to, avoid, penalty)
+
+
+func _astar(from: Vector2i, to: Vector2i, avoid: Vector2i = Vector2i(-99999, -99999), penalty: int = 0) -> Array[Vector2i]:
 	var empty: Array[Vector2i] = []
 	if not _world.is_walkable(from) or not _world.is_walkable(to):
 		return empty
@@ -88,7 +93,7 @@ func _astar(from: Vector2i, to: Vector2i) -> Array[Vector2i]:
 			var n: Vector2i = cur + d
 			if closed.has(n) or not _world.is_walkable(n):
 				continue
-			var ng: int = g[cur] + 1
+			var ng: int = g[cur] + (1 + penalty if n == avoid else 1)
 			if not g.has(n) or ng < g[n]:
 				g[n] = ng
 				came[n] = cur

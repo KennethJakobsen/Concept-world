@@ -19,7 +19,31 @@ func _init() -> void:
 	for d in ScenarioDef.list_all():
 		if not d.is_sandbox():
 			_scenario_runs(d)
+	_m7_perf()
 	quit(0)
+
+
+## T-103 / ADR-005 §7: 500 gæster, ms pr. tick (budget 4 ms headless desktop) + køopgivelser.
+func _m7_perf() -> void:
+	print("\n=== T-103: ydeevne med 500 gæster (budget ≤ 4 ms/tick) ===")
+	var Q: GDScript = load("res://tests/test_m7_queues.gd")
+	for sd in [99, 7]:
+		var s: ParkSim = Q.call("mass_park", sd)
+		for i in 700:
+			s.update(SimClock.TICK_DELTA)
+		var t0: int = Time.get_ticks_usec()
+		for i in 400:
+			s.update(SimClock.TICK_DELTA)
+		var ms: float = float(Time.get_ticks_usec() - t0) / 400.0 / 1000.0
+		var queued: int = 0
+		var bored: int = 0
+		for g: Guest in s.guests.values():
+			if g.state == Guest.State.QUEUING:
+				queued += 1
+				if g.patience <= 0.0:
+					bored += 1
+		print("seed %d | gæster %d | %.2f ms/tick | i kø %d (utålmodige %d) | trange celler %d | %s" % [sd,
+			s.guests.size(), ms, queued, bored, s.crowded_cells().size(), "OK" if ms <= 4.0 else "OVER BUDGET"])
 
 
 ## T-041: startpark med/uden personale, 7 dage, flere seeds. Samme layout som _run.

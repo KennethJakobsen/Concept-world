@@ -41,6 +41,11 @@ var wet_ticks: int = 0
 var transport_id: int = -1
 var transport_dest: Vector2i = Vector2i.ZERO
 var transport_resume_state: int = State.WALKING
+## M7 (T-103): resterende tålmodighed i køen (ticks; < 0 = utålmodig), plads i køen (0 = forrest)
+## og ticks blokeret af en fuld celle.
+var patience: float = 1050.0
+var queue_index: int = -1
+var blocked_ticks: int = 0
 
 
 func is_on_transport() -> bool:
@@ -69,6 +74,7 @@ func to_save() -> Dictionary:
 		"items": _items_to_save(), "wet_ticks": wet_ticks,
 		"transport_id": transport_id, "transport_dest": SaveCodec.v2i(transport_dest),
 		"transport_resume_state": transport_resume_state,
+		"patience": SaveCodec.f(patience), "queue_index": queue_index, "blocked_ticks": blocked_ticks,
 	}
 
 
@@ -104,6 +110,9 @@ static func from_save(d: Dictionary) -> Guest:
 	g.transport_id = int(d.get("transport_id", -1))
 	g.transport_dest = SaveCodec.to_v2i(d.get("transport_dest"), Vector2i.ZERO)
 	g.transport_resume_state = int(d.get("transport_resume_state", State.WALKING))
+	g.patience = SaveCodec.to_f(d.get("patience"), 1050.0)
+	g.queue_index = int(d.get("queue_index", -1))
+	g.blocked_ticks = int(d.get("blocked_ticks", 0))
 	var its: Variant = d.get("items", [])
 	if its is Array:
 		for it: Variant in its:

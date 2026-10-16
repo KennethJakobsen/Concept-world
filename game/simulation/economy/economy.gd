@@ -6,7 +6,7 @@ extends RefCounted
 signal money_changed(money: int)
 
 const CATEGORIES: Array[String] = ["entry", "tickets", "build", "path", "decor", "refund", "running",
-	"wages", "repairs", "research", "prizes"]
+	"wages", "repairs", "research", "prizes", "supplies"]
 
 var money: int = 0
 ## Dagens totaler: kategori -> int (indtægter positive, udgifter negative).

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://blpnf7js8jwb"
-path="res://.godot/imported/logo_full_src.svg-5c8e1e7ce2dbb3c99874177d58de4355.ctex"
+uid="uid://drvslafbgopk5"
+path="res://.godot/imported/atm.png-ab163ae6a82f94de660f8d56e3f7f4d4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/logo/src/logo_full_src.svg"
-dest_files=["res://.godot/imported/logo_full_src.svg-5c8e1e7ce2dbb3c99874177d58de4355.ctex"]
+source_file="res://assets/ui/thumbs/atm.png"
+dest_files=["res://.godot/imported/atm.png-ab163ae6a82f94de660f8d56e3f7f4d4.ctex"]
 
 [params]
 
@@ -38,6 +38,3 @@ process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
 detect_3d/compress_to=1
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false

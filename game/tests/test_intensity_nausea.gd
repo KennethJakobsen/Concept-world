@@ -177,8 +177,8 @@ func test_migration_v2_to_v3() -> void:
 	var v2: Dictionary = {"save_version": 2, "park": {"world": {"litter": [[1, 2, 3]]},
 		"guests": [{"id": 1}], "attractions": [{"id": 1}]}}
 	var m: Dictionary = SaveMigrations.migrate(v2)
-	assert_eq(m["save_version"], 3)
-	assert_eq(SaveMigrations.CURRENT, 3)
+	assert_eq(m["save_version"], SaveMigrations.CURRENT)
+	assert_true(SaveMigrations.CURRENT >= 3)
 	var g: Dictionary = m["park"]["guests"][0]
 	assert_eq(g["intensity_tolerance"], 50.0)
 	assert_eq(g["nausea"], 0.0)
@@ -191,7 +191,7 @@ func test_v1_fixture_chain_to_v3() -> void:
 	var d: Dictionary = SaveCodec.parse(FileAccess.get_file_as_string("res://tests/fixtures/save_v1.json"))
 	assert_eq(int(d["save_version"]), 1)
 	var m: Dictionary = SaveMigrations.migrate(d)
-	assert_eq(m["save_version"], 3)
+	assert_eq(m["save_version"], SaveMigrations.CURRENT)
 	assert_true(m["park"].has("research"))
 	for g: Dictionary in m["park"]["guests"]:
 		assert_eq(g["nausea"], 0.0)

@@ -33,6 +33,10 @@ signal item_gained(guest_id: int, item_id: StringName)
 signal item_lost(guest_id: int, item_id: StringName, cell: Vector2i)
 ## T-090: toget passerede et splash-stykke (udledt af ride_progress i sim-ticket).
 signal ride_splash(attraction_id: int, cell: Vector2i)
+## M7 (T-102): salg i dette tick, building_id -> kr (højst én gang pr. tick).
+signal sales_tick(sales: Dictionary)
+## M7 (T-103): køens rækkefølge/køsti er ændret (bridge: placér gæster på køpladser).
+signal queue_changed(attraction_id: int)
 
 const PHASE_DAWN: StringName = &"dawn"
 const PHASE_DAY: StringName = &"day"
@@ -102,6 +106,8 @@ var _decor_def_cache: Dictionary = {}
 var _aura: Dictionary = {}  ## celle -> glæde/tick fra dekoration (cache)
 var _aura_dirty: bool = true
 var _phase: StringName = &""  ## afledt af day_tick, gemmes ikke
+var _sales: Dictionary = {}  ## building_id -> kr i nuværende tick (T-102)
+var _queues_dirty: bool = true  ## T-103: køkæder skal genberegnes
 
 
 ## p_balance = null → indlæs content/economy.json + guests.json (defaults ved mangler).
@@ -149,6 +155,21 @@ func cmd_remove_path(cell: Vector2i) -> bool:
 	for did in _decor_ids_at(cell):
 		_remove_decor(did)
 	economy.earn(balance.path_refund, "refund")
+	return true
+
+
+## M7 (T-103): køsti (QUEUE-celle) på græs. PathFinder følger den ikke.
+func cmd_place_queue_path(cell: Vector2i) -> bool:
+	if not world.can_place_path(cell) or not economy.can_afford(balance.queue_path_cost):
+		return false
+	economy.spend(balance.queue_path_cost, "path")
+	return world.place_queue(cell)
+
+
+func cmd_remove_queue_path(cell: Vector2i) -> bool:
+	if not world.remove_queue(cell):
+		return false
+	economy.earn(balance.queue_path_refund, "refund")
 	return true
 
 
@@ -235,7 +256,7 @@ func is_reachable(a: Attraction) -> bool:
 				if not _reachable.has(n) and world.is_walkable(n):
 					_reachable[n] = true
 					frontier.append(n)
-	return _reachable.has(a.entrance_cell)
+	return _reachable.has(approach_cell(a))
 
 
 ## Åben og nåbar fra indgangen – kun disse tæller i tiltrækning og max_guests.
@@ -243,15 +264,333 @@ func is_operating(a: Attraction) -> bool:
 	return a.is_open and is_reachable(a)
 
 
-## Er køen fuld (capacity × queue_max_cycles)?
+## Er køen fuld (queue_capacity)?
 func is_queue_full(a: Attraction) -> bool:
+	return a.queue.size() >= queue_capacity(a)
+
+
+# --- Køer (M7, T-103, ADR-005 §2) ---
+
+## Køstiens celler × slots. Uden køsti: virtuel kø ved indgangen som før M7,
+## max(queue_default_max, kapacitet × queue_max_cycles) (queue_max_cycles <= 0 = ubegrænset).
+func queue_capacity(a: Attraction) -> int:
+	_ensure_queues()
+	if not a.queue_cells.is_empty():
+		return a.queue_cells.size() * balance.queue_slots_per_cell
 	if balance.queue_max_cycles <= 0.0:
-		return false
-	return a.queue.size() >= int(ceil(a.def.capacity * balance.queue_max_cycles))
+		return 1 << 30
+	return maxi(balance.queue_default_max, int(ceil(a.effective_capacity() * balance.queue_max_cycles)))
+
+
+## Cellen gæster går til for at stille sig i kø: sti-cellen ved køens ende, ellers indgangen.
+func approach_cell(a: Attraction) -> Vector2i:
+	_ensure_queues()
+	if a.queue_cells.is_empty():
+		return a.entrance_cell
+	var end: Vector2i = a.queue_cells[a.queue_cells.size() - 1]
+	for d in DIRS:
+		var n: Vector2i = end + d
+		if n != a.entrance_cell and world.get_tile(n) == ParkWorld.Tile.PATH:
+			return n
+	return a.entrance_cell
+
+
+## Celle for køplads i (0 = forrest). Uden køsti: indgangscellen.
+func queue_slot_cell(a: Attraction, index: int) -> Vector2i:
+	_ensure_queues()
+	if a.queue_cells.is_empty():
+		return a.entrance_cell
+	var c: int = clampi(index / balance.queue_slots_per_cell, 0, a.queue_cells.size() - 1)
+	return a.queue_cells[c]
+
+
+## Kontinuert position (gitterenheder, cellecentrum = celle + 0.5) for køplads i.
+## Pladserne ligger på række langs køstien; uden køsti i et lille gitter ved indgangen.
+func queue_slot_position(a: Attraction, index: int) -> Vector2:
+	_ensure_queues()
+	var i: int = maxi(0, index)
+	if a.queue_cells.is_empty():
+		var col: int = i % 3
+		var row: int = (i / 3) % 3
+		return Vector2(a.entrance_cell) + Vector2(0.5 + (col - 1) * 0.3, 0.5 + (row - 1) * 0.3)
+	var slots: int = balance.queue_slots_per_cell
+	var c: int = i / slots
+	var k: int = i % slots
+	var n: int = a.queue_cells.size()
+	if c >= n:  # overløb (kapaciteten er faldet): samles ved enden
+		c = n - 1
+		k = slots - 1
+	var cell: Vector2i = a.queue_cells[c]
+	var prev: Vector2i = a.entrance_cell if c == 0 else a.queue_cells[c - 1]
+	var dir: Vector2 = Vector2(prev - cell)
+	var t: float = 0.5 - (float(k) + 0.5) / float(slots)  # slot 0 nærmest forrest
+	return Vector2(cell) + Vector2(0.5, 0.5) + dir * t
+
+
+## Deterministisk visuel sideforskydning (6 baner, ±0.3 celle) ud fra gæste-id. Påvirker ikke sim.
+static func guest_lane_offset(guest_id: int) -> float:
+	var lane: int = posmod(guest_id * 7, 6)
+	return (float(lane) - 2.5) / 2.5 * 0.3
+
+
+## Gæstens visningsposition i gitterenheder (cellecentrum = celle + 0.5): køplads, når hun står
+## i kø, ellers interpoleret mellem cell og next_cell med bane-forskydning (ADR-005 §1).
+func guest_position(guest_id: int) -> Vector2:
+	if not guests.has(guest_id):
+		return Vector2(-1, -1)
+	var g: Guest = guests[guest_id]
+	if g.state == Guest.State.QUEUING and g.transport_id < 0:
+		var a: Attraction = get_attraction(g.target_attraction_id)
+		if a != null and g.queue_index >= 0:
+			return queue_slot_position(a, g.queue_index)
+	var c0: Vector2 = Vector2(g.cell) + Vector2(0.5, 0.5)
+	var c1: Vector2 = Vector2(g.next_cell) + Vector2(0.5, 0.5)
+	var pos: Vector2 = c0.lerp(c1, clampf(g.progress, 0.0, 1.0))
+	var off: float = guest_lane_offset(g.id)
+	var dir: Vector2 = c1 - c0
+	if dir.length_squared() > 0.0001 and dir.length_squared() < 2.5:
+		var side: Vector2 = Vector2(-dir.y, dir.x).normalized()
+		return pos + side * off
+	return pos + Vector2(off, guest_lane_offset(g.id / 6 + 3))
+
+
+## Ventetid i ticks for en ny gæst bagerst i køen.
+func wait_ticks_estimate(a: Attraction) -> int:
+	var cap: int = maxi(1, a.effective_capacity())
+	var cycles: int = int(ceil(float(a.queue.size()) / float(cap)))
+	var cur: int = a.ticks_left if a.is_running() else 0
+	return cur + cycles * a.ride_ticks()
+
+
+func _ensure_queues() -> void:
+	if not _queues_dirty:
+		return
+	_queues_dirty = false
+	var taken: Dictionary = {}
+	var ordered: Array[Attraction] = attractions.duplicate()
+	ordered.sort_custom(func(x: Attraction, y: Attraction) -> bool: return x.id < y.id)
+	for a in ordered:
+		var chain: Array[Vector2i] = []
+		if not a.is_transport():
+			chain = world.queue_chain(a.entrance_cell, taken)
+		for c in chain:
+			taken[c] = true
+		if chain != a.queue_cells:
+			a.queue_cells = chain
+			a.queue_dirty = true
+			queue_changed.emit(a.id)
+	_reachable_dirty = true
+
+
+func _join_queue(g: Guest, a: Attraction) -> void:
+	a.enqueue(g.id)
+	g.queue_index = a.queue.size() - 1
+	g.patience = _patience_for(g)
+	g.blocked_ticks = 0
+
+
+## Tålmodighed i [min, max] ud fra et hash af gæst og besøg (bruger ikke sim-RNG).
+func _patience_for(g: Guest) -> float:
+	var span: int = int(balance.queue_patience_max - balance.queue_patience_min)
+	if span <= 0:
+		return balance.queue_patience_min
+	var h: int = posmod((g.id * 73856093) ^ ((g.rides_left + 1) * 19349663) ^ (g.money * 83492791), span + 1)
+	return balance.queue_patience_min + float(h)
+
+
+## Tålmodighed tikker ned (halvt så hurtigt med underholdning). Under 0: glæden falder og
+## tanken queue_bored; når tabet når queue_abandon_happiness, opgiver gæsten (ingen refusion).
+func _tick_queue_patience(g: Guest) -> void:
+	if g.transport_id >= 0:
+		return
+	var a: Attraction = get_attraction(g.target_attraction_id)
+	if a == null:
+		return
+	g.patience -= balance.queue_entertained_factor if _entertained(g) else 1.0
+	if g.patience > 0.0:
+		return
+	g.happiness = clampf(g.happiness - balance.queue_impatient_decay, 0.0, 100.0)
+	g.thought = M7_THOUGHTS["queue_bored"]
+	var limit: float = balance.queue_abandon_happiness / maxf(1e-6, balance.queue_impatient_decay)
+	if -g.patience >= limit:
+		a.dequeue(g.id)
+		g.queue_index = -1
+		g.paid = 0
+		g.state = Guest.State.WALKING
+		g.rejected_ids.append(a.id)
+		g.target_attraction_id = -1
+		_choose_goal(g)
+		g.thought = M7_THOUGHTS["queue_gave_up"]
+
+
+func _entertained(g: Guest) -> bool:
+	for sid in staff:
+		var s: Staff = staff[sid]
+		if s.def.id == StaffAI.ENTERTAINER and absi(s.cell.x - g.cell.x) + absi(s.cell.y - g.cell.y) <= s.def.work_radius:
+			return true
+	return false
+
+
+func _sync_queue_indices() -> void:
+	_ensure_queues()
+	for a in attractions:
+		if not a.queue_dirty:
+			continue
+		a.queue_dirty = false
+		for i in a.queue.size():
+			var gid: int = int(a.queue[i])
+			if guests.has(gid):
+				(guests[gid] as Guest).queue_index = i
+		queue_changed.emit(a.id)
+
+
+# --- Belægning (M7, T-103, ADR-005 §1) ---
+
+func occupancy(cell: Vector2i) -> int:
+	return world.occupancy(cell)
+
+
+## Celler, der har været fulde længere end crowd_ticks (overlay).
+func crowded_cells() -> Array[Vector2i]:
+	return world.crowded_cells(balance.crowd_ticks)
+
+
+func _counts_on_cell(g: Guest) -> bool:
+	return g.state == Guest.State.WALKING or g.state == Guest.State.LEAVING or g.state == Guest.State.RESTING
+
+
+func _rebuild_occupancy() -> void:
+	world.occupancy_reset()
+	_flow_built = false
+	_reroute_budget = REROUTES_PER_TICK
+	var ids: Array = guests.keys()
+	ids.sort()
+	for gid in ids:
+		var g: Guest = guests[gid]
+		if _counts_on_cell(g):
+			world.occupancy_add(g.cell, 1)
+
+
+var _flow_built: bool = false
+## ADR-005 §7: højst så mange ekstra A*-omlægninger pr. tick (resten prøver ved næste interval).
+const REROUTES_PER_TICK: int = 8
+var _reroute_budget: int = REROUTES_PER_TICK
+
+
+## Bygges først, når en gæst blokeres i et tick (billigt uden trængsel).
+func _build_flow() -> void:
+	if _flow_built:
+		return
+	_flow_built = true
+	_counterflow.clear()
+	_cell_guests.clear()
+	var ids: Array = guests.keys()
+	ids.sort()
+	for gid in ids:
+		var g: Guest = guests[gid]
+		if not _counts_on_cell(g):
+			continue
+		var cl: Array = _cell_guests.get(g.cell, [])
+		cl.append(g.id)
+		_cell_guests[g.cell] = cl
+		if g.next_cell != g.cell:
+			var k: Vector4i = Vector4i(g.cell.x, g.cell.y, g.next_cell.x, g.next_cell.y)
+			var l: Array = _counterflow.get(k, [])
+			l.append(g.id)
+			_counterflow[k] = l
+
+
+## Celle -> gæste-id'er på cellen ved tickets start (id-orden).
+var _cell_guests: Dictionary = {}
+
+
+func _swap_any(g: Guest, cell: Vector2i) -> bool:
+	_build_flow()
+	for oid: int in _cell_guests.get(cell, []):
+		if oid == g.id or not guests.has(oid):
+			continue
+		var o: Guest = guests[oid]
+		if o.cell != cell or not _counts_on_cell(o) or o.state == Guest.State.RESTING:
+			continue
+		world.occupancy_add(cell, -1)
+		world.occupancy_add(g.cell, 1)
+		if o.next_cell == g.cell:
+			o.next_cell = o.path.pop_front() if not o.path.is_empty() else g.cell
+		else:
+			if o.next_cell != o.cell:
+				o.path.push_front(o.next_cell)
+			o.next_cell = cell
+		o.cell = g.cell
+		o.progress = 0.0
+		o.blocked_ticks = 0
+		return true
+	return false
+
+
+## Gæste-id'er, der vil fra a til b (bygges pr. tick i id-orden): modgående trafik bytter plads.
+var _counterflow: Dictionary = {}
+
+
+## Bytter plads med en modgående gæst i `cell` (belægningen er uændret). Returnerer true ved byt.
+func _swap_with_counterflow(g: Guest, cell: Vector2i) -> bool:
+	_build_flow()
+	var k: Vector4i = Vector4i(cell.x, cell.y, g.cell.x, g.cell.y)
+	var l: Array = _counterflow.get(k, [])
+	while not l.is_empty():
+		var oid: int = int(l.pop_front())
+		if not guests.has(oid):
+			continue
+		var o: Guest = guests[oid]
+		if o.cell != cell or o.next_cell != g.cell or not _counts_on_cell(o):
+			continue
+		world.occupancy_add(cell, -1)
+		world.occupancy_add(g.cell, 1)
+		o.cell = g.cell
+		o.progress = 0.0
+		o.blocked_ticks = 0
+		o.next_cell = o.cell if o.path.is_empty() else o.path.pop_front()
+		return true
+	return false
+
+
+## Kan gæsten træde ind i cellen? Parkens indgang er undtaget; efter 3 × crowd_reroute_ticks
+## presser hun sig igennem (ingen fastlåsning).
+func _cell_has_room(g: Guest, cell: Vector2i) -> bool:
+	if cell == world.entrance or world.occupancy(cell) < balance.max_guests_per_cell:
+		return true
+	# Modgående trafik: byt plads med en gæst, der vil den anden vej (belægningen er uændret).
+	if _swap_with_counterflow(g, cell):
+		return true
+	# Efter 3 × crowd_reroute_ticks presser hun sig forbi: bytter plads med en gæst i cellen,
+	# som får et skridt tilbage på sin rute. Belægningen er uændret, og ingen kan låses inde.
+	if g.blocked_ticks >= 3 * balance.crowd_reroute_ticks:
+		_swap_any(g, cell)
+		return true
+	return false
+
+
+func _reroute_around(g: Guest, blocked: Vector2i) -> void:
+	var dest: Vector2i = g.path[g.path.size() - 1] if not g.path.is_empty() else g.next_cell
+	if dest == blocked and g.path.is_empty():
+		if g.target_attraction_id < 0 and g.target_decor_id < 0 and g.state == Guest.State.WALKING:
+			_wander_step(g)
+		return
+	if _reroute_budget <= 0:
+		return
+	_reroute_budget -= 1
+	var route: Array[Vector2i] = path_finder.find_path_avoiding(g.cell, dest, blocked, balance.crowd_reroute_penalty)
+	if not route.is_empty():
+		var old_next: Vector2i = g.next_cell
+		var old_progress: float = g.progress
+		_set_route(g, route)
+		if g.next_cell == old_next:
+			g.progress = old_progress
 
 
 func _on_tile_changed(_cell: Vector2i, _tile: int) -> void:
 	_reachable_dirty = true
+	_queues_dirty = true
+	_ensure_queues()
 
 
 func _has_open_ride() -> bool:
@@ -329,6 +668,8 @@ func price_value(a: Attraction, g: Guest = null) -> float:
 				if a.satisfies_need(k):
 					need = maxf(need, float(g.needs.get(k, 0.0)))
 		v = a.def.ticket_price * (1.0 + need / 100.0)
+		for rid in a.recipes:
+			v *= 1.0 + float(a.def.recipe(rid).get("price_tolerance", 0.0))
 	return v * (balance.happiness_price_base + happiness * balance.happiness_price_factor)
 
 
@@ -419,14 +760,18 @@ func _tick_self_repair() -> void:
 
 func _on_attraction_placed(a: Attraction) -> void:
 	attractions.append(a)
+	_queues_dirty = true
+	_ensure_queues()
 	a.ride_finished.connect(_on_ride_finished.bind(a))
 	a.ride_started.connect(_on_ride_started.bind(a))
 
 
 func _on_attraction_removed(a: Attraction) -> void:
 	attractions.erase(a)
+	_queues_dirty = true
+	_ensure_queues()
 	var affected: Array = a.queue + a.riders
-	a.queue.clear()
+	a.clear_queue()
 	a.riders.clear()
 	for gid in affected:
 		if guests.has(gid):
@@ -436,6 +781,7 @@ func _on_attraction_removed(a: Attraction) -> void:
 			g.state = Guest.State.WALKING
 			g.target_attraction_id = -1
 			g.transport_id = -1
+			g.queue_index = -1
 			_choose_goal(g)
 	attraction_removed.emit(a.id)
 
@@ -459,6 +805,8 @@ func _on_tick(_tick: int) -> void:
 		a.tick()
 		if tl_before >= 0 and a.profile != null and a.profile.splashes > 0:
 			_check_splash(a, tl_before)
+	_ensure_queues()
+	_rebuild_occupancy()
 	var ids: Array = guests.keys()
 	ids.sort()
 	for gid in ids:
@@ -466,11 +814,17 @@ func _on_tick(_tick: int) -> void:
 			var g: Guest = guests[gid]
 			if _update_needs(g):
 				_tick_guest(g)
+	world.update_crowd(balance.max_guests_per_cell)
+	_sync_queue_indices()
 	if day_tick % hour_ticks() == 0:
 		_tick_items_hour()
 	StaffAI.tick_all(self)
 	_tick_self_repair()
 	_update_phase()
+	if not _sales.is_empty():
+		var sales: Dictionary = _sales
+		_sales = {}
+		sales_tick.emit(sales)
 
 
 ## T-090: ride_splash når toget i dette tick passerer slutningen af et splash-stykke.
@@ -489,8 +843,17 @@ func _end_day() -> void:
 	for a in attractions:
 		a.riders_today = 0
 	for a in attractions:
-		if a.def.running_cost_per_day > 0:
-			economy.charge(a.def.running_cost_per_day, "running")
+		var upkeep: int = a.upkeep_per_day()
+		if upkeep > 0:
+			economy.charge(upkeep, "running")
+			a.upkeep_total += upkeep
+		a.revenue_days.append(a.revenue_today)
+		while a.revenue_days.size() > 7:
+			a.revenue_days.remove_at(0)
+		a.revenue_today = 0
+		a.customers_today = 0
+		if a.payback_day < 0 and a.build_value() > 0 and _net_total(a) >= a.build_value():
+			a.payback_day = day
 	var sids: Array = staff.keys()
 	sids.sort()
 	for sid in sids:
@@ -532,7 +895,8 @@ func _update_needs(g: Guest) -> bool:
 		# T-033: utilfredse gæster opgiver køen og går hjem (betalt billet refunderes ikke).
 		var q: Attraction = get_attraction(g.transport_id if g.transport_id >= 0 else g.target_attraction_id)
 		if q != null:
-			q.queue.erase(g.id)
+			q.dequeue(g.id)
+		g.queue_index = -1
 		g.transport_id = -1
 		g.paid = 0
 		g.state = Guest.State.WALKING
@@ -619,17 +983,24 @@ func _choose_goal(g: Guest) -> void:
 	urgent.sort_custom(func(x: String, y: String) -> bool:
 		return g.needs[x] > g.needs[y] or (g.needs[x] == g.needs[y] and x < y))
 	for need: String in urgent:
-		var best: Attraction = null
-		var best_route: Array[Vector2i] = []
+		# ADR-005 §3: score = manhattan + kølængde × queue_weight_cells; fyldte køer springes over.
+		var cands: Array = []
 		for a in attractions:
 			if not a.satisfies_need(need) or not _usable(g, a):
 				continue
-			var route: Array[Vector2i] = _route(g, a.entrance_cell)
-			if route.is_empty():
-				continue
-			if best == null or route.size() < best_route.size():
-				best = a
+			var ac: Vector2i = approach_cell(a)
+			var sc: float = absi(ac.x - g.cell.x) + absi(ac.y - g.cell.y) + a.queue.size() * balance.queue_weight_cells
+			cands.append([sc, a.id, a])
+		cands.sort_custom(func(x: Array, y: Array) -> bool:
+			return float(x[0]) < float(y[0]) or (float(x[0]) == float(y[0]) and int(x[1]) < int(y[1])))
+		var best: Attraction = null
+		var best_route: Array[Vector2i] = []
+		for c: Array in cands:
+			var route: Array[Vector2i] = _route(g, approach_cell(c[2]))
+			if not route.is_empty():
+				best = c[2]
 				best_route = route
+				break
 		if best != null:
 			g.seeking_need = need
 			g.thought = NEED_THOUGHTS.get(need, "")
@@ -645,7 +1016,7 @@ func _choose_goal(g: Guest) -> void:
 		var options: Array[Attraction] = []
 		for a in attractions:
 			if (a.is_ride() or a.is_sideshow()) and _usable(g, a) \
-					and not _route(g, a.entrance_cell).is_empty():
+					and not _route(g, approach_cell(a)).is_empty():
 				options.append(a)
 		if not options.is_empty():
 			# Vægtet efter excitement (min. vægt 1); for tamme forlystelser vægtes ned (T-084).
@@ -659,7 +1030,7 @@ func _choose_goal(g: Guest) -> void:
 				if r < 0:
 					a = o
 					break
-			_go_to(g, a, _route(g, a.entrance_cell))
+			_go_to(g, a, _route(g, approach_cell(a)))
 			if _too_tame(g, a):
 				g.thought = TOO_TAME_THOUGHT
 			return
@@ -691,10 +1062,11 @@ func _try_impulse(g: Guest) -> bool:
 			continue
 		if not a.is_open or a.broken or g.rejected_ids.has(a.id) or a.price > g.money:
 			continue
-		var d: Vector2i = (a.entrance_cell - g.cell).abs()
+		var ac: Vector2i = approach_cell(a)
+		var d: Vector2i = (ac - g.cell).abs()
 		if d.x + d.y > balance.impulse_radius:
 			continue
-		var route: Array[Vector2i] = _route(g, a.entrance_cell)
+		var route: Array[Vector2i] = _route(g, ac)
 		if route.is_empty() or route.size() - 1 > balance.impulse_radius:
 			continue
 		if best == null or route.size() < best_route.size():
@@ -776,7 +1148,10 @@ func _remove_guest(g: Guest) -> void:
 
 
 func _tick_guest(g: Guest) -> void:
-	if g.state == Guest.State.QUEUING or g.state == Guest.State.RIDING:
+	if g.state == Guest.State.QUEUING:
+		_tick_queue_patience(g)
+		return
+	if g.state == Guest.State.RIDING:
 		return
 	if g.state == Guest.State.RESTING:
 		g.rest_ticks_left -= 1
@@ -798,11 +1173,21 @@ func _tick_guest(g: Guest) -> void:
 		if absi(g.next_cell.x - g.cell.x) + absi(g.next_cell.y - g.cell.y) > 1:
 			_board_transport(g)
 			return
+		if g.progress + guest_speed >= 1.0 - 1e-6 and not _cell_has_room(g, g.next_cell):
+			# ADR-005 §1: cellen er fuld – vent, og læg ruten om efter crowd_reroute_ticks.
+			g.blocked_ticks += 1
+			if g.blocked_ticks % balance.crowd_reroute_ticks == 0 and g.blocked_ticks < 3 * balance.crowd_reroute_ticks:
+				_reroute_around(g, g.next_cell)
+			return
 		g.progress += guest_speed
 		if g.progress < 1.0 - 1e-6:
 			return
+		if _counts_on_cell(g):
+			world.occupancy_add(g.cell, -1)
+			world.occupancy_add(g.next_cell, 1)
 		g.cell = g.next_cell
 		g.progress = 0.0
+		g.blocked_ticks = 0
 		if g.litter_steps_left > 0:
 			g.litter_steps_left -= 1
 			if g.litter_steps_left == 0:
@@ -830,7 +1215,7 @@ func _arrived(g: Guest) -> void:
 		g.target_decor_id = -1
 	if g.target_attraction_id >= 0:
 		var a: Attraction = get_attraction(g.target_attraction_id)
-		if a != null and a.entrance_cell == g.cell:
+		if a != null and approach_cell(a) == g.cell:
 			var reason: String = _try_enter(g, a)
 			if reason == "":
 				return
@@ -864,19 +1249,33 @@ func _try_enter(g: Guest, a: Attraction) -> String:
 		return reason
 	g.money -= a.price
 	g.paid = a.price
-	economy.earn(a.price, "tickets")
-	purchase_made.emit(g.id, a.id, a.price)
-	a.total_revenue += a.price
+	_record_sale(g, a, a.price)
 	a.total_visitors += 1
+	a.customers_today += 1
 	g.state = Guest.State.QUEUING
-	a.enqueue(g.id)
+	_join_queue(g, a)
 	return ""
+
+
+## T-102: bogfører et salg (billet/vare) og samler det til sales_tick.
+func _record_sale(g: Guest, a: Attraction, amount: int) -> void:
+	economy.earn(amount, "tickets")
+	purchase_made.emit(g.id, a.id, amount)
+	a.total_revenue += amount
+	a.revenue_today += amount
+	if amount > 0:
+		_sales[a.id] = int(_sales.get(a.id, 0)) + amount
+
+
+func _net_total(a: Attraction) -> int:
+	return a.total_revenue - a.upkeep_total - a.supplies_total - a.prize_cost_total
 
 
 func _on_ride_started(a: Attraction) -> void:
 	for gid in a.riders:
 		if guests.has(gid):
 			(guests[gid] as Guest).state = Guest.State.RIDING
+			(guests[gid] as Guest).queue_index = -1
 	if a.is_ride() or a.is_transport():
 		ride_cycle_started.emit(a.id)
 
@@ -889,8 +1288,11 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 		if a.is_transport():
 			_finish_transport(g, a)
 			continue
+		_exit_at(g, a)
 		_apply_visit(g, a)
 		if a.def.kind == "shop":
+			_apply_recipes(g, a)
+			_price_effects(g, a)
 			if a.def.carry_item != "":
 				_give_item(g, StringName(a.def.carry_item))
 			g.litter_steps_left = rng.randi_range(1, maxi(1, balance.litter_carry_cells))
@@ -907,6 +1309,32 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 	if (a.is_ride() or a.is_transport()) and not guest_ids.is_empty() and a.def.reliability < 1.0 \
 			and rng.randf() >= a.effective_reliability():
 		_break(a)
+
+
+## Udgang: indgangscellen (eller en nabosti med plads, så gæster ikke hober sig op – ADR-005 §1).
+## Med køsti, hvor indgangen ikke kan nås, bliver gæsten ved køens ende.
+func _exit_at(g: Guest, a: Attraction) -> void:
+	var cands: Array[Vector2i] = []
+	if world.is_walkable(a.entrance_cell):
+		is_reachable(a)  # bygger _reachable
+		if g.cell == a.entrance_cell or _reachable.has(a.entrance_cell):
+			cands.append(a.entrance_cell)
+			for d in DIRS:
+				var n: Vector2i = a.entrance_cell + d
+				if world.get_tile(n) == ParkWorld.Tile.PATH and _reachable.has(n):
+					cands.append(n)
+	if cands.is_empty():
+		cands.append(g.cell)
+	var pick: Vector2i = cands[0]
+	for c in cands:
+		if world.occupancy(c) < balance.max_guests_per_cell:
+			pick = c
+			break
+	g.cell = pick
+	g.next_cell = pick
+	g.path.clear()
+	g.progress = 0.0
+	world.occupancy_add(pick, 1)
 
 
 ## T-090: vandbane – tørst += wet_thirst og våd i balance.wet_ticks.
@@ -1042,7 +1470,121 @@ func attraction_stats(attraction_id: int) -> Dictionary:
 		"prizes_won": a.prizes_won, "prize_cost_total": a.prize_cost_total,
 		"riders_today": a.riders_today,
 		"splashes": a.profile.splashes if a.profile != null else 0,
+		"revenue_today": a.revenue_today,
+		"revenue_yesterday": a.revenue_days[a.revenue_days.size() - 1] if not a.revenue_days.is_empty() else 0,
+		"revenue_total": a.total_revenue, "upkeep_total": a.upkeep_total,
+		"supplies_total": a.supplies_total, "net_total": _net_total(a),
+		"customers_today": a.customers_today, "revenue_days": Array(a.revenue_days),
+		"payback_day": a.payback_day, "config": effective_config(a.id),
+		"recipes": a.recipes.duplicate(),
+		"queue_length": a.queue.size(), "queue_capacity": queue_capacity(a),
+		"queue_cells": a.queue_cells.size(), "wait_ticks_estimate": wait_ticks_estimate(a),
 	}
+
+
+# --- M7 (T-102): config, opskrifter, prisvirkninger ---
+
+const TOO_MUCH_THOUGHT: String = "Jeg spiste for meget."
+## M7-tanke-id'er → standardtekst (UI kan oversætte via id'et).
+const M7_THOUGHTS: Dictionary = {
+	"too_much": TOO_MUCH_THOUGHT,
+	"queue_too_long": QUEUE_FULL_THOUGHT,
+	"queue_bored": "Det tager for lang tid!",
+	"queue_gave_up": "Jeg gider ikke vente mere.",
+	"crowded": "Her er alt for mange mennesker!",
+}
+
+
+## Sætter en config-nøgle (clamp til min/max). Gælder fra næste tur. Sporbaner har ingen config.
+func cmd_set_config(attraction_id: int, key: String, value: float) -> bool:
+	var a: Attraction = get_attraction(attraction_id)
+	if a == null or a.is_tracked() or not a.def.config.has(key):
+		return false
+	var e: Dictionary = a.def.config[key]
+	var v: float = clampf(value, float(e["min"]), float(e["max"]))
+	if key != "speed":
+		v = round(v)
+	if v == float(e["default"]):
+		a.config.erase(key)
+	else:
+		a.config[key] = v
+	for g: Guest in guests.values():
+		g.rejected_ids.erase(attraction_id)
+	return true
+
+
+func cmd_set_recipe(attraction_id: int, recipe_id: String, on: bool) -> bool:
+	var a: Attraction = get_attraction(attraction_id)
+	if a == null or a.def.recipe(recipe_id).is_empty():
+		return false
+	if on and not a.recipes.has(recipe_id):
+		a.recipes.append(recipe_id)
+		a.recipes.sort()
+	elif not on:
+		a.recipes.erase(recipe_id)
+	for g: Guest in guests.values():
+		g.rejected_ids.erase(attraction_id)
+	return true
+
+
+## {capacity, ride_ticks, speed, upkeep_per_day, excitement, intensity, nausea} ({} hvis ukendt).
+func effective_config(attraction_id: int) -> Dictionary:
+	var a: Attraction = get_attraction(attraction_id)
+	if a == null:
+		return {}
+	return {
+		"capacity": a.effective_capacity(),
+		"ride_ticks": int(round(a.cfg_current("ride_ticks"))) if a.def.config.has("ride_ticks") else a.ride_ticks(),
+		"speed": a.cfg_current("speed") if a.def.config.has("speed") else 1.0,
+		"upkeep_per_day": a.upkeep_per_day(),
+		"excitement": _excitement(a), "intensity": a.intensity_value(_rating_scale()),
+		"nausea": a.nausea_value(_rating_scale()),
+	}
+
+
+## Opskrifter: ekstra behovsændring/glæde pr. salg; varekøb bogføres som "supplies".
+func _apply_recipes(g: Guest, a: Attraction) -> void:
+	for rid in a.recipes:
+		var r: Dictionary = a.def.recipe(rid)
+		if r.is_empty():
+			continue
+		var sat: Dictionary = r["satisfies"]
+		for k: String in sat:
+			if g.needs.has(k):
+				g.needs[k] = clampf(g.needs[k] + float(sat[k]), 0.0, 100.0)
+		g.happiness = clampf(g.happiness + float(r["happiness"]), 0.0, 100.0)
+		_add_supplies(a, float(r["cost_per_sale"]))
+
+
+func _add_supplies(a: Attraction, amount: float) -> void:
+	a.supplies_frac += amount
+	var whole: int = int(floor(a.supplies_frac + 1e-9))
+	if whole > 0:
+		a.supplies_frac -= whole
+		a.supplies_total += whole
+		economy.charge(whole, "supplies")
+
+
+## Lav pris: chance (sim-RNG) for ét ekstra køb med kvalme og tanken too_much.
+func _price_effects(g: Guest, a: Attraction) -> void:
+	if a.def.price_effects.is_empty() or a.def.ticket_price <= 0:
+		return
+	var ratio: float = float(a.price) / float(a.def.ticket_price)
+	for e: Dictionary in a.def.price_effects:
+		if ratio >= float(e["below_ratio"]):
+			continue
+		if rng.randf() >= float(e["extra_purchase_chance"]) or g.money < a.price:
+			continue
+		g.money -= a.price
+		_record_sale(g, a, a.price)
+		g.nausea = clampf(g.nausea + float(e["nausea"]), 0.0, 100.0)
+		var tid: String = str(e["thought"])
+		g.thought = str(M7_THOUGHTS.get(tid, tid)) if tid != "" else TOO_MUCH_THOUGHT
+		_apply_recipes(g, a)
+		if g.nausea >= balance.vomit_threshold:
+			var chance: float = (g.nausea - balance.vomit_threshold) / maxf(1e-6, 100.0 - balance.vomit_threshold)
+			if rng.randf() < chance:
+				_vomit(g)
 
 
 ## T-085: økonomi pr. kategori. Alle Economy.CATEGORIES er med (0 som default).
@@ -1219,6 +1761,10 @@ func _apply_surroundings(g: Guest) -> void:
 		if s.def.id == StaffAI.ENTERTAINER and absi(s.cell.x - g.cell.x) + absi(s.cell.y - g.cell.y) <= s.def.work_radius:
 			delta += balance.entertainer_happiness_per_tick
 	if (g.state == Guest.State.WALKING or g.state == Guest.State.LEAVING) \
+			and world.crowd_ticks_at(g.cell) > balance.crowd_ticks and g.cell != world.entrance:
+		delta -= balance.crowd_decay
+		g.thought = M7_THOUGHTS["crowded"]
+	if (g.state == Guest.State.WALKING or g.state == Guest.State.LEAVING) \
 			and world.get_litter(g.cell) >= balance.dirty_threshold:
 		delta -= balance.happiness_penalty_dirty_per_tick
 		g.thought = balance.thought_dirty
@@ -1259,7 +1805,7 @@ func _break(a: Attraction) -> void:
 	if a.is_transport():
 		path_finder.invalidate()
 	var q: Array = a.queue.duplicate()
-	a.queue.clear()
+	a.clear_queue()
 	for gid in q:
 		if not guests.has(gid):
 			continue
@@ -1271,6 +1817,7 @@ func _break(a: Attraction) -> void:
 		g.state = Guest.State.WALKING
 		g.target_attraction_id = -1
 		g.transport_id = -1
+		g.queue_index = -1
 		_choose_goal(g)
 		g.thought = balance.thought_broken
 	a.self_repair_elapsed = 0
@@ -1770,17 +2317,16 @@ func _board_transport(g: Guest) -> void:
 		return
 	g.money -= a.price
 	g.paid = a.price
-	economy.earn(a.price, "tickets")
-	purchase_made.emit(g.id, a.id, a.price)
-	a.total_revenue += a.price
+	_record_sale(g, a, a.price)
 	a.total_visitors += 1
+	a.customers_today += 1
 	a.riders_today += 1
 	g.transport_id = a.id
 	g.transport_dest = g.next_cell
 	g.transport_resume_state = g.state
 	g.progress = 0.0
 	g.state = Guest.State.QUEUING
-	a.enqueue(g.id)
+	_join_queue(g, a)
 
 
 ## Turen er slut: gæsten står ved den anden stations indgang og fortsætter sin rute.
@@ -1962,6 +2508,13 @@ func _park_load(park: Dictionary) -> void:
 		scenario = Scenario.from_save(sc, sdef)
 	_aura_dirty = true
 	_reachable_dirty = true
+	_queues_dirty = true
+	_ensure_queues()
+	for a in attractions:
+		a.queue_dirty = false
+		for i in a.queue.size():
+			if guests.has(int(a.queue[i])):
+				(guests[int(a.queue[i])] as Guest).queue_index = i  # også migrerede saves
 	_phase = phase()
 
 

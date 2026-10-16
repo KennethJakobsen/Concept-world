@@ -252,7 +252,9 @@ Klik: træ-"tok". Hover: blødt tik (lav volumen). Placering: eksisterende bygge
 
 ---
 
-## Logo (T-139)
+## Logo (T-139, v2 T-143)
+
+v2: én samlet silhuet – et bredt skilt med en kuppel, hvor pariserhjulet stiger op af skiltet. Ordmærket "CONCEPT" står på træet, og "WORLD" står i det røde felt, der udgør skiltets nederste del (ikke et løst bånd). Bogstaverne er egne monoline-former (runde ender, mørk kontur), så der ingen fontafhængighed er. Symbolet er samme opbygning i en cirkel: hjulet over et træfelt med "CW" og en rød bund.
 
 Filer i `game/assets/ui/logo/` (alt er eget arbejde, håndskrevet SVG):
 
@@ -261,10 +263,10 @@ Filer i `game/assets/ui/logo/` (alt er eget arbejde, håndskrevet SVG):
 | `logo_full.svg` + `logo_full_{1024,512,256}.png` | Fuldt logo: buet træskilt med messingkant, pærer, pariserhjul-medaljon og ordmærket "Concept / WORLD". Hovedmenu, boot-splash |
 | `logo_symbol.svg` + `logo_symbol_{512,256,64}.png` | Kun symbol (medaljon med pærekrans og pariserhjul). App-ikon og knapper |
 | `logo_symbol_small.svg` + `favicon_{32,16}.png` | Forenklet symbol til små størrelser (favicon) |
-| `src/logo_full_src.svg` | Kilde med `<text>`. `logo_full.svg` er konverteret til paths (inkscape `--export-text-to-path`), så den ikke afhænger af en font |
+| `src/gen_logo.py` | Generator for alle tre SVG'er (`python3 gen_logo.py`). PNG'er eksporteres med inkscape |
 
 - **Minimumsstørrelser:** fuldt logo mindst 256 px bredt. Detaljeret symbol mindst 48 px. Under det bruges `logo_symbol_small`.
 - **Farver:** kun paletten: `wood_*`, `brass`/`brass_light`, `paper`, `cream_text`, `ink` og `red_sign` (WORLD-båndet). Kurvene i hjulet bruger kategorifarverne.
 - **Frirum:** mindst 1/8 af logoets højde på alle sider. Logoet må ikke strækkes, omfarves eller lægges på en baggrund med lav kontrast, dvs. mellembrun træfarve.
 - **Baggrund:** logoet er designet til himmelblå/grøn (spilscenen) og `wood_dark`. PNG'erne har transparent baggrund.
-- Preview: `docs/screenshots/t139_logo.png`.
+- Preview: `docs/screenshots/t143_logo.png` (v1: `t139_logo.png`).

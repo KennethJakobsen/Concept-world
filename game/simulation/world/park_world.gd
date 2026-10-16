@@ -9,7 +9,9 @@ signal litter_changed(cell: Vector2i, amount: int)
 ## T-091: transportkanter er ændret.
 signal links_changed
 
-enum Tile { GRASS, PATH, ATTRACTION, ENTRANCE, DECOR }  ## DECOR = græs-dekoration (træ/blomster)
+enum Tile { GRASS, PATH, ATTRACTION, ENTRANCE, DECOR, QUEUE }  ## DECOR = græs-dekoration; QUEUE = køsti (M7)
+## M7 (ADR-005 §2): alias brugt i kontrakten (ParkWorld.CellKind.QUEUE).
+const CellKind = Tile
 
 const TILE_SIZE: float = 1.0
 
@@ -29,6 +31,13 @@ var _track: Dictionary = {}
 ## T-091: transportkanter i stigrafen: Vector2i -> Array[{to, cost, owner_id}]. Afledt; gemmes ikke.
 var _links: Dictionary = {}
 
+## M7 (ADR-005 §1): gæster pr. celle (index = y * width + x). Afledt; gemmes ikke.
+var occupancy_counts: PackedInt32Array = PackedInt32Array()
+## Ticks cellen har været fuld i træk. Afledt; gemmes ikke.
+var crowd_counts: PackedInt32Array = PackedInt32Array()
+## Celle-index med occupancy > 0 eller crowd > 0 (til billig nulstilling).
+var _occ_touched: Dictionary = {}
+
 ## Over dette niveau (>=) må banen ligge over stier/bygninger/decor.
 const TRACK_CLEARANCE: int = 2
 
@@ -38,6 +47,8 @@ func _init(p_width: int, p_height: int) -> void:
 	height = p_height
 	_tiles.resize(width * height)
 	_tiles.fill(Tile.GRASS)
+	occupancy_counts.resize(width * height)
+	crowd_counts.resize(width * height)
 	entrance = Vector2i(width / 2, height - 1)
 	_tiles[_idx(entrance)] = Tile.ENTRANCE
 
@@ -79,6 +90,95 @@ func _set_tile(cell: Vector2i, tile: int) -> void:
 
 func can_place_path(cell: Vector2i) -> bool:
 	return get_tile(cell) == Tile.GRASS and not has_low_track(cell)
+
+
+# --- Køstier (M7, ADR-005 §2) ---
+
+func is_queue(cell: Vector2i) -> bool:
+	return get_tile(cell) == Tile.QUEUE
+
+
+func place_queue(cell: Vector2i) -> bool:
+	if not can_place_path(cell):
+		return false
+	_set_tile(cell, Tile.QUEUE)
+	return true
+
+
+func remove_queue(cell: Vector2i) -> bool:
+	if get_tile(cell) != Tile.QUEUE:
+		return false
+	_set_tile(cell, Tile.GRASS)
+	return true
+
+
+## Ordnet køkæde fra cellen ved indgangen og udad. Kæden stopper ved forgrening, ved
+## celler i `taken` (andre attraktioners kø) og ved andre attraktioners indgange.
+func queue_chain(entrance_cell: Vector2i, taken: Dictionary) -> Array[Vector2i]:
+	var out: Array[Vector2i] = []
+	var cur: Vector2i = entrance_cell
+	var seen: Dictionary = {entrance_cell: true}
+	while true:
+		var nexts: Array[Vector2i] = []
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var n: Vector2i = cur + d
+			if not seen.has(n) and not taken.has(n) and get_tile(n) == Tile.QUEUE:
+				nexts.append(n)
+		if nexts.size() != 1 and not (out.is_empty() and nexts.size() > 0):
+			break
+		cur = nexts[0]
+		seen[cur] = true
+		out.append(cur)
+	return out
+
+
+# --- Belægning (M7, ADR-005 §1) ---
+
+func occupancy(cell: Vector2i) -> int:
+	return occupancy_counts[_idx(cell)] if in_bounds(cell) else 0
+
+
+func occupancy_add(cell: Vector2i, n: int) -> void:
+	if not in_bounds(cell):
+		return
+	var i: int = _idx(cell)
+	occupancy_counts[i] += n
+	_occ_touched[i] = true
+
+
+## Nulstiller belægning (crowd-tællerne bevares).
+func occupancy_reset() -> void:
+	for i: int in _occ_touched:
+		occupancy_counts[i] = 0
+
+
+## Opdaterer crowd-tællere ud fra belægningen og rydder index-sættet for tomme celler.
+func update_crowd(max_per_cell: int) -> void:
+	var drop: Array = []
+	for i: int in _occ_touched:
+		if occupancy_counts[i] >= max_per_cell:
+			crowd_counts[i] += 1
+		else:
+			crowd_counts[i] = 0
+			if occupancy_counts[i] == 0:
+				drop.append(i)
+	for i: int in drop:
+		_occ_touched.erase(i)
+
+
+func crowd_ticks_at(cell: Vector2i) -> int:
+	return crowd_counts[_idx(cell)] if in_bounds(cell) else 0
+
+
+## Celler, der har været fulde i mindst min_ticks (sorteret, til overlay).
+func crowded_cells(min_ticks: int = 1) -> Array[Vector2i]:
+	var idx: Array = _occ_touched.keys()
+	idx.sort()
+	var out: Array[Vector2i] = []
+	for i: int in idx:
+		if crowd_counts[i] >= min_ticks:
+			out.append(Vector2i(i % width, i / width))
+	return out
 
 
 # --- Rutsjebanespor (T-068) ---

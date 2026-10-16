@@ -102,6 +102,20 @@ func _enter_tree() -> void:
 		get_viewport().size_changed.connect(_on_viewport_resized)
 
 
+var _in_layout: bool = false
+var _last_vp: Vector2 = Vector2.ZERO
+
+
+## Genberegner layoutet straks (samme frame), når dock/top-bar ændrer størrelse.
+func _relayout() -> void:
+	if _in_layout:
+		return
+	if is_inside_tree():
+		layout(get_viewport().get_visible_rect().size)
+	elif _last_vp != Vector2.ZERO:
+		layout(_last_vp)
+
+
 func _on_viewport_resized() -> void:
 	layout(get_viewport().get_visible_rect().size)
 
@@ -110,8 +124,15 @@ func _on_viewport_resized() -> void:
 ## ombrydning af knapperne ved den givne bredde, så byggemenuen altid ligger helt synlig i bunden.
 func layout(vp: Vector2) -> void:
 	var root: Control = get_node_or_null("Root")
-	if root == null:
+	if root == null or _in_layout:
 		return
+	_in_layout = true
+	_last_vp = vp
+	_layout_impl(root, vp)
+	_in_layout = false
+
+
+func _layout_impl(root: Control, vp: Vector2) -> void:
 	root.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	root.position = Vector2.ZERO
 	root.size = vp
@@ -124,9 +145,10 @@ func layout(vp: Vector2) -> void:
 	# Byggedok: centreret, svæver 12 px over bunden; kortgitteret tilpasses bredden.
 	var cols: int = int((w - 40.0) / (BuildDock.CARD_SIZE.x + BuildDock.CARD_GAP))
 	build_dock.set_grid(cols, 2 if vp.y >= 900.0 else 1)
-	var bs: Vector2 = bottom.get_combined_minimum_size()
+	var bs: Vector2 = build_dock.dock_size()
 	bs.x = minf(bs.x, w)
 	bottom.size = bs
+	bs = bottom.size  # Control kan klampe til (cachet) minimum – placér ud fra den faktiske størrelse
 	bottom.position = Vector2(maxf(MARGIN, (vp.x - bs.x) * 0.5), maxf(MARGIN, vp.y - 12.0 - bs.y))
 	for p: Control in [top, bottom]:
 		_sort_tree(p)
@@ -280,6 +302,8 @@ func _build_ui() -> void:
 	build_dock.build()
 	build_dock.set_anchors_preset(Control.PRESET_TOP_LEFT)  # placeres af layout()
 	build_dock.category_selected.connect(set_tab)
+	build_dock.layout_changed.connect(_relayout)  # T-141: luk/åbn kort -> dock tilbage i bunden
+	top_bar.minimum_size_changed.connect(_relayout)  # T-142: tekst-/datoskift -> ingen hop
 	build_dock.card_pressed.connect(request_build_tool)
 	_add_build_button(null, "select", "Vælg", 0)
 	_add_build_button(null, "remove", "Fjern", 0)
@@ -289,6 +313,8 @@ func _build_ui() -> void:
 		_tab_buttons[t] = build_dock.add_category(t)
 	_add_build_button(null, "path", "Sti", 0, "paths")
 	TooltipService.attach(_build_buttons["path"], "Sti (1)", "Træk for at bygge, højreklik-træk for at fjerne.")
+	_add_build_button(null, "queue_path", "Køsti", 15, "paths", "$15",  # T-140
+		"Byg fra en forlystelses indgang og ud til en sti. Gæsterne stiller sig i kø langs køstien.\nTræk for at bygge, højreklik-træk for at fjerne.")
 	for d: AttractionDef in load_defs():
 		var body: String = card_body(d)
 		if CoasterContent.is_tracked_kind(d.kind):
@@ -492,8 +518,7 @@ static func card_body(d: AttractionDef) -> String:
 func set_tab(tab: String) -> void:
 	current_tab = tab
 	build_dock.set_category(tab)
-	if is_inside_tree():
-		layout(get_viewport().get_visible_rect().size)
+	_relayout()
 
 
 func visible_build_ids() -> Array[String]:
@@ -737,7 +762,12 @@ static func attraction_text(a: Attraction, p_sim: ParkSim) -> String:
 	lines.append("Besøgende: %d" % a.total_visitors)
 	lines.append("Omsætning: $%d" % a.total_revenue)
 	lines.append("Pris: $%d" % a.price)
-	lines.append("Kø: %d" % a.queue.size())
+	var qs: Dictionary = p_sim.attraction_stats(a.id) if p_sim != null else {}
+	if qs.has("queue_capacity") and int(qs["queue_capacity"]) < 100000:  # T-140: kølængde og ventetid (indtil T-112's kø-fane)
+		lines.append("Kø: %d/%d, ventetid ca. %d s" % [int(qs["queue_length"]), int(qs["queue_capacity"]),
+			int(qs.get("wait_ticks_estimate", 0)) / SimClock.TICKS_PER_SECOND])
+	else:
+		lines.append("Kø: %d" % a.queue.size())
 	return "\n".join(lines)
 
 
@@ -1074,7 +1104,7 @@ static func system_for_build(build_id: String) -> StringName:
 
 ## Forsknings-id for en byggeknap ("" = aldrig låst).
 static func research_id(build_id: String) -> String:
-	if build_id in ["select", "path", "remove"] or build_id.begins_with("staff:"):
+	if build_id in ["select", "path", "queue_path", "remove"] or build_id.begins_with("staff:"):
 		return ""
 	if build_id.begins_with("decor:"):
 		return build_id.substr(6)
