@@ -43,6 +43,53 @@ func _esc() -> void:
 	await _frames(3)
 
 
+## T-093: bygger tømmerrende, minitog og svævebane med spor-værktøjet (BuildTool) og
+## tjekker scene-noderne (spor, tog, stationer, endestation).
+func _build_tracks(v: ParkView) -> void:
+	var sim: ParkSim = v.sim
+	var bt: BuildTool = current_scene.get_node("BuildTool") as BuildTool
+	var was_enabled: bool = sim.research.enabled
+	sim.research.enabled = false
+	sim.economy.money += 1000000
+	var flume: Array[String] = ["flume_lift_up", "flume_lift_up", "flume_straight", "flume_straight", "flume_straight",
+		"flume_turn_right", "flume_turn_right", "flume_drop", "flume_straight", "flume_straight", "flume_straight",
+		"flume_straight", "flume_straight", "flume_turn_right", "flume_turn_right"]
+	var train: Array[String] = ["train_straight", "train_straight", "train_straight", "train_straight", "train_straight",
+		"train_turn_right", "train_turn_right", "train_straight", "train_straight", "train_straight", "train_straight",
+		"train_straight", "train_straight", "train_turn_right", "train_turn_right"]
+	var mono: Array[String] = []
+	for i in 8:
+		mono.append("monorail_straight")
+	var specs: Array = [["log_flume", Vector2i(6, 8), flume], ["mini_train", Vector2i(6, 18), train], ["monorail", Vector2i(6, 28), mono]]
+	for spec: Array in specs:
+		var def_id: String = spec[0]
+		_check(bt.set_tool("coaster:" + def_id), "spor-værktøj %s" % def_id)
+		var pal: Array[String] = bt.coaster_palette()
+		var sys: StringName = bt.coaster_system()
+		_check(not pal.is_empty() and pal.all(func(p: String) -> bool: return (CoasterContent.piece(p) as TrackPieceDef).system == sys),
+			"palette filtreret (%s: %d stykker)" % [sys, pal.size()])
+		var id: int = bt.place_coaster_station(spec[1], 1)
+		_check(id > 0, "station %s placeret" % def_id)
+		if id <= 0:
+			continue
+		var all_ok: bool = true
+		for p: String in spec[2]:
+			bt.set_coaster_piece(p)
+			all_ok = bt.place_coaster_piece() and all_ok
+		_check(all_ok, "%s: alle stykker placeret" % def_id)
+		if sim.get_attraction(id).is_transport():
+			_check(bt.can_place_end_station(), "endestation tilbydes")
+			_check(bt.place_end_station(), "endestation placeret")
+		var errs: Array[String] = bt.finish_coaster()
+		_check(errs.is_empty(), "%s færdig %s" % [def_id, errs])
+		await _frames(2)
+		_check(v.coaster_mesh(id) != null and v.coaster_train(id) != null, "%s: spor + tog i scenen" % def_id)
+		if sim.get_attraction(id).is_transport():
+			_check(v.end_station_node(id) is TrackStation, "svævebanens endestation i scenen")
+	sim.research.enabled = was_enabled
+	bt.set_tool("select")
+
+
 func _run() -> void:
 	var gs: Node = root.get_node_or_null("GameSession")
 	_check(gs != null, "autoload GameSession findes")
@@ -135,6 +182,8 @@ func _run() -> void:
 	_check(hud2 != null and hud2.get("sim") == v2.sim, "HUD følger ny sim efter load")
 	var lbl: Label = hud2.get("_top_label") as Label
 	_check(lbl != null and lbl.text.begins_with("$%d " % money_before), "HUD viser samme penge: '%s'" % (lbl.text if lbl else ""))
+
+	await _build_tracks(v2)
 
 	gs.call("go_to_main_menu")
 	await _frames(3)

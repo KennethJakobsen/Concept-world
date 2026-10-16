@@ -89,6 +89,8 @@ func set_tool(def_id: String) -> bool:
 		var a: Attraction = _view.sim.get_attraction(coaster_id) if _view != null and _view.sim != null else null
 		if a == null or a.def.id != def_id.substr(PREFIX_COASTER.length()):
 			coaster_id = -1
+	if def_id.begins_with(PREFIX_COASTER) and coaster_piece != "" and not coaster_palette().has(coaster_piece):
+		coaster_piece = ""  # T-093: stykket hører til et andet sporsystem
 	if grid_lines != null:
 		grid_lines.set_tool(def_id)
 	return true
@@ -133,6 +135,55 @@ func is_building_coaster() -> bool:
 
 func rotate_coaster() -> void:
 	coaster_heading = posmod(coaster_heading + 1, 4)
+
+
+## T-093: sporsystemet for det aktive spor-værktøj (&"" hvis intet).
+func coaster_system() -> StringName:
+	if not is_coaster_tool() or _view == null or _view.sim == null:
+		return &""
+	var def: AttractionDef = _view.sim.get_def(tool.substr(PREFIX_COASTER.length()))
+	return def.track_system() if def != null else &""
+
+
+## T-093: stykker til paletten for systemet (uden stationer), sorteret.
+func coaster_palette() -> Array[String]:
+	var out: Array[String] = []
+	var sys: StringName = coaster_system()
+	if sys == &"":
+		return out
+	var ps: Dictionary = CoasterContent.pieces(sys)
+	for id: String in ps:
+		if (ps[id] as TrackPieceDef).kind != "station":
+			out.append(id)
+	out.sort()
+	return out
+
+
+## T-093: endestationens stykke-id for åbne systemer (svævebanen), ellers "".
+func end_station_piece() -> String:
+	var sys: StringName = coaster_system()
+	if sys == &"" or bool(CoasterContent.system_def(sys).get("closed_loop", true)):
+		return ""
+	return CoasterContent.station_id(sys, "end")
+
+
+## "Endestation" tilbydes, når banen er længere end 1 stykke og ikke allerede har en.
+func can_place_end_station() -> bool:
+	if end_station_piece() == "" or not is_building_coaster():
+		return false
+	var a: Attraction = _view.sim.get_attraction(coaster_id)
+	return a.track != null and a.track.pieces.size() > 1 and a.track.end_station() == null
+
+
+func place_end_station() -> bool:
+	if not can_place_end_station():
+		play_error()
+		return false
+	var prev: String = coaster_piece
+	coaster_piece = end_station_piece()
+	var ok: bool = place_coaster_piece()
+	coaster_piece = prev
+	return ok
 
 
 ## Placerer stationen (første klik). Returnerer coaster-id eller -1.

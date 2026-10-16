@@ -67,6 +67,7 @@ class CoasterVis:
 	var acc: PackedFloat32Array
 	var total: float = 0.0
 	var vis_t: float = 0.0  ## interpoleret ride_progress
+	var end_station: Node3D  ## T-093: svævebanens endestation
 
 
 func _ready() -> void:
@@ -122,6 +123,7 @@ func setup(p_sim: ParkSim) -> void:
 	sim.ride_cycle_started.connect(_on_ride_cycle_started)
 	sim.coaster_changed.connect(_on_coaster_changed)
 	sim.guest_vomited.connect(_on_guest_vomited)
+	sim.ride_splash.connect(_on_ride_splash)
 	sim.prize_won.connect(_on_prize_won)
 	sim.item_gained.connect(_on_item_changed)
 	sim.item_lost.connect(_on_item_lost)
@@ -140,7 +142,8 @@ func _disconnect() -> void:
 			[sim.phase_changed, _on_phase_changed], [sim.purchase_made, _on_purchase_made],
 			[sim.litter_swept, _on_litter_swept], [sim.ride_cycle_started, _on_ride_cycle_started],
 			[sim.coaster_changed, _on_coaster_changed], [sim.guest_vomited, _on_guest_vomited],
-			[sim.prize_won, _on_prize_won], [sim.item_gained, _on_item_changed], [sim.item_lost, _on_item_lost]]:
+			[sim.prize_won, _on_prize_won], [sim.item_gained, _on_item_changed], [sim.item_lost, _on_item_lost],
+			[sim.ride_splash, _on_ride_splash]]:
 		var sig: Signal = pair[0]
 		if sig.is_connected(pair[1]):
 			sig.disconnect(pair[1])
@@ -347,6 +350,39 @@ func _on_ride_cycle_started(attraction_id: int) -> void:
 		_audio(&"sfx", &"ride_start", _attraction_pos(a))
 
 
+# --- T-093: sporsystemer ---
+
+const STATION_SCENES: Dictionary = {
+	&"flume": "res://scenes/props/flume_station.tscn",
+	&"train": "res://scenes/props/train_station.tscn",
+	&"monorail": "res://scenes/props/monorail_station.tscn",
+}
+
+
+func _on_ride_splash(_attraction_id: int, cell: Vector2i) -> void:
+	var pos: Vector3 = cell_center(cell)
+	_fx(&"splash", pos)
+	if _camera_near(pos):
+		_audio(&"sfx", &"splash", pos)
+
+
+## Stationsscene for et sporsystem (null = brug def.model).
+func _station_scene(system: StringName) -> PackedScene:
+	var path: String = STATION_SCENES.get(system, "")
+	if path == "":
+		return null
+	if not _scene_cache.has(path):
+		_scene_cache[path] = load(path) as PackedScene if ResourceLoader.exists(path) else null
+	return _scene_cache[path]
+
+
+## Drejer en stations-node efter sporstykket og sætter niveau (svævebanen).
+func _pose_station(n: Node3D, p: Dictionary) -> void:
+	n.rotation.y = -PI * 0.5 * int(p["heading"])
+	if n is TrackStation:
+		(n as TrackStation).level = int(p["level"])
+
+
 # --- T-088: opkast, præmier og ting ---
 
 func _on_guest_vomited(guest_id: int, cell: Vector2i) -> void:
@@ -516,7 +552,9 @@ func _on_tile_changed(cell: Vector2i, tile: int) -> void:
 
 
 func _on_attraction_placed(a: Attraction) -> void:
-	var scene: PackedScene = _model_scene(a.def)
+	var scene: PackedScene = _station_scene(a.def.track_system()) if a.is_tracked() else null
+	if scene == null:
+		scene = _model_scene(a.def)
 	if scene == null:
 		push_warning("ParkView: ingen scene for attraktion '%s'" % a.def.id)
 		return
@@ -540,6 +578,8 @@ func _on_attraction_removed(attraction_id: int) -> void:
 		cv.mesh.queue_free()
 		if cv.train != null:
 			cv.train.queue_free()
+		if cv.end_station != null:
+			cv.end_station.queue_free()
 		_coasters.erase(attraction_id)
 	_free_in(_smoke, attraction_id)
 	_free_in(_sparks, attraction_id)
@@ -718,7 +758,7 @@ func _sync_repair(sid: int, st: Staff, n: Node3D) -> void:
 
 
 func _update_guest(n: Node3D, g: Guest) -> void:
-	if g.state == Guest.State.RIDING:
+	if g.state == Guest.State.RIDING or sim.guest_state_name(g) == &"riding_transport":
 		n.visible = false
 		return
 	n.visible = true
@@ -832,13 +872,15 @@ func _on_coaster_changed(coaster_id: int) -> void:
 	if not pieces.is_empty():
 		var st: Node3D = _attractions.get(coaster_id, null)
 		if st != null:
-			st.rotation.y = -PI * 0.5 * int(pieces[0]["heading"])
+			_pose_station(st, pieces[0])
+	_sync_end_station(cv, a, pieces)
 	var open: bool = not a.building and a.profile != null
 	if open and cv.train == null:
 		cv.train = CoasterTrain.new()
 		cv.train.name = "Train%d" % coaster_id
 		_root.add_child(cv.train)
 		cv.train.set_cars(int(CoasterContent.train(a.def.train if a.def.train != "" else "basic_train").get("cars", 3)))
+		cv.train.set_style(a.track.system)
 		if _night >= 0.0:
 			cv.train.set_lights(_night)
 	elif not open and cv.train != null:
@@ -846,6 +888,39 @@ func _on_coaster_changed(coaster_id: int) -> void:
 		cv.train = null
 	if open:
 		_pose_train(cv, a, 0.0)
+
+
+## Svævebanens endestation (stykke med station_role "end") vises som egen node.
+func _sync_end_station(cv: CoasterVis, a: Attraction, pieces: Array) -> void:
+	var end_p: Dictionary = {}
+	for i in range(1, pieces.size()):
+		var d: TrackPieceDef = CoasterContent.piece(str(pieces[i]["def_id"]))
+		if d != null and d.kind == "station" and d.station_role == "end":
+			end_p = pieces[i]
+			break
+	if end_p.is_empty():
+		if cv.end_station != null:
+			cv.end_station.queue_free()
+			cv.end_station = null
+		return
+	if cv.end_station == null:
+		var scene: PackedScene = _station_scene(a.track.system)
+		if scene == null:
+			scene = _model_scene(a.def)
+		if scene == null:
+			return
+		cv.end_station = scene.instantiate()
+		cv.end_station.name = "EndStation%d" % a.id
+		_root.add_child(cv.end_station)
+		if _night >= 0.0:
+			_light_node(cv.end_station, _night)
+	var c: Vector2i = end_p["cell"]
+	cv.end_station.position = cell_center(c)
+	_pose_station(cv.end_station, end_p)
+
+
+func end_station_node(coaster_id: int) -> Node3D:
+	return (_coasters[coaster_id] as CoasterVis).end_station if _coasters.has(coaster_id) else null
 
 
 ## Toget følger ride_progress, interpoleret mellem ticks; står stille i stationen mellem ture.
@@ -874,6 +949,9 @@ func _pose_train(cv: CoasterVis, a: Attraction, t: float) -> void:
 	var scale: float = cv.total / a.profile.length if a.profile.length > 0.0 else 1.0
 	# Forreste vogn ved stationens forkant, så toget står i stationen ved t = 0.
 	var head: float = a.profile.position_at(t) * scale + CoasterTrain.CAR_SPACING * (n - 1) * 0.5 + 0.5
+	if a.is_transport():
+		# Svævebanen kører fra station til endestation og stopper der (intet loop).
+		head = minf(head, cv.total - 0.5)
 	var poses: Array[Transform3D] = []
 	for i in n:
 		poses.append(CoasterTrackMesh.pose_at(cv.line, cv.acc, head - i * CoasterTrain.CAR_SPACING))
