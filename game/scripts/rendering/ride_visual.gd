@@ -110,7 +110,15 @@ const BULB_ANCHORS: Dictionary = {
 	"PirateShip": ["Base"],
 	"SpaceRocket": ["Base"],
 	"DropTower": ["Pad"],
-	"SouvenirShop": ["Hut"],
+	"SouvenirShop": ["AwnTrim"],
+	# T-099: boder får lyskæden på markisekanten i stedet for fallback (øverste mesh).
+	"FriesStand": ["AwnTrim"],
+	"CoffeeStand": ["AwnTrim"],
+	"BalloonStand": ["CartTop"],
+	"CoconutShy": ["AwnTrim"],
+	"ShootingGallery": ["AwnTrim"],
+	"HookADuck": ["PoolRim"],
+	"StrengthTester": ["Platform"],
 }
 const BULB_SPACING: float = 0.35
 const BULB_MIN: int = 8

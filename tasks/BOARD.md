@@ -121,7 +121,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-090 | Sim: generaliseret spor, tømmerrende og minitog | simulation | review |
 | T-091 | Sim: svævebane – transport mellem to stationer | simulation | review |
 | T-092 | Grafik: trug, togskinner, monorail-bjælke og køretøjer | graphics | review |
-| T-099 | Bug: M6-props mangler teksturer/detaljer, showcase viser kun 3 | graphics | in-progress |
+| T-099 | Bug: M6-props mangler teksturer/detaljer, showcase viser kun 3 | graphics | review |
 | T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | review |
 | T-094 | UI: spor-faner, fejltekster og info | ui | review |
 | T-095 | Balance: M6-indhold | designer | todo |
