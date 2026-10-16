@@ -17,6 +17,13 @@ signal money_flash(sign: int)
 ## T-111: sim'ens milepælssignaler videresendt til UI (overlever sim-skift ved load).
 signal milestone_achieved(id: String)
 signal milestones_backfilled(ids: Array)
+## T-115: tutorial. step = rå trin-dict {id, text, highlight, complete_when}.
+signal tutorial_step_changed(index: int, step: Dictionary)
+signal tutorial_finished(skipped: bool)
+
+var tutorial: TutorialDirector
+var _tutorial_scenario: String = ""  ## scenarie-id fra start_scenario; forbruges ved næste sim
+var _tutorial_arrow: TutorialArrow
 
 
 func _process(_delta: float) -> void:
@@ -31,6 +38,8 @@ func _process(_delta: float) -> void:
 			s.scenario_finished.connect(_on_scenario_finished)
 			s.milestone_achieved.connect(func(id: String) -> void: milestone_achieved.emit(id))
 			s.milestones_backfilled.connect(func(ids: Array) -> void: milestones_backfilled.emit(ids))
+		_start_tutorial(s)
+	_tick_tutorial()
 
 
 ## Alias for start_sandbox (bagudkompatibelt).
@@ -42,6 +51,7 @@ func start_sandbox(p_seed: int = randi()) -> void:
 	seed = p_seed
 	pending_save = {}
 	pending_scenario = ""
+	_tutorial_scenario = ""
 	_change(MAIN_SCENE)
 
 
@@ -49,12 +59,14 @@ func start_scenario(scenario_id: String, p_seed: int = randi()) -> void:
 	seed = p_seed
 	pending_save = {}
 	pending_scenario = scenario_id
+	_tutorial_scenario = scenario_id
 	_change(MAIN_SCENE)
 
 
 func start_from_save(d: Dictionary) -> void:
 	pending_save = d
 	pending_scenario = ""
+	_tutorial_scenario = ""
 	_change(MAIN_SCENE)
 
 
@@ -138,6 +150,7 @@ func overlay_data(kind: StringName) -> Dictionary:
 
 ## Vis/skjul overlay i parken (kind = &"" skjuler). UI's overlay-vælger kalder disse.
 func show_overlay(kind: StringName) -> void:
+	tutorial_notify("overlay_opened:" + String(kind))
 	var v: ParkView = current_view()
 	if v != null:
 		v.show_overlay(kind)
@@ -163,3 +176,80 @@ func refresh_settings() -> void:
 		v.refresh_settings()
 	else:
 		ParkColors.refresh_from_settings()
+
+
+# --- T-115: tutorial -------------------------------------------------------
+
+func tutorial_active() -> bool:
+	return tutorial != null and tutorial.active()
+
+
+func tutorial_step_index() -> int:
+	return tutorial.index if tutorial != null else -1
+
+
+func tutorial_step_count() -> int:
+	return tutorial.steps.size() if tutorial != null else 0
+
+
+func tutorial_current_step() -> Dictionary:
+	return tutorial.current_step() if tutorial != null else {}
+
+
+func tutorial_skippable() -> bool:
+	return tutorial != null and tutorial.skippable
+
+
+## UI-handlinger, som sim'en ikke ser (fx "overlay_opened:queue").
+func tutorial_notify(event: String) -> void:
+	if tutorial != null:
+		tutorial.notify(event)
+
+
+func tutorial_skip() -> void:
+	if tutorial != null:
+		tutorial.skip()
+
+
+func _start_tutorial(s: ParkSim) -> void:
+	_clear_tutorial()
+	tutorial = TutorialDirector.for_scenario(_tutorial_scenario, s)
+	_tutorial_scenario = ""
+	if tutorial == null:
+		return
+	tutorial.step_changed.connect(_on_tutorial_step)
+	tutorial.finished.connect(_on_tutorial_finished)
+	var v: ParkView = current_view()
+	if v != null:
+		_tutorial_arrow = TutorialArrow.new()
+		_tutorial_arrow.name = "TutorialArrow"
+		v.add_child(_tutorial_arrow)
+	tutorial.start()
+
+
+func _tick_tutorial() -> void:
+	if tutorial == null or not tutorial.active():
+		return
+	tutorial.poll()
+	if _tutorial_arrow != null and is_instance_valid(_tutorial_arrow):
+		_tutorial_arrow.point_at(tutorial.arrow_cell())
+
+
+func _on_tutorial_step(index: int, step: Dictionary) -> void:
+	if index > 0:
+		_sfx(&"cheer")
+	tutorial_step_changed.emit(index, step)
+
+
+func _on_tutorial_finished(skipped: bool) -> void:
+	if _tutorial_arrow != null and is_instance_valid(_tutorial_arrow):
+		_tutorial_arrow.queue_free()
+	_tutorial_arrow = null
+	tutorial_finished.emit(skipped)
+
+
+func _clear_tutorial() -> void:
+	if _tutorial_arrow != null and is_instance_valid(_tutorial_arrow):
+		_tutorial_arrow.queue_free()
+	_tutorial_arrow = null
+	tutorial = null

@@ -54,6 +54,8 @@ var _sel_attraction: int = -1
 var _sel_guest: int = -1
 # M5 (T-071)
 var objective_panel: ObjectivePanel
+var tutorial_panel: TutorialPanel  ## T-116
+var tutorial_highlight: TutorialHighlight
 var research_panel: ResearchPanel
 var result_dialog: ResultDialog
 var coaster_palette: CoasterPalette
@@ -181,6 +183,14 @@ func _layout_impl(root: Control, vp: Vector2) -> void:
 	if objective_panel != null:
 		objective_panel.position = Vector2(MARGIN + rail_w, top_h + 2.0 * MARGIN)
 		objective_panel.size = objective_panel.get_combined_minimum_size()
+	if tutorial_panel != null and tutorial_panel.visible:
+		var ty: float = y0
+		if objective_panel != null and objective_panel.visible:
+			ty = objective_panel.position.y + objective_panel.size.y + MARGIN
+		tutorial_panel.size = Vector2.ZERO
+		tutorial_panel.size = tutorial_panel.get_combined_minimum_size()
+		tutorial_panel.position = Vector2(MARGIN + rail_w, ty)
+		_sort_tree(tutorial_panel)
 	if coaster_palette != null:
 		var ph: float = _panel_height(coaster_palette, w)
 		coaster_palette.position = Vector2(MARGIN, maxf(MARGIN, bottom.position.y - MARGIN - ph))
@@ -431,6 +441,7 @@ func _build_ui() -> void:
 
 	_build_m5(root)
 	_build_rail(root)
+	_build_tutorial(root)
 	alert_tray = AlertTray.new()
 	root.add_child(alert_tray)
 	alert_tray.unread_changed.connect(top_bar.set_unread)
@@ -1118,6 +1129,63 @@ func _connect_session() -> void:
 		gs.connect("milestone_achieved", on_milestone_achieved)
 	if gs.has_signal("money_flash") and not gs.is_connected("money_flash", top_bar.flash_money):
 		gs.connect("money_flash", top_bar.flash_money)
+	if gs.has_signal("tutorial_step_changed") and not gs.is_connected("tutorial_step_changed", on_tutorial_step):
+		gs.connect("tutorial_step_changed", on_tutorial_step)
+	if gs.has_signal("tutorial_finished") and not gs.is_connected("tutorial_finished", on_tutorial_finished):
+		gs.connect("tutorial_finished", on_tutorial_finished)
+	# Allerede i gang (HUD'en oprettet efter første trin)?
+	if gs.has_method("tutorial_active") and bool(gs.call("tutorial_active")) and gs.has_method("tutorial_current_step"):
+		var cur: Dictionary = gs.call("tutorial_current_step")
+		var idx: int = int(gs.call("tutorial_step_index")) if gs.has_method("tutorial_step_index") else 0
+		if not cur.is_empty():
+			on_tutorial_step(idx, cur)
+
+
+# --- T-116: tutorial ---
+
+func _build_tutorial(root: Control) -> void:
+	tutorial_panel = TutorialPanel.new()
+	root.add_child(tutorial_panel)
+	tutorial_panel.build()
+	tutorial_highlight = TutorialHighlight.new()
+	tutorial_highlight.dock = build_dock
+	tutorial_highlight.rail = park_rail
+	tutorial_highlight.picker_provider = overlay_picker
+	root.add_child(tutorial_highlight)
+	tutorial_panel.highlight = tutorial_highlight
+
+
+func on_tutorial_step(index: int, step_dict: Dictionary) -> void:
+	if tutorial_panel == null:
+		return
+	if UiSession.has("tutorial_step_count"):
+		tutorial_panel.set_step_count(int(UiSession.call_session("tutorial_step_count")))
+	elif tutorial_panel.step_count == 0:
+		tutorial_panel.set_step_count(_tutorial_json_steps())
+	var d: Dictionary = step_dict.duplicate()
+	if UiSession.has("tutorial_skippable") and not d.has("skippable"):
+		d["skippable"] = bool(UiSession.call_session("tutorial_skippable"))
+	tutorial_panel.show_step(index, d)
+	if index > 0:
+		UiSound.play(&"cheer")
+	if is_inside_tree():
+		layout(get_viewport().get_visible_rect().size)
+
+
+static func _tutorial_json_steps() -> int:
+	var f := FileAccess.open("res://content/scenarios/tutorial.json", FileAccess.READ)
+	if f == null:
+		return 0
+	var d: Variant = JSON.parse_string(f.get_as_text())
+	return (d.get("steps", []) as Array).size() if d is Dictionary else 0
+
+
+func on_tutorial_finished(skipped: bool = false) -> void:
+	if tutorial_panel != null:
+		var was: bool = tutorial_panel.visible
+		tutorial_panel.finish()
+		if was and not skipped and alert_tray != null:
+			alert_tray.push("Introduktionen er færdig. God fornøjelse med parken!", "trophy")
 
 
 ## Toast + fanfare, når en milepæl nås (backfill giver ingen toast).

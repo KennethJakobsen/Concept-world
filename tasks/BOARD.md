@@ -157,8 +157,8 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-112 | UI: inspektør-faner (indstillinger, økonomi, kø) | ui | review |
 | T-113 | UI: milepæle, overlay-vælger, indstillinger og tanker | ui | review |
 | T-114 | Data: tutorial-scenariet 'Første park' | designer | review |
-| T-115 | Gameplay: TutorialDirector og pile i verden | gameplay | todo |
-| T-116 | UI: tutorial-trinpanel | ui | todo |
+| T-115 | Gameplay: TutorialDirector og pile i verden | gameplay | review |
+| T-116 | UI: tutorial-trinpanel | ui | review |
 | T-117 | Balance: M7-mekanik | designer | todo |
 | T-133 | Sim: required_pieces for sporbaner | simulation | review |
 | T-134 | UI: låst sporbane-kort | ui | review |
