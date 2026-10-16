@@ -124,7 +124,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-099 | Bug: M6-props mangler teksturer/detaljer, showcase viser kun 3 | graphics | ✅ done |
 | T-119 | Sim: impulskøb i butikker uden behov | simulation | review |
 | T-120 | Bug: tømmerrenden går under terræn ved fald | simulation | review |
-| T-130 | Bug: tømmerrende "mangler en station" ved færdiggørelse | simulation | in-progress |
+| T-130 | Bug: tømmerrende "mangler en station" ved færdiggørelse | simulation | review |
 | T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | review |
 | T-094 | UI: spor-faner, fejltekster og info | ui | review |
 | T-095 | Balance: M6-indhold | designer | review |

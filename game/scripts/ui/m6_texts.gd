@@ -27,6 +27,7 @@ const TRACK_ERRORS: Dictionary = {
 	"stations_too_close": "Stationerne ligger for tæt på hinanden.",
 	"multiple_stations": "Banen har for mange stationer.",
 	"closed": "Banen er allerede færdig.",
+	"no_active_track": "Vælg den ufærdige bane og tryk 'Fortsæt byg'.",
 }
 const WARN_VOMIT: String = "En gæst kastede op - byg færre vilde forlystelser tæt på stierne."
 

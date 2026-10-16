@@ -119,7 +119,7 @@ func remove_last() -> void:
 
 func finish() -> void:
 	if _tool_ok("finish_coaster"):
-		var errs: Array = tool.call("finish_coaster")
+		var errs: Array = tool.call("finish_coaster", resume_id)  # T-130
 		if errs.is_empty():
 			message.emit("Rutsjebanen er åben!" if system == &"coaster" else "Banen er åben!")
 

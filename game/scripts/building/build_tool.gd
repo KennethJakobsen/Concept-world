@@ -222,11 +222,17 @@ func remove_last_coaster_piece() -> bool:
 
 
 ## "Færdig": validerer. Fejl udsendes via coaster_errors; ved succes skiftes til vælg-værktøjet.
-func finish_coaster() -> Array[String]:
+## T-130: prefer_id = ufærdig bane valgt i UI (paletten's resume_id). Har værktøjet mistet
+## sin aktive bane (Esc, Vælg-klik, skift af værktøj, indlæst save), genoptages den.
+func finish_coaster(prefer_id: int = -1) -> Array[String]:
 	if coaster_id < 0:
-		var none: Array[String] = ["no_station"]
-		coaster_errors.emit(none)
-		return none
+		var found: int = find_unfinished_coaster(prefer_id)
+		if found >= 0:
+			resume_coaster(found)
+		if coaster_id < 0:
+			var none: Array[String] = ["no_active_track" if found == -2 else "no_station"]
+			coaster_errors.emit(none)
+			return none
 	var id: int = coaster_id
 	var errs: Array[String] = _view.sim.cmd_finish_coaster(id)
 	if not errs.is_empty():
@@ -237,6 +243,32 @@ func finish_coaster() -> Array[String]:
 	_request_tool(TOOL_SELECT)
 	coaster_finished.emit(id)
 	return errs
+
+
+## T-130: finder en ufærdig bane: prefer_id hvis gyldig, ellers den eneste for værktøjets
+## type, ellers den eneste i parken. -1 = ingen, -2 = flere (tvetydigt).
+func find_unfinished_coaster(prefer_id: int = -1) -> int:
+	if _view == null or _view.sim == null:
+		return -1
+	var p: Attraction = _view.sim.get_attraction(prefer_id) if prefer_id >= 0 else null
+	if p != null and p.track != null and p.building:
+		return p.id
+	var def_id: String = tool.substr(PREFIX_COASTER.length()) if is_coaster_tool() else ""
+	var same: Array[int] = []
+	var all: Array[int] = []
+	for a: Attraction in _view.sim.attractions:
+		if a.track == null or not a.building:
+			continue
+		all.append(a.id)
+		if a.def.id == def_id:
+			same.append(a.id)
+	if same.size() == 1:
+		return same[0]
+	if same.size() > 1:
+		return -2
+	if all.size() == 1:
+		return all[0]
+	return -2 if all.size() > 1 else -1
 
 
 ## "Fortsæt byg" på en ufærdig bane.
