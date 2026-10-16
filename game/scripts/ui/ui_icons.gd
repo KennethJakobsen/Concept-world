@@ -121,6 +121,23 @@ static func draw_symbol(ci: CanvasItem, k: String, r: Rect2, col: Color) -> void
 				ci.draw_line(c + Vector2(cos(a), sin(a)) * s.x * 0.2, c + Vector2(cos(a), sin(a)) * s.x * 0.42, col, lw * 1.6)
 			ci.draw_circle(c, s.x * 0.27, col)
 			ci.draw_circle(c, s.x * 0.1, Color(0.11, 0.13, 0.17))
+		"trophy":  # T-113: pokal (milepæle)
+			ci.draw_colored_polygon(PackedVector2Array([o + s * Vector2(0.25, 0.12), o + s * Vector2(0.75, 0.12),
+				o + s * Vector2(0.68, 0.45), o + s * Vector2(0.5, 0.55), o + s * Vector2(0.32, 0.45)]), col)
+			ci.draw_arc(o + s * Vector2(0.25, 0.27), s.x * 0.11, PI * 0.5, PI * 1.5, 8, col, lw)
+			ci.draw_arc(o + s * Vector2(0.75, 0.27), s.x * 0.11, -PI * 0.5, PI * 0.5, 8, col, lw)
+			ci.draw_line(o + s * Vector2(0.5, 0.55), o + s * Vector2(0.5, 0.75), col, lw * 1.3)
+			ci.draw_rect(Rect2(o + s * Vector2(0.3, 0.75), s * Vector2(0.4, 0.12)), col)
+		"overlay":  # T-113: øje (overlay-vælger)
+			var pts := PackedVector2Array()
+			for i in 17:
+				var t: float = float(i) / 16.0
+				pts.append(o + s * Vector2(0.1 + 0.8 * t, 0.5 - 0.28 * sin(PI * t)))
+			for i in range(15, 0, -1):
+				var t2: float = float(i) / 16.0
+				pts.append(o + s * Vector2(0.1 + 0.8 * t2, 0.5 + 0.28 * sin(PI * t2)))
+			ci.draw_colored_polygon(pts, col)
+			ci.draw_circle(o + s * 0.5, s.x * 0.15, Color(0.11, 0.13, 0.17))
 		"menu":  # tre streger
 			for i in 3:
 				var y: float = 0.25 + 0.25 * i

@@ -140,3 +140,23 @@ func set_clock_state(paused: bool, speed: float) -> void:
 		TooltipService.attach(pause_btn, tip, "Mellemrum")
 	for i in SPEEDS.size():
 		speed_btns[i].set_pressed_no_signal(not paused and is_equal_approx(speed, SPEEDS[i]))
+
+
+## T-113: pengeblink efter salg (+1 grøn) eller udgift (-1 rød); toner ud over 0,4 s.
+var _flash_tween: Tween
+var last_flash: int = 0
+
+
+func flash_money(sign: int) -> void:
+	last_flash = sign
+	if label == null:
+		return
+	var c: Color = UiTheme.GREEN.lightened(0.35) if sign >= 0 else UiTheme.RED.lightened(0.25)
+	label.add_theme_color_override("font_color", c)
+	if _flash_tween != null and _flash_tween.is_valid():
+		_flash_tween.kill()
+	if not is_inside_tree():
+		return
+	_flash_tween = create_tween()
+	_flash_tween.tween_interval(0.4)
+	_flash_tween.tween_callback(func() -> void: label.remove_theme_color_override("font_color"))

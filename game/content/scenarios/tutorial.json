@@ -1,0 +1,14 @@
+{"id": "tutorial", "name": "Første park", "description": "Lær at bygge en park i seks små trin. Du kan springe over når som helst.", "order": 0,
+ "tutorial": true, "skippable": true,
+ "map": {"width": 32, "height": 32, "entrance": [16, 31]},
+ "start": {"money": 20000, "loan": 0, "reputation": 50, "paths": [[16,31]], "attractions": [], "decor": [], "staff": [], "unlocked": [], "research_enabled": false, "entry_fee": 5},
+ "objectives": [], "deadline_days": 0, "lose": [], "milestones": false,
+ "surroundings": {"theme": "countryside"},
+ "steps": [
+  {"id": "path", "text": "Velkommen, direktør! Gæsterne står og tripper ved porten. Læg en sti fra indgangen og ind i parken.", "highlight": "entrance", "complete_when": "path_connected_to_entrance"},
+  {"id": "ride", "text": "En park uden forlystelser er bare en have. Byg en karrusel ved stien, og læg et par køfelter fra stien hen til dens indgang.", "highlight": "build:carousel", "complete_when": "attraction_built:ride"},
+  {"id": "shop", "text": "Glade gæster bliver tørstige. Sæt en drikkebod ved stien, så ingen går tørre.", "highlight": "build:drinks_stand", "complete_when": "attraction_built:shop"},
+  {"id": "price", "text": "Klik på boden og ret prisen. For dyrt, og gæsterne vender om. For billigt, og kassen bliver tom.", "highlight": "attraction:shop", "complete_when": "price_changed"},
+  {"id": "queue", "text": "Hvor står folk og venter? Åbn kø-overlayet og se, hvor køerne bliver lange.", "highlight": "overlay:queue", "complete_when": "overlay_opened:queue"},
+  {"id": "cleaner", "text": "Hvor der er gæster, er der skrald. Ansæt en rengøringsmedarbejder, så parken holder sig pæn. Så er du klar!", "highlight": "staff:cleaner", "complete_when": "staff_hired:cleaner"}
+ ]}

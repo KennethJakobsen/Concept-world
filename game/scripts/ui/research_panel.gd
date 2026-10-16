@@ -10,6 +10,8 @@ var _funding_btns: Array[Button] = []
 var _prio: OptionButton
 var _topic_ids: Array[String] = []
 var _item: Label
+var _locked: Label
+var _lock_sig: String = "-"
 var _bar: ProgressBar
 var _built_for: ParkSim
 var wanted: bool = false  ## brugeren har åbnet panelet
@@ -41,6 +43,12 @@ func build() -> void:
 	_prio.clip_text = true
 	_prio.fit_to_longest_item = false
 	v.add_child(_prio)
+	_locked = Label.new()  # T-113: låste grene og milepælen, der åbner dem
+	_locked.name = "Locked"
+	_locked.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_locked.add_theme_font_size_override("font_size", 12)
+	_locked.visible = false
+	v.add_child(_locked)
 	_item = Label.new()
 	_item.name = "Item"
 	_item.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -64,6 +72,7 @@ var _sim: ParkSim
 
 func _rebuild(sim: ParkSim) -> void:
 	_built_for = sim
+	_lock_sig = "-"
 	_sim = sim
 	for b in _funding_btns:
 		b.queue_free()
@@ -112,6 +121,7 @@ func refresh(sim: ParkSim) -> void:
 	var pi: int = maxi(0, _topic_ids.find(str(st.get("priority", ""))))
 	if _prio.selected != pi:
 		_prio.select(pi)
+	_refresh_locks(sim)
 	var cur: String = str(st.get("current_item", ""))
 	var need: float = float(st.get("points_needed", 0.0))
 	if cur == "":
@@ -121,6 +131,33 @@ func refresh(sim: ParkSim) -> void:
 	_bar.value = 0.0 if need <= 0.0 else clampf(float(st.get("progress", 0.0)) / need * 100.0, 0.0, 100.0)
 	if lvl == 0 and cur != "":
 		_item.text += " (sat på pause)"
+
+
+## T-113: låste emner deaktiveres i prioritetslisten og forklares med milepælens navn.
+func _refresh_locks(sim: ParkSim) -> void:
+	if not sim.has_method("topic_locked_by"):
+		return
+	var lines: Array[String] = []
+	var sig: String = ""
+	for i in range(1, _topic_ids.size()):
+		var by: String = sim.topic_locked_by(_topic_ids[i])
+		sig += by + "|"
+		_prio.set_item_disabled(i, by != "")
+		if by != "":
+			var mname: String = M7Texts.milestone_name(sim, by)
+			_prio.set_item_tooltip(i, M7Texts.locked_text(mname))
+			lines.append("%s: %s" % [M7Texts.topic_name(_topic_ids[i], sim), M7Texts.locked_text(mname)])
+		else:
+			_prio.set_item_tooltip(i, "")
+	if sig == _lock_sig:
+		return
+	_lock_sig = sig
+	_locked.text = "\n".join(lines)
+	_locked.visible = not lines.is_empty()
+
+
+func locked_text() -> String:
+	return _locked.text if _locked.visible else ""
 
 
 func set_funding(level: int) -> void:

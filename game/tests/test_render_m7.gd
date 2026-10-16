@@ -24,6 +24,34 @@ func test_crowd_limits_individuals() -> void:
 	r.free()
 
 
+## T-148: MultiMesh-instanser står oprejst, uskaleret, med samme dele/offsets som guest.tscn.
+func test_crowd_instances_upright_and_match_guest_visual() -> void:
+	var r := GuestCrowdRenderer.new()
+	var entries: Array = []
+	for i in 300:
+		entries.append({"id": i, "pos": Vector3(float(i % 30) * 0.4, 0.1, float(i / 30) * 0.4), "color": Color(0.2, 0.9, 0.3)})
+	r.update(entries, Vector3.ZERO)
+	var body := r.part_multimesh("Lod0Body")
+	assert_true(body.visible_instance_count > 0, "LOD0 i brug")
+	for name: String in ["Lod0Body", "Lod0Pants", "Lod0Head", "Lod0Hair"]:
+		var mm := r.part_multimesh(name)
+		assert_eq(mm.visible_instance_count, body.visible_instance_count, name)
+	var scene: Node3D = load("res://scenes/props/guest.tscn").instantiate()
+	var t := GuestCrowdRenderer.part_transform(Vector3(1, 0.1, 2), GuestCrowdRenderer.OFF_HEAD)
+	assert_eq(t.basis, Basis.IDENTITY, "oprejst/uskaleret")
+	assert_true(t.origin.is_equal_approx(Vector3(1, 0.1, 2) + (scene.get_node("Head") as Node3D).position))
+	assert_true(GuestCrowdRenderer.OFF_BODY.is_equal_approx((scene.get_node("Body") as Node3D).position))
+	var pants := scene.get_node("Body/Pants") as Node3D
+	assert_true(GuestCrowdRenderer.OFF_PANTS.is_equal_approx(pants.position + (scene.get_node("Body") as Node3D).position))
+	assert_eq((body.mesh as CapsuleMesh).height, ((scene.get_node("Body") as MeshInstance3D).mesh as CapsuleMesh).height)
+	assert_true(body.use_colors, "krop farves pr. gæst")
+	scene.free()
+	# Færre gæster næste frame: kapacitet bevares, kun synlige tælles.
+	r.update(entries.slice(0, 10), Vector3(100, 0, 100))
+	assert_true(r.part_multimesh("Lod0Body").visible_instance_count <= 10)
+	r.free()
+
+
 func test_lane_offset_deterministic_and_spread() -> void:
 	var seen := {}
 	for i in 60:

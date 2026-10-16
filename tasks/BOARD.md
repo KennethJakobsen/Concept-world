@@ -152,11 +152,11 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-107 | Grafik: skrald, spande, bænke, ATM, køsti, svævetal og gæstemængde | graphics | review |
 | T-108 | Grafik: mur, port og omgivelser | graphics | review |
 | T-109 | Grafik: kort-overlays og farveblind-palet | graphics | review |
-| T-110 | Gameplay: køsti-, flyt-, rotér- og fortryd-værktøjer | gameplay | todo |
+| T-110 | Gameplay: køsti-, flyt-, rotér- og fortryd-værktøjer | gameplay | review |
 | T-111 | Gameplay: bridge for salg, skrald, bænke, kø og overlays | gameplay | review |
 | T-112 | UI: inspektør-faner (indstillinger, økonomi, kø) | ui | review |
-| T-113 | UI: milepæle, overlay-vælger, indstillinger og tanker | ui | todo |
-| T-114 | Data: tutorial-scenariet 'Første park' | designer | todo |
+| T-113 | UI: milepæle, overlay-vælger, indstillinger og tanker | ui | review |
+| T-114 | Data: tutorial-scenariet 'Første park' | designer | review |
 | T-115 | Gameplay: TutorialDirector og pile i verden | gameplay | todo |
 | T-116 | UI: tutorial-trinpanel | ui | todo |
 | T-117 | Balance: M7-mekanik | designer | todo |
@@ -174,6 +174,7 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-144 | Bug: svævebanen kører ikke | gameplay | review |
 | T-145 | Svævebane som attraktion – kører kun ved brug | simulation | review |
 | T-146 | Bug: personale-panelet uden for skærmen | ui | review |
+| T-148 | Bug: gæster ser forskellige ud, strakte kapsler | graphics | review |
 | T-118 | M7 verifikation | qa | todo |
 
 M7 startet 2026-10-16. Runde 1 (T-100, T-101, T-108, T-121, T-131) på review. Kendt: 2 tests fejler på `atm` indtil T-104/T-107.

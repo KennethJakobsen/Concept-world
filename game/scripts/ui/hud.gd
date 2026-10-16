@@ -78,6 +78,7 @@ func _ready() -> void:
 	fit_window_to_screen()
 	_build_ui()
 	_connect_scene()
+	_connect_session()
 
 
 ## Desktop: vinduet må ikke være større end skærmens brugbare område (dock/menulinje).
@@ -887,7 +888,7 @@ func _refresh_guest() -> void:
 		(_guest_bars["tolerance"] as ProgressBar).value = float(info.get("intensity_tolerance", 0.0)) / 10.0
 		_refresh_guest_items(info.get("items", []) as Array)
 	if g.thought != "":
-		lines.append("\"%s\"" % M6Texts.thought_text(g.thought))
+		lines.append("\"%s\"" % M7Texts.thought_text(g.thought))
 	_guest_label.text = "\n".join(lines)
 
 
@@ -972,6 +973,17 @@ func _input(event: InputEvent) -> void:
 			and (event as InputEventKey).keycode == KEY_ESCAPE:
 		if handle_escape():
 			get_viewport().set_input_as_handled()
+	elif event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo \
+			and (event as InputEventKey).keycode == KEY_O and not (event as InputEventKey).ctrl_pressed \
+			and not _text_has_focus():
+		if park_rail != null and not is_pause_menu_open():
+			park_rail.toggle(&"overlays")
+			get_viewport().set_input_as_handled()
+
+
+func _text_has_focus() -> bool:
+	var f: Control = get_viewport().gui_get_focus_owner()
+	return f is LineEdit or f is TextEdit
 
 
 ## Returnerer true, hvis Esc blev brugt af HUD'en (inspektør eller rail-panel lukket).
@@ -1061,6 +1073,8 @@ func _build_rail(root: Control) -> void:
 	park_rail.register_action(&"staff", "staff", "Personale", toggle_staff_list)
 	_research_btn = park_rail.register_action(&"research", "research", "Forskning", toggle_research_panel)
 	_research_btn.visible = false
+	park_rail.register(&"milestones", "trophy", _make_milestone_panel, "Milepæle")  # T-113
+	park_rail.register(&"overlays", "overlay", _make_overlay_picker, "Overlays (O)")  # T-113
 	park_rail.register(&"settings", "settings", _make_settings_panel, "Indstillinger")
 	park_rail.register_action(&"menu", "menu", "Menu (Esc)", open_pause_menu)
 	park_rail.panel_toggled.connect(_on_rail_panel)
@@ -1069,10 +1083,53 @@ func _build_rail(root: Control) -> void:
 func _make_settings_panel() -> Control:
 	var p := UiSettingsPanel.new()
 	p.build(user_settings)
+	p.settings_changed.connect(_on_settings_changed)
 	return p
 
 
+## T-113: farveblind/svævetal slår straks igennem i verden.
+func _on_settings_changed(s: UserSettings) -> void:
+	ParkColors.set_colorblind(s.colorblind)
+	UiSession.call_session("refresh_settings")
+
+
+func _make_milestone_panel() -> Control:
+	var p := MilestonePanel.new()
+	p.build()
+	return p
+
+
+func _make_overlay_picker() -> Control:
+	var p := OverlayPicker.new()
+	p.build()
+	return p
+
+
+func overlay_picker() -> OverlayPicker:
+	return park_rail.panel(&"overlays") as OverlayPicker if park_rail != null else null
+
+
+## T-113: GameSession-signaler (milepæle, pengeblink).
+func _connect_session() -> void:
+	var gs: Node = UiSession.get_session()
+	if gs == null:
+		return
+	if gs.has_signal("milestone_achieved") and not gs.is_connected("milestone_achieved", on_milestone_achieved):
+		gs.connect("milestone_achieved", on_milestone_achieved)
+	if gs.has_signal("money_flash") and not gs.is_connected("money_flash", top_bar.flash_money):
+		gs.connect("money_flash", top_bar.flash_money)
+
+
+## Toast + fanfare, når en milepæl nås (backfill giver ingen toast).
+func on_milestone_achieved(id: String) -> void:
+	if alert_tray != null:
+		alert_tray.push(M7Texts.achieved_text(M7Texts.milestone_name(sim, id)), "trophy")
+	UiSound.play(&"cheer")
+
+
 func _on_rail_panel(_id: StringName, open: bool) -> void:
+	if _id == &"overlays" and not open and overlay_picker() != null:
+		overlay_picker().clear()  # overlayet vises, mens vælgeren er åben
 	if open:
 		clear_selection()
 		_park_panel.visible = false

@@ -153,6 +153,7 @@ func setup(p_sim: ParkSim) -> void:
 	sim.bin_state_changed.connect(_on_bin_state_changed)
 	sim.guest_sat.connect(_on_guest_sat)
 	sim.guest_stood.connect(_on_guest_stood)
+	sim.attraction_moved.connect(_on_attraction_moved)  # T-110
 	_last_money = sim.economy.money
 	_sales = SalesBatcher.new()
 	refresh_settings()
@@ -175,7 +176,7 @@ func _disconnect() -> void:
 			[sim.ride_splash, _on_ride_splash], [sim.queue_changed, _on_queue_changed],
 			[sim.sales_tick, _on_sales_tick], [sim.atm_used, _on_atm_used],
 			[sim.bin_state_changed, _on_bin_state_changed], [sim.guest_sat, _on_guest_sat],
-			[sim.guest_stood, _on_guest_stood]]:
+			[sim.guest_stood, _on_guest_stood], [sim.attraction_moved, _on_attraction_moved]]:
 		var sig: Signal = pair[0]
 		if sig.is_connected(pair[1]):
 			sig.disconnect(pair[1])
@@ -366,7 +367,8 @@ func _audio(kind: StringName, id: StringName, pos: Vector3 = Vector3.INF) -> voi
 
 
 func _attraction_pos(a: Attraction, y: float = 0.0) -> Vector3:
-	return Vector3(a.origin.x + a.def.footprint.x * 0.5, y, a.origin.y + a.def.footprint.y * 0.5)
+	var fp: Vector2i = a.footprint_size()
+	return Vector3(a.origin.x + fp.x * 0.5, y, a.origin.y + fp.y * 0.5)
 
 
 func _camera_near(pos: Vector3) -> bool:
@@ -696,7 +698,7 @@ func _on_attraction_placed(a: Attraction) -> void:
 		push_warning("ParkView: ingen scene for attraktion '%s'" % a.def.id)
 		return
 	var n: Node3D = scene.instantiate()
-	n.position = Vector3(a.origin.x + a.def.footprint.x * 0.5, 0.0, a.origin.y + a.def.footprint.y * 0.5)
+	_pose_attraction(n, a)
 	_root.add_child(n)
 	_attractions[a.id] = n
 	if _night >= 0.0:
@@ -707,6 +709,28 @@ func _on_attraction_placed(a: Attraction) -> void:
 		if a.def.kind == "ride":
 			_fx(&"confetti", _attraction_pos(a, 1.0))
 		_audio(&"sfx", &"build", pos)
+
+
+## T-110: flad bygning placeres midt i (roteret) footprint og drejes, så indgangen vender rigtigt.
+## Sporbaners station poseres af _on_coaster_changed.
+func _pose_attraction(n: Node3D, a: Attraction) -> void:
+	var fp: Vector2i = a.footprint_size()
+	n.position = Vector3(a.origin.x + fp.x * 0.5, 0.0, a.origin.y + fp.y * 0.5)
+	if not a.is_tracked():
+		n.rotation.y = -PI * 0.5 * a.rotation
+
+
+## T-110: bygningen er flyttet/drejet (sim T-106). Sporbaner opdateres via coaster_changed.
+func _on_attraction_moved(attraction_id: int) -> void:
+	var a: Attraction = sim.get_attraction(attraction_id)
+	var n: Node3D = _attractions.get(attraction_id, null)
+	if a == null or n == null:
+		return
+	_pose_attraction(n, a)
+	for d: Dictionary in [_smoke, _sparks]:
+		if d.has(attraction_id):
+			(d[attraction_id] as Node3D).position = _attraction_pos(a, (d[attraction_id] as Node3D).position.y)
+	_fx(&"build_dust", n.position)
 
 
 func _on_attraction_removed(attraction_id: int) -> void:

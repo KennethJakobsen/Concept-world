@@ -7,6 +7,9 @@ extends Node
 ## "decor:<id>" placerer dekoration, "staff:<type>" ansætter på sti,
 ## "staff_move:<id>" flytter personale (klik på sti). I vælg-værktøjet kan valgt personale trækkes. Venstre=byg/træk, højre=fjern sti.
 ## Space = pause, +/- = hastighed.
+## T-110: M = flyt (klik på bygning/pynt løfter, R roterer 90°, klik placerer; også sporbaner som helhed),
+## Ctrl/Cmd+Z = fortryd, Ctrl/Cmd+Shift+Z (eller Ctrl+Y) = gentag. Ghost viser pris ved musen,
+## Fjern viser refusion (sim.sell_refund) før klik, og stier uden forbindelse til porten markeres røde.
 
 const HIGHLIGHT_SCRIPT: Script = preload("res://scripts/rendering/cell_highlight.gd")
 const SPEEDS: Array[float] = [0.5, 1.0, 2.0, 4.0, 8.0]
@@ -14,9 +17,11 @@ const TOOL_PATH: String = "path"
 const TOOL_QUEUE: String = "queue_path"  ## T-140: køsti (træk for flere, højreklik fjerner)
 const TOOL_REMOVE: String = "remove"
 const TOOL_SELECT: String = "select"
+const TOOL_MOVE: String = "move"  ## T-110
 const KEY_TOOLS: Dictionary = {
-	KEY_X: "remove", KEY_0: "select",
+	KEY_X: "remove", KEY_0: "select", KEY_M: "move",
 }
+const DISCONNECTED_SHOW_TIME: float = 4.0
 ## T-111: tasterne 1-6 åbner BuildDock-kategorierne (samme rækkefølge som BuildDock.CATEGORIES).
 const KEY_CATEGORIES: Dictionary = {
 	KEY_1: "paths", KEY_2: "rides", KEY_3: "shops", KEY_4: "decor", KEY_5: "staff", KEY_6: "coaster",
@@ -33,6 +38,8 @@ signal coaster_errors(codes: Array[String])
 signal coaster_finished(coaster_id: int)
 ## En fjernelse blev afvist (T-132) – UI viser teksten som toast.
 signal remove_blocked(message: String)
+## T-110: fortryd/gentag udført (eller afvist: ok=false). label = handlingens tekst.
+signal undo_performed(redo: bool, ok: bool, label: String)
 
 const MSG_ENTRANCE: String = "Stien er indgang til en attraktion - fjern attraktionen først."
 
@@ -58,6 +65,14 @@ var coaster_heading: int = 1      ## heading for stationen (R roterer)
 var coaster_piece: String = ""    ## valgt stykke (set_coaster_piece)
 var _ghost: CoasterTrackMesh
 var _piece_defs: Dictionary = {}
+## T-110 flyt-værktøj
+var move_kind: String = ""        ## "" (intet løftet), "attraction" eller "decor"
+var move_id: int = -1
+var move_rotation: int = 0        ## absolut rotation (0..3) for den løftede bygning
+var _price_label: Label3D
+var _warn_highlights: Array[CellHighlight] = []
+var _disconnected: Array[Vector2i] = []
+var _disconnected_time: float = 0.0
 
 
 func _ready() -> void:
@@ -73,6 +88,24 @@ func _ready() -> void:
 	_picker = GridPicker.new()
 	add_child(_picker)
 	grid_lines = GridLineFader.new(_ground_material(), tool)
+	_add_tool_card.call_deferred()
+
+
+## T-110: medaljon for Flyt via BuildDock's eksisterende add_card (cat "" = værktøj). Hud sender
+## card_pressed videre som build_tool_requested, så der kræves ingen ændring i UI-koden.
+func _add_tool_card() -> void:
+	if not is_inside_tree():
+		return
+	var docks: Array[Node] = get_tree().root.find_children("*", "BuildDock", true, false)
+	if docks.is_empty():
+		return
+	var dock: BuildDock = docks[0] as BuildDock
+	if dock.cards.has(TOOL_MOVE):
+		return
+	var b: Button = dock.add_card(TOOL_MOVE, "Flyt (M)", "", "",
+		"Klik på en bygning, sporbane eller pynt for at løfte den, R roterer, klik for at placere. Gratis.\nCtrl+Z fortryder, Ctrl+Shift+Z gentager.")
+	if b.icon == null:
+		b.text = "M"
 
 
 func _ground_material() -> ShaderMaterial:
@@ -91,6 +124,10 @@ func set_tool(def_id: String) -> bool:
 		return false
 	tool = def_id
 	_dragging = 0
+	if def_id != TOOL_MOVE:
+		cancel_move()
+	else:
+		refresh_disconnected()
 	if not def_id.begins_with(PREFIX_COASTER):
 		coaster_id = -1
 	elif coaster_id >= 0:
@@ -110,7 +147,7 @@ static func tool_content_id(t: String) -> String:
 		return t.substr(PREFIX_COASTER.length())
 	if t.begins_with(PREFIX_DECOR):
 		return t.substr(PREFIX_DECOR.length())
-	if t == TOOL_PATH or t == TOOL_QUEUE or t == TOOL_REMOVE or t == TOOL_SELECT or t.contains(":"):
+	if t == TOOL_PATH or t == TOOL_QUEUE or t == TOOL_REMOVE or t == TOOL_SELECT or t == TOOL_MOVE or t.contains(":"):
 		return ""
 	return t
 
@@ -324,7 +361,8 @@ func _update_coaster_preview() -> void:
 
 
 func _building_def() -> AttractionDef:
-	if tool == TOOL_PATH or tool == TOOL_REMOVE or tool == TOOL_SELECT or tool.contains(":"):
+	if tool == TOOL_PATH or tool == TOOL_QUEUE or tool == TOOL_REMOVE or tool == TOOL_SELECT or tool == TOOL_MOVE \
+			or tool.contains(":"):
 		return null
 	return _view.sim.get_def(tool)
 
@@ -363,7 +401,9 @@ func _process(delta: float) -> void:
 		grid_lines.update(delta)
 	if _view == null or _view.sim == null:
 		return
+	_disconnected_time = maxf(_disconnected_time - delta, 0.0)
 	_update_preview()
+	_update_warnings()
 
 
 func _update_preview() -> void:
@@ -371,6 +411,10 @@ func _update_preview() -> void:
 		h.hide_highlight()
 	if _ghost != null:
 		_ghost.visible = false
+	_hide_price()
+	if tool == TOOL_MOVE:
+		_update_move_preview()
+		return
 	if is_coaster_tool():
 		_update_coaster_preview()
 		return
@@ -383,6 +427,7 @@ func _update_preview() -> void:
 	if tool == TOOL_REMOVE and _view.decor_at(origin) >= 0:
 		_ensure_highlights(1)
 		_highlights[0].show_at(origin, false)
+		_show_price(origin, "+$%d" % sell_preview(origin), true)
 		return
 	if (tool == TOOL_REMOVE or tool == TOOL_SELECT) and _drag_staff < 0:
 		var a: Attraction = w.get_attraction_at(origin)
@@ -391,17 +436,20 @@ func _update_preview() -> void:
 				_ensure_highlights(1)
 				_highlights[0].show_at(origin, false)  # rød = fjernes
 			return
-		_ensure_highlights(a.def.footprint.x * a.def.footprint.y)
-		var j: int = 0
-		for y in a.def.footprint.y:
-			for x in a.def.footprint.x:
-				_highlights[j].show_at(a.origin + Vector2i(x, y), tool == TOOL_SELECT)
-				j += 1
+		var acells: Array[Vector2i] = a.footprint_cells()
+		_ensure_highlights(acells.size())
+		for j in acells.size():
+			_highlights[j].show_at(acells[j], tool == TOOL_SELECT)
+		if tool == TOOL_REMOVE:
+			_show_price(origin, "Sælg +$%d" % sell_preview(origin), true)
 		return
 	_ensure_highlights(fp.x * fp.y)
 	if tool.begins_with(PREFIX_DECOR):
 		var dd: DecorDef = _view.sim.get_decor_def(tool.substr(PREFIX_DECOR.length()))
-		_highlights[0].show_at(origin, _view.sim.can_place_decor(dd, origin) and dd != null and _view.sim.economy.can_afford(dd.build_cost))
+		var dok: bool = dd != null and _view.sim.can_place_decor(dd, origin) and _view.sim.economy.can_afford(dd.build_cost)
+		_highlights[0].show_at(origin, dok)
+		if dd != null:
+			_show_price(origin, "$%d" % dd.build_cost, dok)
 	elif tool.begins_with(PREFIX_STAFF) or tool.begins_with(PREFIX_MOVE) or _drag_staff >= 0:
 		_highlights[0].show_at(origin, w.is_walkable(origin))
 	elif def != null:
@@ -411,13 +459,220 @@ func _update_preview() -> void:
 			for x in fp.x:
 				_highlights[i].show_at(origin + Vector2i(x, y), valid)
 				i += 1
+		_show_price(origin + Vector2i(fp.x / 2, fp.y / 2), "$%d" % def.build_cost, valid)
 	elif tool == TOOL_QUEUE and w.in_bounds(origin):
 		var removing_q: bool = _dragging == 2 or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
-		_highlights[0].show_at(origin, not removing_q and w.can_place_path(origin)
-			and _view.sim.economy.can_afford(_view.sim.balance.queue_path_cost))
+		var qok: bool = not removing_q and w.can_place_path(origin) \
+			and _view.sim.economy.can_afford(_view.sim.balance.queue_path_cost)
+		_highlights[0].show_at(origin, qok)
+		_show_price(origin, "+$%d" % _view.sim.balance.queue_path_refund if removing_q
+			else "$%d" % _view.sim.balance.queue_path_cost, qok or removing_q)
 	elif w.in_bounds(origin):
 		var removing: bool = _dragging == 2 or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
 		_highlights[0].show_at(origin, w.can_place_path(origin) and not removing)  # rød ved fjern
+		if tool == TOOL_PATH:
+			_show_price(origin, "+$%d" % _view.sim.balance.path_refund if removing
+				else "$%d" % _view.sim.balance.path_cost, not removing and w.can_place_path(origin))
+
+
+# --- T-110: pris ved musen, flyt, fortryd og afbrudte stier ---
+
+func _show_price(cell: Vector2i, text: String, ok: bool) -> void:
+	if _price_label == null:
+		_price_label = Label3D.new()
+		_price_label.name = "GhostPrice"
+		_price_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+		_price_label.no_depth_test = true
+		_price_label.pixel_size = 0.008
+		_price_label.outline_size = 8
+		_view.add_child(_price_label)
+	_price_label.text = text
+	_price_label.modulate = ParkColors.ghost(ok, 1.0)
+	_price_label.position = ParkView.cell_center(cell) + Vector3(0, 1.2, 0)
+	_price_label.visible = true
+
+
+func _hide_price() -> void:
+	if _price_label != null:
+		_price_label.visible = false
+
+
+## Teksten ved musen (tests/UI). "" hvis skjult.
+func price_text() -> String:
+	return _price_label.text if _price_label != null and _price_label.visible else ""
+
+
+## Refusion ved salg/fjernelse af det, der ligger på cellen (pynt, bygning, sti/køsti). -1 = intet.
+func sell_preview(cell: Vector2i) -> int:
+	var sim: ParkSim = _view.sim
+	var did: int = _view.decor_at(cell)
+	if did >= 0:
+		return (sim.get_decor(did) as Decor).def.build_cost / 2
+	var a: Attraction = sim.world.get_attraction_at(cell)
+	if a != null:
+		return sim.sell_refund(a.id)
+	if sim.world.is_queue(cell):
+		return sim.balance.queue_path_refund
+	if sim.world.get_tile(cell) == ParkWorld.Tile.PATH:
+		return sim.balance.path_refund
+	return -1
+
+
+## Løfter bygningen/sporbanen (eller pynten) på cellen. Returnerer true hvis noget blev løftet.
+func pick_up_at(cell: Vector2i) -> bool:
+	var a: Attraction = _view.sim.world.get_attraction_at(cell)
+	if a != null and not a.building:
+		move_kind = "attraction"
+		move_id = a.id
+		move_rotation = a.rotation
+		return true
+	var did: int = _view.decor_at(cell)
+	if did >= 0:
+		move_kind = "decor"
+		move_id = did
+		move_rotation = 0
+		return true
+	return false
+
+
+func cancel_move() -> void:
+	move_kind = ""
+	move_id = -1
+	move_rotation = 0
+
+
+func rotate_move() -> void:
+	if move_kind == "attraction":
+		move_rotation = posmod(move_rotation + 1, 4)
+
+
+## Origin for den løftede bygning, når musen står på cell (centreret; sporbaner: stationens celle).
+func move_origin_for(cell: Vector2i) -> Vector2i:
+	if move_kind != "attraction":
+		return cell
+	var a: Attraction = _view.sim.get_attraction(move_id)
+	if a == null or a.track != null:
+		return cell
+	var fp: Vector2i = Attraction.rotated_size(a.def, move_rotation)
+	return cell - Vector2i(fp.x / 2, fp.y / 2)
+
+
+## Placerer det løftede på origin (bygning) eller cellen (pynt). Gratis; kan fortrydes.
+func drop_move(origin: Vector2i) -> bool:
+	var ok: bool = false
+	if move_kind == "attraction":
+		ok = bool(_view.sim.cmd_move_attraction(move_id, origin, move_rotation).get("ok", false))
+	elif move_kind == "decor":
+		ok = _view.sim.cmd_move_decor(move_id, origin)
+	if not ok:
+		play_error()
+		return false
+	cancel_move()
+	refresh_disconnected()
+	return true
+
+
+func _update_move_preview() -> void:
+	var cell: Vector2i = _picker.cell_under_mouse(_camera)
+	if cell == GridPicker.INVALID:
+		return
+	var w: ParkWorld = _view.sim.world
+	if move_kind == "":
+		var a: Attraction = w.get_attraction_at(cell)
+		var cells: Array[Vector2i] = []
+		if a != null and not a.building:
+			cells = a.footprint_cells()
+		elif _view.decor_at(cell) >= 0:
+			cells = [cell]
+		_ensure_highlights(cells.size())
+		for i in cells.size():
+			_highlights[i].show_at(cells[i], true)
+		return
+	if move_kind == "decor":
+		var d: Decor = _view.sim.get_decor(move_id)
+		var dok: bool = d != null and _view.sim.can_place_decor(d.def, cell)
+		_ensure_highlights(1)
+		_highlights[0].show_at(cell, dok)
+		_show_price(cell, "Flyt (gratis)", dok)
+		return
+	var origin: Vector2i = move_origin_for(cell)
+	var pv: Dictionary = _view.sim.preview_move(move_id, origin, move_rotation)
+	var ok: bool = bool(pv.get("ok", false))
+	var pcells: Array = pv.get("cells", [])
+	var ent: Vector2i = pv.get("entrance", Vector2i(-1, -1))
+	_ensure_highlights(pcells.size() + 1)
+	for i in pcells.size():
+		_highlights[i].show_at(pcells[i] as Vector2i, ok)
+	if w.in_bounds(ent):
+		_highlights[pcells.size()].show_at(ent, ok)
+	_show_price(cell, "Flyt (gratis)" if ok or str(pv.get("reason", "")) == "same" else "Kan ikke flytte hertil", ok)
+
+
+## Fortryd (redo=false) eller gentag. Udsender undo_performed.
+func undo(redo: bool = false) -> Dictionary:
+	var sim: ParkSim = _view.sim
+	var label: String = sim.redo_label() if redo else sim.undo_label()
+	var r: Dictionary = sim.cmd_redo() if redo else sim.cmd_undo()
+	var ok: bool = bool(r.get("ok", false))
+	if not ok:
+		play_error()
+	else:
+		cancel_move()
+		refresh_disconnected()
+	undo_performed.emit(redo, ok, label)
+	return r
+
+
+## Sticeller (ikke køstier), der ikke kan nås fra parkens indgang.
+static func disconnected_paths(w: ParkWorld) -> Array[Vector2i]:
+	var seen: Dictionary = {}
+	var stack: Array[Vector2i] = []
+	for d: Vector2i in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.UP, Vector2i.DOWN]:
+		var c: Vector2i = w.entrance + d
+		if w.in_bounds(c) and w.get_tile(c) == ParkWorld.Tile.PATH and not seen.has(c):
+			seen[c] = true
+			stack.append(c)
+	while not stack.is_empty():
+		var cur: Vector2i = stack.pop_back()
+		for d: Vector2i in [Vector2i.RIGHT, Vector2i.LEFT, Vector2i.UP, Vector2i.DOWN]:
+			var n: Vector2i = cur + d
+			if not seen.has(n) and w.in_bounds(n) and w.get_tile(n) == ParkWorld.Tile.PATH:
+				seen[n] = true
+				stack.append(n)
+	var out: Array[Vector2i] = []
+	for y in w.height:
+		for x in w.width:
+			var c := Vector2i(x, y)
+			if w.get_tile(c) == ParkWorld.Tile.PATH and not seen.has(c):
+				out.append(c)
+	return out
+
+
+## Genberegner afbrudte stier og viser dem i DISCONNECTED_SHOW_TIME sek. (altid i flyt-værktøjet).
+func refresh_disconnected() -> void:
+	if _view == null or _view.sim == null:
+		return
+	_disconnected = disconnected_paths(_view.sim.world)
+	_disconnected_time = DISCONNECTED_SHOW_TIME
+
+
+func disconnected_cells() -> Array[Vector2i]:
+	return _disconnected
+
+
+func _update_warnings() -> void:
+	var show: bool = tool == TOOL_MOVE or _disconnected_time > 0.0
+	var n: int = _disconnected.size() if show else 0
+	while _warn_highlights.size() < n:
+		var h := MeshInstance3D.new()
+		h.set_script(HIGHLIGHT_SCRIPT)
+		_view.add_child(h)
+		_warn_highlights.append(h as CellHighlight)
+	for i in _warn_highlights.size():
+		if i < n:
+			_warn_highlights[i].show_at(_disconnected[i], false)
+		else:
+			_warn_highlights[i].hide_highlight()
 
 
 ## Kommandoer – offentlige så tests kan drive dem uden input.
@@ -482,7 +737,7 @@ func remove_path_at(cell: Vector2i) -> bool:
 func remove_building_at(cell: Vector2i) -> bool:
 	var did: int = _view.decor_at(cell)
 	if did >= 0:
-		var refund: int = (_view.sim.get_decor(did) as Decor).def.build_cost / 2
+		var refund: int = sell_preview(cell)
 		if _view.sim.cmd_remove_decor(did):
 			_view.spawn_floating_text(ParkView.cell_center(cell), "+%d" % refund, Color(0.4, 1, 0.4))
 			return true
@@ -491,12 +746,13 @@ func remove_building_at(cell: Vector2i) -> bool:
 	if a == null:
 		return remove_path_at(cell)
 	var c: Vector3 = _center(a)
-	var refund: int = a.def.build_cost / 2
+	var refund: int = _view.sim.sell_refund(a.id)
 	if not _view.sim.cmd_remove_attraction(a.id):
 		return false
 	_view.spawn_floating_text(c, "+%d" % refund, Color(0.4, 1, 0.4))
 	if _selection != null:
 		_selection.cleared.emit()
+	refresh_disconnected()
 	return true
 
 
@@ -522,7 +778,8 @@ func select_at(cell: Vector2i, ground: Variant) -> int:
 
 
 static func _center(a: Attraction) -> Vector3:
-	return Vector3(a.origin.x + a.def.footprint.x * 0.5, 0.0, a.origin.y + a.def.footprint.y * 0.5)
+	var fp: Vector2i = a.footprint_size()
+	return Vector3(a.origin.x + fp.x * 0.5, 0.0, a.origin.y + fp.y * 0.5)
 
 
 func _apply_drag() -> void:
@@ -572,6 +829,12 @@ func _unhandled_input(event: InputEvent) -> void:
 					place_coaster_station(cell)
 				else:
 					place_coaster_piece()
+			elif tool == TOOL_MOVE:
+				if move_kind == "":
+					if not pick_up_at(cell):
+						play_error()
+				else:
+					drop_move(move_origin_for(cell))
 			elif tool == TOOL_SELECT:
 				_drag_staff = select_at(cell, _ground_under_mouse())
 			elif tool.begins_with(PREFIX_DECOR):
@@ -589,6 +852,8 @@ func _unhandled_input(event: InputEvent) -> void:
 				remove_building_at(cell)
 			else:
 				place_building(tool, _origin_under_mouse())
+		elif tool == TOOL_MOVE:
+			cancel_move()  # højreklik slipper det løftede (bliver hvor det var)
 		else:
 			_dragging = 2
 			_last_drag_cell = GridPicker.INVALID
@@ -599,6 +864,18 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event is InputEventKey and event.pressed and not event.echo:
 		var k := event as InputEventKey
 		var clock: SimClock = _view.sim.clock
+		if (k.ctrl_pressed or k.meta_pressed) and (k.keycode == KEY_Z or k.keycode == KEY_Y):
+			undo(k.keycode == KEY_Y or k.shift_pressed)
+			get_viewport().set_input_as_handled()
+			return
+		if tool == TOOL_MOVE and k.keycode == KEY_R:
+			rotate_move()
+			get_viewport().set_input_as_handled()
+			return
+		if k.keycode == KEY_ESCAPE and tool == TOOL_MOVE and move_kind != "":
+			cancel_move()
+			get_viewport().set_input_as_handled()
+			return
 		if k.keycode == KEY_ESCAPE:
 			handle_escape()
 			get_viewport().set_input_as_handled()
