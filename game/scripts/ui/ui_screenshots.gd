@@ -69,5 +69,14 @@ func _process(_d: float) -> bool:
 				hud2.layout(Vector2(1280, 720))
 			if _f == 90:
 				_shot("inspector")
+				# T-146: personale-panelet med en lang liste.
+				var hud3: Hud = _hud()
+				hud3.clear_selection()
+				for i in 14:
+					hud3.sim.cmd_hire_staff(["cleaner", "mechanic", "entertainer"][i % 3], hud3.sim.world.entrance + Vector2i(0, -1))
+				hud3.park_rail.toggle(&"staff")
+				hud3.layout(Vector2(1280, 720))
+			if _f == 120:
+				_shot("staff")
 				quit()
 	return false

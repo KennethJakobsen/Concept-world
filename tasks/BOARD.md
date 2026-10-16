@@ -172,6 +172,8 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-142 | Bug: menuen hopper ved dagskift | ui | review |
 | T-143 | Design: logo v2 – mere sammenhængende | designer | review |
 | T-144 | Bug: svævebanen kører ikke | gameplay | review |
+| T-145 | Svævebane som attraktion – kører kun ved brug | simulation | review |
+| T-146 | Bug: personale-panelet uden for skærmen | ui | review |
 | T-118 | M7 verifikation | qa | todo |
 
 M7 startet 2026-10-16. Runde 1 (T-100, T-101, T-108, T-121, T-131) på review. Kendt: 2 tests fejler på `atm` indtil T-104/T-107.
@@ -179,6 +181,7 @@ M7 startet 2026-10-16. Runde 1 (T-100, T-101, T-108, T-121, T-131) på review. K
 Runder: 1) T-100, T-101 (UX-fundament), T-108 · 2) T-102 (save v4), T-107 · 3) T-103→T-104→T-105, T-112, T-109 · 4) T-106, T-111 · 5) T-110, T-113, derefter T-114 · 6) T-115/T-116, derefter T-117 · 7) T-118.
 
 ## Kommende milepæle
+- **M8-idéer** ([liste](M8-ideas/IDEAS.md)): T-147 Design: vurdér idéer og foreslå omfang – designer – todo (efter M7).
 - **M8** (udskudt fra M7): personale (løn, træthed, områder), lån/regnskab/reklame, terræn (bakker, vand), gæstegrupper.
 
 ## Åbne punkter / backlog

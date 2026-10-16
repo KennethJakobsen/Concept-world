@@ -168,3 +168,29 @@ func test_remove_transport_removes_links_and_refunds() -> void:
 	assert_true(not s.world.has_links())
 	assert_eq(g.transport_id, -1)
 	assert_eq(g.money, 100)
+
+
+## T-145: svævebanen er også en forlystelse – gæster kører i den uden genvejsfordel.
+func test_guests_ride_transport_as_attraction() -> void:
+	var s := _park(7, false)
+	assert_true(s.cmd_place_track_piece(1, "monorail_station_end"))
+	assert_eq(s.cmd_finish_coaster(1), [] as Array[String])
+	# Sti til endestationen, så banen ikke er en genvej (parallel sti fra (4,4)).
+	for x in range(5, 15):
+		assert_true(s.cmd_place_path(Vector2i(x, 3)))
+	assert_true(s.cmd_place_path(Vector2i(4, 3)))
+	var mono: Attraction = s.get_attraction(1)
+	var arrived: Array = [false]
+	var riding: Dictionary = {}
+	for i in 6000:
+		s.update(SimClock.TICK_DELTA)
+		for gg: Guest in s.guests.values():
+			if gg.state == Guest.State.RIDING and gg.transport_id < 0 and gg.target_attraction_id == 1:
+				riding[gg.id] = true
+			elif riding.has(gg.id) and gg.state != Guest.State.RIDING:
+				riding.erase(gg.id)
+				if gg.cell == s.transport_exit_cell(mono):
+					arrived[0] = true
+	assert_true(mono.total_visitors > 0, "gæster valgte svævebanen som forlystelse")
+	assert_true(mono.total_revenue > 0, "billet")
+	assert_true(arrived[0], "gæst steg af ved den anden station")

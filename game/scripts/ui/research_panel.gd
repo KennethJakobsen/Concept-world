@@ -5,7 +5,7 @@ extends PanelContainer
 
 const LEVEL_NAMES: Array[String] = ["Ingen", "Lav", "Mellem", "Høj"]
 
-var _funding_box: HBoxContainer
+var _funding_box: GridContainer
 var _funding_btns: Array[Button] = []
 var _prio: OptionButton
 var _topic_ids: Array[String] = []
@@ -27,7 +27,8 @@ func build() -> void:
 	var fl := Label.new()
 	fl.text = "Finansiering:"
 	v.add_child(fl)
-	_funding_box = HBoxContainer.new()
+	_funding_box = GridContainer.new()  # T-146: 2x2, så panelet ikke bliver for bredt
+	_funding_box.columns = 2
 	_funding_box.name = "Funding"
 	v.add_child(_funding_box)
 	var pl := Label.new()
@@ -37,9 +38,12 @@ func build() -> void:
 	_prio.name = "Priority"
 	_prio.focus_mode = Control.FOCUS_NONE
 	_prio.item_selected.connect(_on_prio)
+	_prio.clip_text = true
+	_prio.fit_to_longest_item = false
 	v.add_child(_prio)
 	_item = Label.new()
 	_item.name = "Item"
+	_item.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	v.add_child(_item)
 	_bar = ProgressBar.new()
 	_bar.name = "Progress"
@@ -71,6 +75,7 @@ func _rebuild(sim: ParkSim) -> void:
 		b.text = "%s\n$%d/dag" % [LEVEL_NAMES[lvl], cost]
 		b.toggle_mode = true
 		b.focus_mode = Control.FOCUS_NONE
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.pressed.connect(set_funding.bind(lvl))
 		_funding_box.add_child(b)
 		_funding_btns.append(b)

@@ -43,6 +43,8 @@ var _staff_label: Label
 var _staff_list_panel: PanelContainer
 var _staff_list: VBoxContainer
 var _staff_list_ids: Array = []
+var _staff_scroll: ScrollContainer
+var _staff_title: Label
 var _pause_menu: PauseMenu
 var _build_tab: Dictionary = {}  ## def_id -> fane ("" = altid synlig)
 var _tab_buttons: Dictionary = {}  ## fane -> Button
@@ -154,24 +156,27 @@ func _layout_impl(root: Control, vp: Vector2) -> void:
 		_sort_tree(p)
 	if _staff_list_panel == null:
 		return  # under opbygning
+	var y0: float = top_h + 2.0 * MARGIN
 	var max_h: float = maxf(0.0, bottom.position.y - top_h - 3.0 * MARGIN)
-	for p: Control in right_panels():
-		p.position = Vector2(maxf(MARGIN, vp.x - MARGIN - p.custom_minimum_size.x), top_h + 2.0 * MARGIN)
-		p.size = Vector2(p.custom_minimum_size.x, minf(p.get_combined_minimum_size().y, max_h))
+	# T-146: åbne paneler må gerne dække dokken, hvis der ellers ikke er plads – men aldrig
+	# gå ud over skærmkanten (indholdet scroller i stedet).
+	var panel_h: float = maxf(max_h, minf(360.0, vp.y - y0 - MARGIN))
 	var rail_w: float = 0.0
 	if park_rail != null:
-		park_rail.position = Vector2(MARGIN, top_h + 2.0 * MARGIN)
-		park_rail.size = park_rail.get_combined_minimum_size()
-		rail_w = park_rail.size.x + MARGIN
+		park_rail.position = Vector2(MARGIN, y0)
+		var rs: Vector2 = UiFit.fit(park_rail, Vector2(w, maxf(0.0, vp.y - y0 - MARGIN)))
+		rail_w = rs.x + MARGIN
 		var rp: Control = park_rail.panel(park_rail.open_id)
 		if rp != null:
-			var ps: Vector2 = rp.get_combined_minimum_size()
-			ps.y = minf(ps.y, max_h)
-			rp.size = ps
-			rp.position = Vector2(maxf(MARGIN + rail_w, (vp.x - ps.x) * 0.5), top_h + 2.0 * MARGIN)
+			var avail: float = maxf(0.0, vp.x - 2.0 * MARGIN - rail_w)
+			var ps: Vector2 = UiFit.fit(rp, Vector2(avail, panel_h))
+			rp.position = Vector2(clampf((vp.x - ps.x) * 0.5, MARGIN + rail_w, maxf(MARGIN + rail_w, vp.x - MARGIN - ps.x)), y0)
 	# Personale-listen scroller inden for den plads der er mellem top- og byggebjælke.
-	var scroll: ScrollContainer = _staff_list_panel.get_node("V/Scroll")
-	scroll.custom_minimum_size.y = clampf(max_h - 90.0, 40.0, 260.0)
+	_staff_scroll.custom_minimum_size.y = clampf(panel_h - 110.0, 40.0, 260.0)
+	var right_w: float = maxf(0.0, vp.x - 2.0 * MARGIN - rail_w)
+	for p: Control in right_panels():
+		var sz: Vector2 = UiFit.fit(p, Vector2(right_w, panel_h if p != inspector else max_h))
+		p.position = Vector2(maxf(MARGIN + rail_w, vp.x - MARGIN - sz.x), y0)
 	if objective_panel != null:
 		objective_panel.position = Vector2(MARGIN + rail_w, top_h + 2.0 * MARGIN)
 		objective_panel.size = objective_panel.get_combined_minimum_size()
@@ -388,6 +393,7 @@ func _build_ui() -> void:
 	_button(eh, "Entré -", change_entry_fee.bind(-1))
 	_button(eh, "Entré +", change_entry_fee.bind(1))
 	_button(pv, "Luk panel", toggle_park_panel)
+	UiFit.wrap_scroll(_park_panel)
 	_park_panel.visible = false
 
 	_staff_list_panel = _panel(root, "StaffListPanel")
@@ -399,6 +405,7 @@ func _build_ui() -> void:
 	lt.name = "Title"
 	lv.add_child(lt)
 	var scroll := ScrollContainer.new()
+	_staff_scroll = scroll
 	scroll.name = "Scroll"
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.custom_minimum_size = Vector2(0, 200)
@@ -407,6 +414,8 @@ func _build_ui() -> void:
 	_staff_list.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(_staff_list)
 	_button(lv, "Luk panel", toggle_staff_list)
+	_staff_title = lt
+	UiFit.wrap_scroll(_staff_list_panel)
 	_staff_list_panel.visible = false
 
 	_pause_menu = PauseMenu.new()
@@ -811,7 +820,7 @@ func _refresh_staff_list() -> void:
 	var wages: int = 0
 	for id: int in ids:
 		wages += (d[id] as Staff).def.wage_per_day
-	(_staff_list_panel.get_node("V/Title") as Label).text = "Personale: %d (løn $%d/dag)" % [ids.size(), wages]
+	_staff_title.text = "Personale: %d (løn $%d/dag)" % [ids.size(), wages]
 	if ids != _staff_list_ids:
 		_staff_list_ids = ids
 		for c in _staff_list.get_children():
@@ -823,6 +832,10 @@ func _refresh_staff_list() -> void:
 			var l := Label.new()
 			l.name = "L"
 			l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			l.clip_text = true  # T-146: lang tekst må ikke gøre panelet bredere end skærmen
+			l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+			l.custom_minimum_size.x = 120.0
+			l.mouse_filter = Control.MOUSE_FILTER_PASS
 			row.add_child(l)
 			_button(row, "Fyr", fire_staff.bind(id))
 			_staff_list.add_child(row)
@@ -830,7 +843,9 @@ func _refresh_staff_list() -> void:
 		var s: Staff = d[id]
 		var row: Node = _staff_list.get_node_or_null("Row_%d" % id)
 		if row != null:
-			(row.get_node("L") as Label).text = "%s #%d $%d - %s" % [s.def.name, id, s.def.wage_per_day, staff_status(s)]
+			var lb: Label = row.get_node("L") as Label
+			lb.text = "%s #%d $%d - %s" % [s.def.name, id, s.def.wage_per_day, staff_status(s)]
+			lb.tooltip_text = lb.text
 
 
 func toggle_staff_list() -> void:
@@ -1078,6 +1093,7 @@ func _build_m5(root: Control) -> void:
 	root.add_child(research_panel)
 	research_panel.build()
 	_place_right(research_panel)
+	UiFit.wrap_scroll(research_panel)
 	coaster_palette = CoasterPalette.new()
 	root.add_child(coaster_palette)
 	coaster_palette.build()

@@ -43,6 +43,41 @@ func _esc() -> void:
 	await _frames(3)
 
 
+## T-146: alle rail-paneler (med lang personaleliste) inden for skærmen ved 1280x720,
+## 1024x600 og 1024x600 @ 200 % UI-skala (effektivt 512x300).
+func _check_rail_bounds(sim: ParkSim) -> void:
+	var hud: Hud = _hud() as Hud
+	var e: Vector2i = sim.world.entrance
+	sim.cmd_place_path(e + Vector2i(0, -1))
+	for i in 14:
+		sim.cmd_hire_staff(["cleaner", "mechanic", "entertainer"][i % 3], e + Vector2i(0, -1))
+	var fails: Array[String] = []
+	for vp: Vector2 in [Vector2(1280, 720), Vector2(1024, 600), Vector2(512, 300)]:
+		for id: StringName in UiBounds.RAIL_IDS:
+			hud.park_rail.toggle(id)
+			await _frames(2)
+			hud.refresh()
+			hud.layout(vp)
+			Hud._sort_tree(hud.get_node("Root"))
+			hud.layout(vp)
+			Hud._sort_tree(hud.get_node("Root"))
+			var p: Control = hud.park_rail.panel(hud.park_rail.open_id)
+			if p == null:
+				for c: Control in hud.right_panels():
+					if c.visible:
+						p = c
+			if p == null:
+				fails.append("%s @%s: intet panel" % [id, vp])
+			else:
+				fails.append_array(UiBounds.check_control(p, Rect2(Vector2.ZERO, vp), "%s @%s" % [id, vp]))
+			fails.append_array(UiBounds.check_control(hud.park_rail, Rect2(Vector2.ZERO, vp), "rail @%s" % vp))
+			hud.park_rail.toggle(id)  # luk igen
+	for f: String in fails.slice(0, 12):
+		print("    ", f)
+	_check(fails.is_empty(), "rail-paneler inden for skærmen (%d fejl)" % fails.size())
+	hud.layout(root.get_visible_rect().size)
+
+
 ## T-093: bygger tømmerrende, minitog og svævebane med spor-værktøjet (BuildTool) og
 ## tjekker scene-noderne (spor, tog, stationer, endestation).
 func _build_tracks(v: ParkView) -> void:
@@ -200,6 +235,7 @@ func _run() -> void:
 		ss.clock.paused = true
 		_check(ss.world.width == 48 and ss.scenario.def_id == "green_meadow", "scenariets kort/id")
 		_check(bool(ss.research_status()["enabled"]), "forskning slået til i scenariet")
+		await _check_rail_bounds(ss)
 		var cb: Array = [0]
 		ss.scenario_finished.connect(func(_w: bool, _r: String) -> void: cb[0] += 1)
 		ss.clock.paused = false

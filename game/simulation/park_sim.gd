@@ -1015,7 +1015,7 @@ func _choose_goal(g: Guest) -> void:
 	if g.rides_left > 0:
 		var options: Array[Attraction] = []
 		for a in attractions:
-			if (a.is_ride() or a.is_sideshow()) and _usable(g, a) \
+			if (a.is_ride() or a.is_sideshow() or a.is_transport()) and _usable(g, a) \
 					and not _route(g, approach_cell(a)).is_empty():
 				options.append(a)
 		if not options.is_empty():
@@ -1285,10 +1285,12 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 		if not guests.has(gid):
 			continue
 		var g: Guest = guests[gid]
-		if a.is_transport():
+		if a.is_transport() and g.transport_id >= 0:
 			_finish_transport(g, a)
 			continue
 		_exit_at(g, a)
+		if a.is_transport():  # T-145: forlystelsestur – stig af ved den anden station
+			_exit_at_other_station(g, a)
 		_apply_visit(g, a)
 		if a.def.kind == "shop":
 			_apply_recipes(g, a)
@@ -1298,7 +1300,7 @@ func _on_ride_finished(guest_ids: Array, a: Attraction) -> void:
 			g.litter_steps_left = rng.randi_range(1, maxi(1, balance.litter_carry_cells))
 		if a.is_sideshow():
 			_sideshow_result(g, a)
-		if a.is_ride() or a.is_sideshow():
+		if a.is_ride() or a.is_sideshow() or a.is_transport():
 			g.rides_left -= 1
 		g.target_attraction_id = -1
 		_choose_goal(g)
@@ -2279,6 +2281,19 @@ func _register_links(a: Attraction) -> void:
 	world.remove_links(a.id)
 	world.add_link(a.entrance_cell, transport_exit_cell(a), a.def.transport_cost, a.id)
 	_reachable_dirty = true
+
+
+## T-145: gæsten flyttes fra indgangen (_exit_at) til den anden stations indgang.
+func _exit_at_other_station(g: Guest, a: Attraction) -> void:
+	var dest: Vector2i = transport_exit_cell(a)
+	if not world.is_walkable(dest):
+		return
+	world.occupancy_add(g.cell, -1)
+	g.cell = dest
+	g.next_cell = dest
+	g.path.clear()
+	g.progress = 0.0
+	world.occupancy_add(dest, 1)
 
 
 ## Kan kanten for owner_id bruges (åben, færdig, ikke brudt ned)?

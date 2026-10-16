@@ -27,6 +27,7 @@ func build() -> void:
 	_box.name = "V"
 	_box.add_theme_constant_override("separation", 10)
 	add_child(_box)
+	UiFit.wrap_scroll(self)  # T-146: lav skærm/høj UI-skala -> knapperne scroller
 
 
 func register(id: StringName, icon: String, panel_factory: Callable, title: String = "") -> Button:
@@ -95,6 +96,8 @@ func toggle(id: StringName) -> void:
 		var made: Variant = (e.factory as Callable).call()
 		if made is Control:
 			e.panel = made
+			if made is PanelContainer:
+				UiFit.wrap_scroll(made as Container)  # T-146: scroll ved behov
 			(host if host != null else self).add_child(made)
 	if e.panel != null:
 		(e.panel as Control).visible = true

@@ -73,8 +73,6 @@ class CoasterVis:
 	var at_end: bool = false       ## svævebanen: kabinen holder ved endestationen
 	var leg_running: bool = false
 	var leg_reverse: bool = false  ## svævebanen: denne tur kører end → start
-	var idle_t: float = 0.0        ## T-144: tomgangspendul mellem ture uden passagerer
-	var idle_wait: float = 0.0     ## T-144: ophold (i tur-andele) ved stationen før næste tomgangstur
 
 
 func _ready() -> void:
@@ -1032,42 +1030,24 @@ func update_coasters(delta: float) -> void:
 			# Fremskriv visningen, men højst én tick foran sim'en; spring hvis den halter.
 			cv.vis_t = clampf(cv.vis_t + step, p, minf(1.0, p + tick_t)) if absf(cv.vis_t - p) <= 2.0 * tick_t else p
 		if a.is_transport():
-			var idle: float = step if a.is_open and not a.broken else 0.0
-			_pose_train(cv, a, _transport_leg(cv, p > 0.0 and not a.broken, idle,
-				float(a.load_ticks) / run_ticks))
+			_pose_train(cv, a, _transport_leg(cv, p > 0.0 and not a.broken))
 			continue
 		_pose_train(cv, a, cv.vis_t)
 
 
 ## Svævebanen kører pendul: hver anden tur fra endestationen tilbage til start.
 ## Mellem ture holder kabinen ved den station, hvor den sidst stoppede.
-## T-144: simulationen kører kun banen, når gæster rider (som genvej). Uden passagerer
-## pendler kabinen i tomgang (idle_step = tur-andel pr. frame, 0 = lukket/pause/i stykker),
-## så en åben svævebane altid ses køre. Ren visning – ændrer ikke simulationen.
-func _transport_leg(cv: CoasterVis, running: bool, idle_step: float = 0.0, dwell: float = 0.0) -> float:
+## T-145: ingen tomgangskørsel – kabinen bevæger sig kun, når simulationen kører en tur.
+func _transport_leg(cv: CoasterVis, running: bool) -> float:
 	if running and not cv.leg_running:
 		cv.leg_running = true
-		# En tomgangstur, der er mere end halvvejs, regnes som ankommet.
-		if cv.idle_t > 0.5:
-			cv.at_end = not cv.at_end
-		cv.idle_t = 0.0
 		cv.leg_reverse = cv.at_end
 	elif not running and cv.leg_running:
 		cv.leg_running = false
 		cv.at_end = not cv.leg_reverse
-		cv.idle_wait = dwell
 	if running:
 		return 1.0 - cv.vis_t if cv.leg_reverse else cv.vis_t
-	if idle_step > 0.0:
-		if cv.idle_wait > 0.0:
-			cv.idle_wait = maxf(0.0, cv.idle_wait - idle_step)
-		else:
-			cv.idle_t += idle_step
-			if cv.idle_t >= 1.0:
-				cv.idle_t = 0.0
-				cv.at_end = not cv.at_end
-				cv.idle_wait = dwell
-	return 1.0 - cv.idle_t if cv.at_end else cv.idle_t
+	return 1.0 if cv.at_end else 0.0
 
 
 ## Visnings-t for svævebanens kabine (0 = start, 1 = endestation). Til tests.
@@ -1077,7 +1057,7 @@ func transport_leg_t(coaster_id: int) -> float:
 		return -1.0
 	if cv.leg_running:
 		return 1.0 - cv.vis_t if cv.leg_reverse else cv.vis_t
-	return 1.0 - cv.idle_t if cv.at_end else cv.idle_t
+	return 1.0 if cv.at_end else 0.0
 
 
 func _pose_train(cv: CoasterVis, a: Attraction, t: float) -> void:
