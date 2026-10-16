@@ -131,7 +131,7 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 ## M7 – Dybde og UX  (kontrakt følger i T-098)
 | Task | Titel | Agent | Status |
 |---|---|---|---|
-| T-097 | Design: GDD-afsnit for M7 | designer | in-progress |
+| T-097 | Design: GDD-afsnit for M7 | designer | review |
 | T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | todo |
 
 Starter først implementering, når T-096 er done.

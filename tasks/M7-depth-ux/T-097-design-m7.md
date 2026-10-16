@@ -1,6 +1,6 @@
 # T-097: Design: GDD-afsnit for M7
 
-- **Status:** in-progress
+- **Status:** review
 - **Milepæl:** M7
 - **Agent:** designer
 - **Afhænger af:** –
@@ -21,8 +21,9 @@ Skriv M7-afsnittet i `docs/gdd.md` med mekanikker, tal og dataformat for:
 Udskudt til M8: personale-løn/træthed/områder, lån/regnskab/reklame, terræn, gæstegrupper.
 
 ## Acceptkriterier
-- [ ] M7-afsnit i `docs/gdd.md` dækker punkt 1–10 med tal og foreslåede JSON-felter
-- [ ] Åbne spørgsmål til architect er listet
+- [x] M7-afsnit i `docs/gdd.md` dækker punkt 1–10 med tal og foreslåede JSON-felter
+- [x] Åbne spørgsmål til architect er listet
 
 ## Log
 - 2026-10-16 – orkestrator: oprettet ud fra brugerens ønsker
+- 2026-10-16 – designer: M7-afsnit skrevet i docs/gdd.md (punkt 1–10, JSON-felter, 8 åbne spørgsmål til architect). Sat til review.

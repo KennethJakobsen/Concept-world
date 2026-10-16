@@ -262,3 +262,153 @@ Typekoder: **D** = data plus en prop (eksisterende sim). **A–E** = kræver ny 
 2. **Næste sim-runde:** B (intensity/nausea) først, fordi den gør de nye forlystelser forskellige. Derefter D (sideshow-præmier), som er lille og selvstændig.
 3. **Senere:** A (Tømmerrenden), som er spor-baseret og bør vente på erfaring med coasteren, og C (Svævebanen) samt Bimmelbanen på spor.
 4. **Forskning:** to nye topics, `water_rides` og `sideshows`. Hoppeborgen bliver startunlock, så startparken får en billig børneforlystelse.
+
+## M7 – Dybde og UX (T-097)
+
+Udskudt til M8: løn/træthed/områder for personale, lån/regnskab/reklame, terræn og gæstegrupper. Alle nye felter er valgfrie og har defaults, så gammelt content og gamle saves virker uændret (SaveMigrations).
+
+### 1. Konfiguration pr. bygning
+**Forlystelser** (`attractions/*.json`, nyt objekt `config`):
+```json
+"config": {"capacity": {"min": 4, "max": 12, "default": 8},
+           "ride_ticks": {"min": 120, "max": 320, "default": 200},
+           "speed": {"min": 0.8, "max": 1.3, "default": 1.0}}
+```
+- Kapacitet pr. tur: drift/dag skaleres `× (0.7 + 0.3 × cap/cap_default)`. Flere pladser giver mere gennemløb men højere drift.
+- Turlængde: excitement `× clamp(0.85 + 0.15 × ride_ticks/default, 0.85, 1.15)`. Længere tur er sjovere men giver lavere gennemløb og længere kø.
+- Hastighed (kun flat rides med `speed`): excitement `× speed`, intensity `× speed²`, nausea `× speed²`, reliability-tab pr. tur `× speed`. Hurtigere er sjovere, men flere bliver syge og flere ting går i stykker.
+- Ændringer gælder fra næste tur. Under en tur er værdierne låst.
+
+**Butikker** (`recipes`, en liste af valgfrie tilsætninger, som spilleren slår til/fra pr. bod):
+```json
+"recipes": [{"id": "salt", "name": "Ekstra salt", "cost_per_sale": 0.1, "satisfies": {"thirst": 20}, "happiness": 1},
+            {"id": "big", "name": "Stor portion", "cost_per_sale": 0.5, "satisfies": {"hunger": -15}, "price_tolerance": 0.15}]
+```
+- Fritterbix/burger kan få "Ekstra salt": thirst +20 efter køb, så drikkeboder sælger mere (ca. +15 % drikkesalg i en startpark). Prisen er lidt smag (+1 glæde) og en mindre glad gæst, hvis der ikke er en drikkebod i nærheden.
+- Drikke kan få "Is i": thirst −10 ekstra og toilet +5.
+- `cost_per_sale` trækkes fra omsætningen pr. salg (varekøb).
+
+**Pris med adfærdseffekt** (`price_effects` i shop-json):
+```json
+"price_effects": [{"below_ratio": 0.6, "extra_purchase_chance": 0.35, "nausea": 15, "thought": "too_much"}]
+```
+- `ratio = price / default ticket_price`. Is under 0,6× (fx 1 kr i stedet for 3): 35 % chance for at gæsten køber én gang mere med det samme. Hvert ekstra køb giver nausea +15 (bruger M5-nausea, opkast over 60). Tanke: "Jeg spiste for meget".
+- Over 1,5× gælder den almindelige pris-vurdering ("For dyrt!"). Det er altså kun den lave ende, der er ny.
+- Det gør pris til en reel knap: billigt giver salg men skrald og opkast. Dyrt giver afvisninger.
+
+### 2. Synlige salg
+- Hvert salg udsender et sim-event `sale(building_id, amount)`. Den findes allerede i bogføringen og skal bare eksponeres.
+- **I verden:** en grøn "+4 kr" svæver 1,0 s op over bygningen. Den samler salg inden for 0,25 s, så der ikke står 10 tal oven i hinanden. Den vises kun, når kameraets afstand er under ca. 40 m, og kan slås fra i indstillinger.
+- **HUD:** pengetallet blinker grønt (0,3 s) ved indtægt og rødt ved udgift over 100 kr. Det tæller ikke op/ned, det springer.
+- **Info-panel** (fanen Økonomi): omsætning i dag, i går og i alt, drift i alt, netto i alt, antal kunder i dag og en sparkline over de sidste 7 dage. Tilbagebetalt-markør: "Tjent hjem på dag 6".
+
+### 3. Synligt skrald, spande, bænke og lamper
+- Affald er allerede simuleret (M3). Nu vises det: 1–5 små props pr. celle (papir, bæger, opkast som en grøn plet). Stillingen er deterministisk ud fra celle og indeks, så den ikke hopper.
+- Skraldespand: der vises fyldniveau (0/50/100 %). Fuld spand får et lille ikon. Fuld spand tæller ikke længere som spand (`litter_chance_after_shop` 0.5 igen), og overløb lægges på cellen.
+- Bænk: en gæst, der hviler, sidder synligt. 2 pladser pr. bænk (`seats: 2`). Er den optaget, går gæsten videre.
+- Lampe: aura 0,5 om dagen og 1,5 om natten (`night_aura: 1.5`). Uden lamper om natten: glæde −0,01/tick på stier med lys < 1 (nyt `park.json: dark_path_penalty_per_tick`). Det er lille, men giver lamperne et formål.
+
+### 4. UX-redesign
+**Problem:** i dag er menuerne lister af tekstknapper. Spilleren skal læse for at bygge, og information ligger spredt ud.
+
+**Principper**
+1. *Verden først.* Information vises på/ved tingen (svævetal, ikoner, overlays), før den vises i paneler.
+2. *Ét klik for at se, to for at ændre.* Klik på noget åbner dets panel. Ændringer sker i panelet med direkte kontroller (skydere/stepper), aldrig i dialoger.
+3. *Ikoner + tal, tekst i tooltip.* Alle knapper har ikon og tooltip (0,4 s forsinkelse) med navn, pris og effekt.
+4. *Alt kan fortrydes.* Bygge/fjerne/flytte/pris-ændringer kan fortrydes (Ctrl+Z, 20 skridt, også pengene).
+5. *Konsistente pladser.* Penge/dato/gæster altid øverst. Byg altid nederst. Detaljer altid højre side.
+
+**Informationsarkitektur (skærmzoner)**
+| Zone | Indhold |
+|---|---|
+| Top-bar | penge (blink), dato + dagsur, gæster, glæde-ikon (smiley i 5 trin), omdømme-stjerner, hastighed (pause/1×/2×/4×), varsler-klokke |
+| Bund-dok (byg) | 6 kategori-ikoner: Stier, Forlystelser, Butikker, Pynt, Personale, Rutsjebane. Klik → vandret bakke med kort (ikon/miniature, pris, ★ hvis nyt, lås hvis ikke forsket). Hover = tooltip med stats |
+| Højre panel (inspektør) | kontekst: bygning/gæst/personale/sti. Faner: Oversigt, Indstillinger (config/pris/opskrift), Økonomi, Kø. Kun én åben ad gangen. Esc lukker |
+| Venstre kant (park) | små ikoner: Økonomi-oversigt, Forskning, Mål/milepæle, Gæster, Overlays, Indstillinger. Åbner store paneler, der dækker midten, men ikke top-bar |
+| Nederst til højre | varsler (toast, 4 s): "Karrusellen er i stykker" – klik flytter kameraet dertil |
+
+**Værktøjer**
+- *Flyt* (M): saml en bygning op og sæt den ned igen. Gratis. Gæster i kø/på turen bliver smidt af (de mister ikke penge). Stier, der mister forbindelsen, markeres rødt.
+- *Rotér* (R) under placering og flytning.
+- *Sælg*: refusion 100 % de første 10 s (eller indtil første kunde) – "fortrydelse". Derefter 50 % af byggeprisen + konfig-tilvalg (som i dag). Prisen vises på knappen før klik.
+- *Fortryd* (Ctrl+Z) / *Gentag* (Ctrl+Shift+Z): byg, sælg, flyt, pris, konfig. Ikke tid, forskning eller personale-ansættelse (kan sælges/fyres i stedet).
+- Ghost-forhåndsvisning: grøn = ok, rød = blokeret, med prisen ved musen.
+
+**Kort-overlays** (tast O eller venstre kant; ét ad gangen, resten af verden dæmpes):
+| Overlay | Visning | Skala |
+|---|---|---|
+| Glæde | gæster farvet efter glæde | 0–100 |
+| Skrald | sti-celler farvet efter affald | 0–5 |
+| Kø | forlystelser farvet efter kø-længde/kapacitet + ventetid i tal | 0–100 % |
+| Dækning | radius for spande, mekanikere, rengøring og underholdere | ja/nej |
+| Lys (nat) | stier uden lys | ja/nej |
+Farveskalaer bruger en farveblind-sikker palet (viridis-lignende: mørkeblå → gul) og har altid en signatur/legende.
+
+**Tilgængelighed**
+- UI-skalering: 75 %, 100 %, 125 %, 150 %, 200 % (standard følger skærmens DPI). Gemmes i brugerindstillinger, ikke i saven.
+- Farveblind-tilstand: overlays bruger allerede sikker palet. Tilstanden ændrer også grøn/rød i ghosts og pengeblink til blå/orange og tilføjer form (✓/✗-lignende ikoner tegnet som grafik, ikke tegn, så fonten ikke er et problem).
+- Alle farvesignaler har et andet signal ved siden af (ikon, form eller tal).
+
+**Tutorial (bygges sidst, efter det andet er stabilt)**
+- Separat, valgfrit scenarie "Første park" med 6 trin med pile i verden: læg sti fra indgang → byg karrusel → byg bod → sæt pris → åbn kø-overlay → ansæt rengøring. Hvert trin fuldføres ved handling, ikke ved klik på "Næste". Kan springes over. Data i `scenarios/tutorial.json` (`steps: [{id, text, highlight, complete_when}]`).
+
+### 5. Baggrund og mur
+- Parkens område omkranses af en mur (hæk/hegn) på kanten. Den er kun visuel og kan ikke fjernes. Indgangen er en port i muren.
+- Uden for muren: et bælte på ca. 24 celler med græs, træer, mark og en vej, der fører til indgangen. Ingen sim, kun props. Biler/busser kører på vejen, og gæster går fra en busstoppested til porten (kosmetisk).
+- Data: `park.json: "surroundings": {"wall": "hedge", "margin_cells": 24, "theme": "countryside"}`. Scenarier kan ændre temaet (flod/bjerg).
+
+### 6. Køstier
+- Ny sti-type `queue_path` (byg 15, refusion 7). Den tilsluttes forlystelsens indgang. Køen er så lang som antal køceller × 2 pladser pr. celle (`queue_slots_per_cell: 2`).
+- Uden kø-sti: maks 4 i kø (`queue_default_max: 4`, nuværende adfærd med en kort ventezone).
+- Kø fyldt: gæsten vælger noget andet ("Køen er for lang").
+- **Tålmodighed:** hver gæst har `patience` trukket fra `queue_patience_ticks` {min: 600, max: 1500} (30–75 s ved 1×). Over halvvejs: glæde −0,02/tick. Når den løber ud: gæsten forlader køen, glæde −10, tanke "Jeg gider ikke vente mere".
+- Pynt og underholdere nær køen halverer tålmodighedstabet (`queue_entertained_factor: 0.5`).
+- Forventet: karrusel (8 pladser, 200 ticks) betjener 8 gæster pr. 200 ticks (0,8/s) ⇒ 12 køceller (24 pladser) svarer til ca. 600 ticks ventetid, og det er præcis grænsen. Anbefalet kø: 6–10 celler pr. flat ride.
+
+```json
+"guests.json": {"queue_patience_ticks": {"min": 600, "max": 1500}, "queue_impatient_decay": 0.02, "queue_abandon_happiness": 10}
+"park.json": {"queue_slots_per_cell": 2, "queue_default_max": 4, "queue_entertained_factor": 0.5}
+```
+
+### 7. Gæster med masse
+- Gæster har radius 0,2 celle (`guest_radius`). De undviger hinanden (lokal separation, ikke fuld fysik), og der kan højst være 6 gæster pr. sti-celle (`max_guests_per_cell`). Er cellen fuld, venter gæsten op til 20 ticks og vælger så en anden rute.
+- Fuld celle i mere end 200 ticks er "trængsel": glæde −0,01/tick og tanke "Her er for mange mennesker". Det giver et naturligt incitament til at bygge bredere stier.
+- Determinisme: separationen beregnes i fast rækkefølge (gæste-id). Ingen float-afhængighed af frame-rate.
+
+### 8. Vælg ledig frem for optaget
+- Når en gæst vælger en bygning til et behov, scorer den `score = afstand + kø_længde × queue_weight (3 celler pr. person i kø)`. Den laveste score vinder.
+- Er bygningen fuld (kø fyldt), springes den over. Det gælder toiletter, butikker og forlystelser (forlystelser: til `score` lægges excitement-vægten fra den nuværende tilfældige vægtning).
+- `guests.json: "queue_weight_cells": 3`.
+
+### 9. Gå hjem og hæveautomat
+- Gæsten sætter kurs mod udgangen (tilstand `leaving`, sti til port) når: energy ≥ `leave_energy` 90, glæde < 20, eller penge < billigste åbne pris og ingen hæveautomat inden for rækkevidde. Tanke vises ("Jeg er træt", "Jeg har ikke flere penge").
+- `leaving`-gæster køber ikke og stiller sig ikke i kø, men kan stadig blive sultne (påvirker ikke længere).
+- **Hæveautomat** (`atm`, 1×1, byg 400, drift 20/dag, forskning `shops`, 90 point): en gæst uden penge går til nærmeste hæveautomat (op til 30 celler), hvis glæde ≥ 40, og hæver 20–50 kr (seedet). Højst 2 gange pr. besøg. Parken får 1 kr i gebyr pr. hævning.
+- Forventning: gæster bliver ca. 20–30 % længere ⇒ +15–25 % omsætning i en moden park. Det dækker automaten på dag 1–2.
+
+### 10. Milepæle, der låser forskning op
+Oven på den eksisterende forskning: en milepæl låser en *gren* (topic) op for forskning eller giver point. Uden milepælen kan grenen ikke vælges.
+```json
+"milestones": [
+  {"id": "guests_100", "name": "100 gæster", "condition": {"total_guests": 100}, "reward": {"research_points": 50}},
+  {"id": "first_thrill", "name": "Første vilde tur", "condition": {"rides_open": 3}, "reward": {"unlock_topic": "thrill_rides"}},
+  {"id": "stars_3", "name": "3 stjerner", "condition": {"reputation": 60}, "reward": {"unlock_topic": "roller_coasters"}},
+  {"id": "first_coaster", "name": "Første rutsjebane", "condition": {"coaster_built": true}, "reward": {"unlock_topic": "water_rides", "money": 1000}},
+  {"id": "clean_park", "name": "Ren park", "condition": {"days_clean": 3}, "reward": {"unlock_topic": "scenery"}},
+  {"id": "sideshow_ready", "name": "Pengemaskine", "condition": {"total_revenue": 20000}, "reward": {"unlock_topic": "sideshows"}}
+]
+```
+- Fra start åbne: `gentle_rides`, `shops`. Resten kræver milepæle. Stjerner = omdømme / 20 (3★ = 60).
+- Fil: `game/content/milestones.json`. Gemmes i saven som et sæt af opnåede id'er (default tomt; ved migration markeres milepæle, hvis betingelsen allerede er opfyldt, så gamle saves ikke mister grene).
+- Sandbox: alt åbent, milepæle vises men giver intet. Scenarier kan slå milepæle fra (`"milestones": false`).
+- UI: venstre kant → "Mål/milepæle" med fremskridtslinje pr. milepæl. Opnået milepæl giver toast + fanfare.
+
+### Åbne spørgsmål til architect
+1. **Fortryd og determinisme:** skal fortryd være en kommando-stak i sim (inverse kommandoer) eller et snapshot? Hvad med fortryd efter tid er gået (gæster i kø)? Forslag: kun indtil næste sim-tick-batch på 5 s, ellers kommando-baseret uden at rulle gæster tilbage.
+2. **Gæste-separation** (pkt. 7) i sim med fast tick og mange gæster: rumlig hash pr. celle? Ydelse på web ved 500+ gæster?
+3. **Køstier i pathfinding:** er `queue_path` en separat graf, eller en sti-type, som normal pathfinding ikke må bruge?
+4. **Flyt-værktøj:** hvordan håndteres coaster-spor (flyt hele banen eller ikke tilladt)? Forslag: ikke tilladt i M7.
+5. **Sale-event:** bridge-signal pr. salg eller batch pr. tick (flere hundrede gæster)?
+6. **Brugerindstillinger** (UI-skala, farveblind, svævetal): ny `user://settings.cfg` adskilt fra save – ok?
+7. **Milepæls-migration:** er det acceptabelt at evaluere betingelser retroaktivt ved indlæsning af gamle saves (kun dem, vi kan beregne fra state)?
+8. **Recipes og save:** gemmes valgte tilsætninger pr. bygningsinstans (ja, foreslået) med default `[]`?
