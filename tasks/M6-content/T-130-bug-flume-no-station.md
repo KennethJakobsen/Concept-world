@@ -1,6 +1,6 @@
 # T-130: Bug: tømmerrende kan ikke færdiggøres – "banen mangler en station"
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M6
 - **Agent:** simulation
 - **Afhænger af:** T-090, T-093
@@ -18,3 +18,4 @@ Undersøg hele kæden: sim-validering (station-id pr. system, `station_id(system
 ## Log
 - 2026-10-16 – orkestrator: oprettet ud fra brugerens screenshot
 - 2026-10-16 – simulation: Årsag: ikke sim (sim-validering af lukket rende/minitog er korrekt). BuildTool.coaster_id er ren værktøjstilstand og nulstilles af Esc, Vælg-værktøjet, nyt værktøjsvalg og ved indlæsning af save; et nyt klik på byggeknappen (eller Færdig med paletten åben) gav derefter coaster_id=-1 → finish_coaster() returnerede hårdkodet "no_station", selv om banen har station. Rettelse (building/ui): `finish_coaster(prefer_id)` genoptager nu en ufærdig bane (paletten sender `resume_id`; ellers den eneste ufærdige af værktøjets type / i parken) via `find_unfinished_coaster`; tvetydigt → ny kode `no_active_track` ("Vælg den ufærdige bane og tryk 'Fortsæt byg'.") i M6Texts. Test: `tests/test_track_finish_chain.gd` (palette → BuildTool → sim for tømmerrende og minitog, inkl. reproduktion efter værktøjsskift/Esc). Gemte ufærdige baner virker (status `building` gemmes; Færdig finder dem). test.sh + integration.sh grønne.
+- 2026-10-16 – bruger: godkendt.

@@ -94,13 +94,13 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-067 | Sim: scenarier, mål, sejr/nederlag | simulation | ✅ done |
 | T-068 | Sim: rutsjebane (bane, fysik, ratings) | simulation | ✅ done |
 | T-069 | Grafik: procedurel bane, tog, station | graphics | ✅ done |
-| T-070 | Gameplay: rutsjebane-værktøj, bridge, scenarie-flow | gameplay | review |
-| T-071 | UI: scenarievalg, mål, forskning, rutsjebane-menu | ui | review |
-| T-072 | M5 verifikation | qa | review |
+| T-070 | Gameplay: rutsjebane-værktøj, bridge, scenarie-flow | gameplay | ✅ done |
+| T-071 | UI: scenarievalg, mål, forskning, rutsjebane-menu | ui | ✅ done |
+| T-072 | M5 verifikation | qa | ✅ done |
 | T-073 | Bug: rutsjebanestationens tag vender forkert | graphics | ✅ done |
-| T-074 | Grafik: stiliserede bygninger med tema-elementer | graphics | review |
+| T-074 | Grafik: stiliserede bygninger med tema-elementer | graphics | ✅ done |
 | T-075 | Balance: rutsjebane-ratings og scenarier | designer | ✅ done |
-| T-076 | Bug: rengøringsfolk løber i flok (opgavereservation) | simulation | review |
+| T-076 | Bug: rengøringsfolk løber i flok (opgavereservation) | simulation | ✅ done |
 | T-077 | Bug: test_ui_m5 forældet efter T-075-data | ui | ✅ done |
 | T-078 | Balance: Floddalen/Bjergtoppen kan ikke vindes | designer | ✅ done |
 
@@ -115,30 +115,32 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-084 | Sim: intensity, kvalme, opkast + save v3 | simulation | ✅ done |
 | T-085 | Sim: sideshows og præmier | simulation | ✅ done |
 | T-086 | Sim: bærbare ting (ballon, souvenir, præmier) | simulation | ✅ done |
-| T-087 | Grafik: bærbare ting, opkast og plask | graphics | review |
-| T-088 | Gameplay: B/D/E i scenen | gameplay | review |
-| T-089 | UI: intensity, kvalme, præmier og ting | ui | review |
+| T-087 | Grafik: bærbare ting, opkast og plask | graphics | ✅ done |
+| T-088 | Gameplay: B/D/E i scenen | gameplay | ✅ done |
+| T-089 | UI: intensity, kvalme, præmier og ting | ui | ✅ done |
 | T-090 | Sim: generaliseret spor, tømmerrende og minitog | simulation | ✅ done |
 | T-091 | Sim: svævebane – transport mellem to stationer | simulation | ✅ done |
-| T-092 | Grafik: trug, togskinner, monorail-bjælke og køretøjer | graphics | review |
+| T-092 | Grafik: trug, togskinner, monorail-bjælke og køretøjer | graphics | ✅ done |
 | T-099 | Bug: M6-props mangler teksturer/detaljer, showcase viser kun 3 | graphics | ✅ done |
 | T-119 | Sim: impulskøb i butikker uden behov | simulation | ✅ done |
-| T-120 | Bug: tømmerrenden går under terræn ved fald | simulation | review |
-| T-130 | Bug: tømmerrende "mangler en station" ved færdiggørelse | simulation | review |
-| T-132 | Bug: stier kan ikke fjernes | gameplay | review |
-| T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | review |
-| T-094 | UI: spor-faner, fejltekster og info | ui | review |
+| T-120 | Bug: tømmerrenden går under terræn ved fald | simulation | ✅ done |
+| T-130 | Bug: tømmerrende "mangler en station" ved færdiggørelse | simulation | ✅ done |
+| T-132 | Bug: stier kan ikke fjernes | gameplay | ✅ done |
+| T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | ✅ done |
+| T-094 | UI: spor-faner, fejltekster og info | ui | ✅ done |
 | T-095 | Balance: M6-indhold | designer | ✅ done |
 | T-096 | M6 verifikation | qa | ✅ done |
-| T-121 | balance_sim måler opkast, sideshow-margin og impulskøb | simulation | todo |
+
+M6 afsluttet 2026-10-16 (M5 lukket samme dag).
 
 Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/T-088/T-089 · 4) T-090→T-091, T-092 · 5) T-093/T-094, derefter T-095 · 6) T-096.
 
 ## M7 – Dybde og UX  ([kontrakt](M7-depth-ux/_CONTRACT.md), [ADR-005](../docs/adr/ADR-005-guest-mass-queues.md))
 | Task | Titel | Agent | Status |
 |---|---|---|---|
-| T-097 | Design: GDD-afsnit for M7 | designer | review |
-| T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | review |
+| T-097 | Design: GDD-afsnit for M7 | designer | ✅ done |
+| T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | ✅ done |
+| T-121 | balance_sim måler opkast, sideshow-margin og impulskøb | simulation | todo |
 | T-131 | Ændringsønske: rutsjebane kan startes uden stykker til at lukke den | designer | todo |
 | T-100 | Data: config, opskrifter, kø/gæste-parametre, ATM, milepæle, omgivelser | designer | todo |
 | T-101 | UI: UX-fundament (skærmzoner, tooltips, indstillinger) | ui | todo |
@@ -160,7 +162,7 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-117 | Balance: M7-mekanik | designer | todo |
 | T-118 | M7 verifikation | qa | todo |
 
-Starter først implementering, når T-096 er done.
+M6 er done – M7 kan starte.
 
 Runder: 1) T-100, T-101 (UX-fundament), T-108 · 2) T-102 (save v4), T-107 · 3) T-103→T-104→T-105, T-112, T-109 · 4) T-106, T-111 · 5) T-110, T-113, derefter T-114 · 6) T-115/T-116, derefter T-117 · 7) T-118.
 

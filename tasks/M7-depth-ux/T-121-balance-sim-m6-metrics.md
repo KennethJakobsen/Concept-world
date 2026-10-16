@@ -1,7 +1,7 @@
 # T-121: balance_sim måler M6 (opkast, sideshow-margin, impulskøb)
 
 - **Status:** todo
-- **Milepæl:** M6
+- **Milepæl:** M7
 - **Agent:** simulation (game/tools/balance_sim.gd)
 - **Afhænger af:** T-095, T-119
 
@@ -16,3 +16,4 @@
 
 ## Log
 - 2026-10-16 – qa (T-096): oprettet som opfølgning på T-095-fundet
+- 2026-10-16 – orkestrator: flyttet til M7 (før T-117).

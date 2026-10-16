@@ -1,6 +1,6 @@
 # T-076: Bug: rengøringsfolk løber i flok
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M5
 - **Agent:** simulation
 - **Afhænger af:** –
@@ -22,3 +22,4 @@ Brugeren: "Rengøringsfolkene render rundt i samlet flok." Indfør opgavereserva
 - 2026-10-15 – simulation: oprettet efter brugerrapport, in-progress
 - 2026-10-15 – simulation: implementeret i staff_ai.gd/staff.gd og 5 tests i test_staff_decor.gd. test.sh: 230/231 (fejlen i test_ui_m5 fandtes også før ændringen). integration.sh OK. → review
 - 2026-10-16 – qa (T-096): Sim-delen er verificeret headless (tests grønne). Står på review, indtil brugeren har bekræftet visuelt, at fejerne spreder sig.
+- 2026-10-16 – bruger: godkendt.

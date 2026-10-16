@@ -1,6 +1,6 @@
 # T-120: Bug: tømmerrenden går under terræn ved fald
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M6
 - **Agent:** simulation
 - **Afhænger af:** T-090, T-092
@@ -16,3 +16,4 @@ Brugerrapport (screenshot): ved faldstykket (`flume_drop`) dykker truget ned und
 ## Log
 - 2026-10-16 – orkestrator: oprettet ud fra brugerens screenshot
 - 2026-10-16 – simulation: Årsag er IKKE sim: preview/cmd_place_track_piece og validate afviser allerede level < 0 (`below_ground`/`too_low`). Fejlen lå i grafik: `CoasterTrackMesh.full_centerline` brugte gennemsnitshældning i samlinger, så stykket efter et fald (fx flume_straight i niveau 0) fik start-hældning -1 og Hermite-kurven dykkede ~0,15 under terræn. Rettet (lille, klar ændring i game/scripts/rendering/coaster/coaster_track_mesh.gd): `_joint_slope` giver hældning 0 ved fortegnsskift/fladt nabostykke, og y klampes til stykkets [min,max]-niveau. Gælder alle sporsystemer. Test: `test_flume_drop_never_below_ground`. Saves berøres ikke (kun visning). test.sh 309/309, integration OK. Kræver visuel bekræftelse.
+- 2026-10-16 – bruger: godkendt.

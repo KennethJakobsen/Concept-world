@@ -1,6 +1,6 @@
 # T-088: Gameplay: B/D/E i scenen
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M6
 - **Agent:** gameplay
 - **Afhænger af:** T-086, T-087
@@ -17,3 +17,4 @@ Bridge-forbindelse af signalerne for opkast, præmier og ting (kontrakt §6 T-08
 ## Log
 - 2026-10-15 – architect: oprettet
 - 2026-10-16 – gameplay: ParkView forbinder guest_vomited (vomit-fx, sick-emote, lyd `vomit`), prize_won (happy-emote, cheer + cash, fx_event `prize`), item_gained/item_lost (set_items fra guest.items; balloon_float ved tabt ballon). FX_SCENES har balloon_float/vomit/splash. Items gendannes ved spawn/rebuild (load); opkast gendannes som affald via litter. Tests: alle ikke-sporbaserede bygninger bygges med node, items/præmie/opkast-bridge. Bemærk: lyd-id `vomit` findes ikke i content/audio.json endnu (AudioManager advarer én gang og er tavs) – kræver content-task.
+- 2026-10-16 – bruger: godkendt.

@@ -1,6 +1,6 @@
 # T-098: M7 kontrakt, ADR-005 og tasks
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** architect
 - **Afhænger af:** T-097
@@ -17,3 +17,4 @@ Ud fra GDD'ens M7-afsnit: skriv `tasks/M7-depth-ux/_CONTRACT.md`, `docs/adr/ADR-
 - 2026-10-16 – orkestrator: oprettet
 - 2026-10-16 – architect: startet
 - 2026-10-16 – architect: _CONTRACT.md, ADR-005 og T-100–T-118 oprettet, BOARD opdateret. Brugerbeslutninger: sporbaner kan flyttes, milepæle backfilles. → review
+- 2026-10-16 – bruger: godkendt.

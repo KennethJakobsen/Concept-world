@@ -1,6 +1,6 @@
 # T-097: Design: GDD-afsnit for M7
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** designer
 - **Afhænger af:** –
@@ -27,3 +27,4 @@ Udskudt til M8: personale-løn/træthed/områder, lån/regnskab/reklame, terræn
 ## Log
 - 2026-10-16 – orkestrator: oprettet ud fra brugerens ønsker
 - 2026-10-16 – designer: M7-afsnit skrevet i docs/gdd.md (punkt 1–10, JSON-felter, 8 åbne spørgsmål til architect). Sat til review.
+- 2026-10-16 – bruger: godkendt.
