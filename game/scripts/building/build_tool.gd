@@ -89,7 +89,7 @@ func set_tool(def_id: String) -> bool:
 		var a: Attraction = _view.sim.get_attraction(coaster_id) if _view != null and _view.sim != null else null
 		if a == null or a.def.id != def_id.substr(PREFIX_COASTER.length()):
 			coaster_id = -1
-	if def_id.begins_with(PREFIX_COASTER) and coaster_piece != "" and not coaster_palette().has(coaster_piece):
+	if def_id.begins_with(PREFIX_COASTER) and coaster_piece != "" and not CoasterContent.pieces(coaster_system()).has(coaster_piece):
 		coaster_piece = ""  # T-093: stykket hører til et andet sporsystem
 	if grid_lines != null:
 		grid_lines.set_tool(def_id)

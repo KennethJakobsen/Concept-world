@@ -68,6 +68,9 @@ class CoasterVis:
 	var total: float = 0.0
 	var vis_t: float = 0.0  ## interpoleret ride_progress
 	var end_station: Node3D  ## T-093: svævebanens endestation
+	var at_end: bool = false       ## svævebanen: kabinen holder ved endestationen
+	var leg_running: bool = false
+	var leg_reverse: bool = false  ## svævebanen: denne tur kører end → start
 
 
 func _ready() -> void:
@@ -887,7 +890,7 @@ func _on_coaster_changed(coaster_id: int) -> void:
 		cv.train.queue_free()
 		cv.train = null
 	if open:
-		_pose_train(cv, a, 0.0)
+		_pose_train(cv, a, 1.0 if a.is_transport() and cv.at_end else 0.0)
 
 
 ## Svævebanens endestation (stykke med station_role "end") vises som egen node.
@@ -939,7 +942,34 @@ func update_coasters(delta: float) -> void:
 			var tick_t: float = 1.0 / run_ticks
 			# Fremskriv visningen, men højst én tick foran sim'en; spring hvis den halter.
 			cv.vis_t = clampf(cv.vis_t + step, p, minf(1.0, p + tick_t)) if absf(cv.vis_t - p) <= 2.0 * tick_t else p
+		if a.is_transport():
+			_pose_train(cv, a, _transport_leg(cv, p > 0.0 and not a.broken))
+			continue
 		_pose_train(cv, a, cv.vis_t)
+
+
+## Svævebanen kører pendul: hver anden tur fra endestationen tilbage til start.
+## Mellem ture holder kabinen ved den station, hvor den sidst stoppede.
+func _transport_leg(cv: CoasterVis, running: bool) -> float:
+	if running and not cv.leg_running:
+		cv.leg_running = true
+		cv.leg_reverse = cv.at_end
+	elif not running and cv.leg_running:
+		cv.leg_running = false
+		cv.at_end = not cv.leg_reverse
+	if not running:
+		return 1.0 if cv.at_end else 0.0
+	return 1.0 - cv.vis_t if cv.leg_reverse else cv.vis_t
+
+
+## Visnings-t for svævebanens kabine (0 = start, 1 = endestation). Til tests.
+func transport_leg_t(coaster_id: int) -> float:
+	var cv: CoasterVis = _coasters.get(coaster_id, null)
+	if cv == null:
+		return -1.0
+	if cv.leg_running:
+		return 1.0 - cv.vis_t if cv.leg_reverse else cv.vis_t
+	return 1.0 if cv.at_end else 0.0
 
 
 func _pose_train(cv: CoasterVis, a: Attraction, t: float) -> void:
