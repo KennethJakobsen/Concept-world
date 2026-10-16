@@ -11,7 +11,7 @@ extends PanelContainer
 
 signal panel_toggled(id: StringName, open: bool)
 
-const BUTTON_SIZE: float = 34.0
+const BUTTON_SIZE: float = 48.0
 
 var host: Control  ## hvor fabrik-paneler lægges
 var open_id: StringName = &""
@@ -21,9 +21,11 @@ var _box: VBoxContainer
 
 func build() -> void:
 	name = "ParkRail"
+	theme_type_variation = &"RailWood"
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_box = VBoxContainer.new()
 	_box.name = "V"
+	_box.add_theme_constant_override("separation", 10)
 	add_child(_box)
 
 
@@ -39,15 +41,15 @@ func register_action(id: StringName, icon: String, title: String, action: Callab
 func _add(id: StringName, icon: String, title: String, factory: Callable, action: Callable) -> Button:
 	var b: Button = _entries[id].button if _entries.has(id) else null
 	if b == null:
-		b = Button.new()
+		b = UiTheme.medallion("rail_" + icon, BUTTON_SIZE)
 		b.name = "Rail_" + String(id)
-		b.focus_mode = Control.FOCUS_NONE
-		b.mouse_filter = Control.MOUSE_FILTER_STOP
-		b.custom_minimum_size = Vector2(BUTTON_SIZE, BUTTON_SIZE)
-		var ic := UiIcons.new(icon, BUTTON_SIZE - 12.0)
-		ic.name = "Icon"
-		ic.position = Vector2(6, 6)
-		b.add_child(ic)
+		b.toggle_mode = true
+		if b.icon == null:  # intet malet ikon: tegnet fallback
+			var ic := UiIcons.new(icon, BUTTON_SIZE - 20.0)
+			ic.name = "Icon"
+			ic.color = UiTheme.CREAM
+			ic.position = Vector2(10, 10)
+			b.add_child(ic)
 		b.pressed.connect(toggle.bind(id))
 		_box.add_child(b)
 	TooltipService.attach(b, title if title != "" else String(id))
@@ -82,6 +84,7 @@ func toggle(id: StringName) -> void:
 	var e: Dictionary = _entries[id]
 	if (e.action as Callable).is_valid():
 		close_panel()
+		_sync_pressed()
 		(e.action as Callable).call()
 		return
 	var was_open: bool = open_id == id
@@ -96,6 +99,7 @@ func toggle(id: StringName) -> void:
 	if e.panel != null:
 		(e.panel as Control).visible = true
 		open_id = id
+		_sync_pressed()
 		panel_toggled.emit(id, true)
 
 
@@ -107,6 +111,7 @@ func close_panel() -> void:
 		p.visible = false
 	var old: StringName = open_id
 	open_id = &""
+	_sync_pressed()
 	panel_toggled.emit(old, false)
 
 
@@ -114,3 +119,8 @@ func refresh(sim: ParkSim) -> void:
 	var p: Control = panel(open_id)
 	if p != null and p.visible and p.has_method("refresh"):
 		p.call("refresh", sim)
+
+
+func _sync_pressed() -> void:
+	for k: StringName in _entries:
+		(_entries[k].button as Button).set_pressed_no_signal(k == open_id)

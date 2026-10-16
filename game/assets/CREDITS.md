@@ -29,3 +29,13 @@ Egne `StandardMaterial3D` (.tres) med triplanar UV, deles mellem props.
 
 ## T-108 omgivelser
 - Mur, port, busstoppested, træer, marker, vej, biler/busser og gæster i `scripts/rendering/surroundings_renderer.gd` er procedurelle primitiver (egne, ingen eksterne assets).
+
+## T-137 UI-ikoner og miniaturer (`ui/`)
+Alle **egne**, ingen tredjepartsassets. Licens: samme som projektet.
+- `ui/icons/<id>.png` (64 px) og `ui/icons/128/<id>.png` (128 px): 60 ikoner efter `docs/ui-style.md` §8, tegnet som egne SVG-former i
+  `game/tools/gen_ui_icons.gd` og rasteriseret af Godot. Genkør: `cd game && godot --headless --script res://tools/gen_ui_icons.gd`.
+- `ui/thumbs/<content_id>.png` (160×120, transparent): renderet i Compatibility fra vores egne prop-scener af `game/tools/render_thumbs.gd`.
+  Genkør (ikke headless): `cd game && godot --rendering-method gl_compatibility --script res://tools/render_thumbs.gd -- <kontaktark.png>`.
+  `atm` har ingen prop-scene endnu, så UI'et bruger fallback-ikonet.
+
+- `ui/logo/*` – Concept-world-logo (T-139). Eget arbejde (håndskrevet SVG), CC0. Ordmærket er konverteret til paths fra systemfonten Georgia (kun brugt som tegneudgangspunkt, ingen font distribueres).

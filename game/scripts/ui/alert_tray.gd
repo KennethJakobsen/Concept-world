@@ -13,6 +13,8 @@ const DURATION: float = 4.0
 const MAX_VISIBLE: int = 4
 const HISTORY: int = 10
 const WIDTH: float = 300.0
+const ICONS: Dictionary = {"alert": "alert_danger", "info": "alert_info", "ok": "alert_ok",
+	"broken": "alert_broken", "trash": "alert_trash"}
 
 var unread: int = 0
 var history: Array[Dictionary] = []  ## {text, icon, cell}, nyeste sidst
@@ -39,17 +41,30 @@ func push(text: String, icon: String = "info", cell: Vector2i = NO_CELL) -> Butt
 func _add_item(text: String, icon: String, cell: Vector2i) -> Button:
 	var b := Button.new()
 	b.name = "Alert"
+	b.theme_type_variation = &"AlertNote"
 	b.focus_mode = Control.FOCUS_NONE
 	b.mouse_filter = Control.MOUSE_FILTER_STOP
 	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	b.custom_minimum_size = Vector2(WIDTH, 32)
-	b.text = "      " + text  # plads til det tegnede ikon
+	b.custom_minimum_size = Vector2(WIDTH, 48)
+	b.text = text
 	b.set_meta(&"left", DURATION)
 	b.set_meta(&"cell", cell)
-	var ic := UiIcons.new(icon, 18.0)
-	ic.position = Vector2(8, 7)
-	b.add_child(ic)
+	var tex_id: String = ICONS.get(icon, "alert_info")
+	b.icon = UiTheme.icon(tex_id)
+	if b.icon == null:
+		var ic := UiIcons.new(icon, 18.0)
+		ic.position = Vector2(10, 15)
+		b.add_child(ic)
+		b.text = "      " + text
+	var edge: Color = UiTheme.RED if tex_id == "alert_danger" or tex_id == "alert_broken" \
+		else (UiTheme.GREEN if tex_id == "alert_ok" else UiTheme.TEAL)
+	for st: String in ["normal", "hover", "pressed"]:
+		var sb := (UiTheme.get_theme().get_stylebox(st, &"AlertNote") as StyleBoxFlat).duplicate() as StyleBoxFlat
+		sb.border_color = edge
+		b.add_theme_stylebox_override(st, sb)
+	if cell != NO_CELL:
+		b.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	if cell != NO_CELL:
 		TooltipService.attach(b, "Klik for at se stedet")
 	b.pressed.connect(_on_click.bind(b))
@@ -107,6 +122,8 @@ func _on_click(b: Button) -> void:
 ## Kaldes hver frame (eller manuelt i tests).
 func tick(delta: float) -> void:
 	for b in items():
+		if b.is_hovered():
+			continue  # hover pauser timeren
 		var left: float = float(b.get_meta(&"left", 0.0)) - delta
 		b.set_meta(&"left", left)
 		b.modulate.a = clampf(left / 0.5, 0.0, 1.0)

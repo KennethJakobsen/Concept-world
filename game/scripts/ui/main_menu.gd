@@ -2,7 +2,8 @@ class_name MainMenu
 extends Control
 ## Hovedmenu: Nyt scenarie (liste), Fri leg, Fortsæt (autosave), Indlæs (slot-liste), Afslut (skjult på web).
 
-const THEME_RES: Theme = preload("res://ui/theme.tres")
+const ICONS: Dictionary = {"Nyt scenarie": "menu_new", "Fri leg": "menu_new", "Fortsæt": "menu_continue",
+	"Indlæs...": "menu_load", "Indstillinger": "menu_settings", "Afslut": "menu_quit"}
 
 var store: SaveStore = SaveStore.new()
 var _panel: PanelContainer
@@ -29,12 +30,14 @@ static func show_quit() -> bool:
 
 
 func build() -> void:
-	theme = THEME_RES
+	theme = UiTheme.get_theme()
 	set_anchors_preset(Control.PRESET_TOP_LEFT)
 	var bg := ColorRect.new()
 	bg.name = "Background"
-	bg.color = Color(0.16, 0.32, 0.22)
+	bg.color = Color("#7FB8D8")
 	add_child(bg)
+	bg.add_child(_full_rect(_gradient_tex(false)))
+	bg.add_child(_full_rect(_gradient_tex(true)))
 	_panel = PanelContainer.new()
 	_panel.name = "Panel"
 	_panel.custom_minimum_size = Vector2(320, 0)
@@ -42,11 +45,15 @@ func build() -> void:
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)
 	_panel.add_child(v)
-	var title := Label.new()
-	title.text = "Concept-world"
-	title.add_theme_font_size_override("font_size", 28)
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	v.add_child(title)
+	var logo := TextureRect.new()
+	logo.name = "Logo"
+	logo.texture = load("res://assets/ui/logo/logo_full_512.png") as Texture2D
+	logo.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	logo.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	logo.custom_minimum_size = Vector2(340, 146)
+	logo.tooltip_text = "Concept-world"
+	logo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	v.add_child(logo)
 	_btn(v, "Nyt scenarie", toggle_scenario_list)
 	_scenario_box = VBoxContainer.new()
 	_scenario_box.name = "Scenarios"
@@ -91,10 +98,49 @@ func _btn(parent: Control, text: String, cb: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
 	b.name = text.replace(".", "")
+	b.theme_type_variation = &"BigButton"
+	b.custom_minimum_size = Vector2(280, 44)
+	b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	b.icon = UiTheme.icon(ICONS.get(text, ""))
+	b.add_theme_constant_override("icon_max_width", 28)
 	b.focus_mode = Control.FOCUS_NONE
 	b.pressed.connect(cb)
 	parent.add_child(b)
 	return b
+
+
+static func _full_rect(tex: Texture2D) -> TextureRect:
+	var r := TextureRect.new()
+	r.texture = tex
+	r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	r.stretch_mode = TextureRect.STRETCH_SCALE
+	r.set_anchors_preset(Control.PRESET_FULL_RECT)
+	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return r
+
+
+## Himmel -> græs (lodret) eller varm vignet (radial, sort a 0 -> 0,45 i kanterne).
+static func _gradient_tex(vignette: bool) -> GradientTexture2D:
+	var g := Gradient.new()
+	var t := GradientTexture2D.new()
+	t.width = 256
+	t.height = 256
+	if vignette:
+		g.set_color(0, Color(0.2, 0.1, 0.0, 0.0))
+		g.set_color(1, Color(0.1, 0.05, 0.0, 0.45))
+		g.add_point(0.55, Color(0.2, 0.1, 0.0, 0.0))
+		t.fill = GradientTexture2D.FILL_RADIAL
+		t.fill_from = Vector2(0.5, 0.5)
+		t.fill_to = Vector2(1.0, 1.0)
+	else:
+		g.set_color(0, Color("#9FD3EE"))
+		g.set_color(1, Color("#5E9E3E"))
+		g.add_point(0.62, Color("#E9F2DA"))
+		g.add_point(0.66, Color("#7DBF55"))
+		t.fill_from = Vector2(0.5, 0.0)
+		t.fill_to = Vector2(0.5, 1.0)
+	t.gradient = g
+	return t
 
 
 func refresh() -> void:
@@ -107,8 +153,8 @@ func layout(vp: Vector2) -> void:
 	position = Vector2.ZERO
 	size = vp
 	(get_node("Background") as Control).size = vp
-	_slots.set_height(clampf(vp.y - 360.0, 60.0, 240.0))
-	_scenario_scroll.custom_minimum_size.y = clampf(vp.y - 400.0, 80.0, 320.0)
+	_slots.set_height(clampf(vp.y - 450.0, 60.0, 240.0))
+	_scenario_scroll.custom_minimum_size.y = clampf(vp.y - 480.0, 80.0, 320.0)
 	var m: Vector2 = _panel.get_combined_minimum_size()
 	_panel.size = m
 	_panel.position = ((vp - m) * 0.5).max(Vector2.ZERO)

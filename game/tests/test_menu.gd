@@ -52,3 +52,10 @@ func test_menu_inside_1024x600() -> void:
 
 func test_main_scene_is_menu() -> void:
 	assert_eq(str(ProjectSettings.get_setting("application/run/main_scene")), "res://scenes/main_menu.tscn")
+
+
+func test_menu_uses_logo_texture() -> void:
+	var m := _menu()
+	var logo := m.find_child("Logo", true, false)
+	assert_true(logo is TextureRect and (logo as TextureRect).texture != null, "logo-tekstur")
+	m.free()

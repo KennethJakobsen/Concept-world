@@ -163,6 +163,10 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-133 | Sim: required_pieces for sporbaner | simulation | todo |
 | T-134 | UI: låst sporbane-kort | ui | todo |
 | T-135 | Gameplay: omgivelser i ParkView | gameplay | todo |
+| T-136 | Design: samlet UI-stil (art direction) | designer | review |
+| T-137 | Grafik: UI-ikoner og prop-miniaturer | graphics | review |
+| T-138 | UI: fælles tema og billedbaseret byggemenu | ui | review |
+| T-139 | Design: logo i Tivoli-skilt-stilen | designer | review |
 | T-118 | M7 verifikation | qa | todo |
 
 M7 startet 2026-10-16. Runde 1 (T-100, T-101, T-108, T-121, T-131) på review. Kendt: 2 tests fejler på `atm` indtil T-104/T-107.

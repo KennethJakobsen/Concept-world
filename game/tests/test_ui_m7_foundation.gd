@@ -41,7 +41,7 @@ func test_zones_exist() -> void:
 func test_dock_cards_have_tooltips_with_price() -> void:
 	var hud := _hud()
 	var b: Button = hud._build_buttons["carousel"]
-	assert_true(b.text.contains("$"))
+	assert_true(BuildDock.price_text(b).contains("$"))
 	assert_true(b.tooltip_text.contains("Pris"))
 	assert_true(b.tooltip_text.begins_with(str(b.get_meta(TooltipService.META_TITLE))))
 	hud.free()

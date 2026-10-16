@@ -42,14 +42,17 @@ func _check_inside(vp: Vector2) -> void:
 		var r := Rect2(p.position, p.size)
 		assert_true(bounds.encloses(r), "%s %s inden for %s" % [n, r, vp])
 		assert_true(r.size.y >= p.get_combined_minimum_size().y - 0.5, "%s ikke klippet" % n)
-	# Hver knap skal kunne være på én linje uden at teksten klippes; højden dækker ombrydningen.
-	var menu: PanelContainer = root.get_node("BuildMenu")
-	var flow: Control = menu.get_child(0)
-	assert_true(flow.get_child_count() >= 10, "sti/fjern/vælg + 7 bygninger")
-	for b: Control in flow.get_children():
-		assert_true(b.get_combined_minimum_size().x <= menu.size.x - 16.0, "knap %s passer i bredden" % (b as Button).text)
-		assert_true(not (b as Button).clip_text)
-	assert_true(menu.size.y >= flow.get_child(0).get_combined_minimum_size().y, "mindst én række høj")
+	# Byggedokken (T-138): centreret træbjælke med medaljoner + kortgitter, der passer i bredden.
+	var menu: BuildDock = root.get_node("BuildMenu")
+	assert_true(menu.cards.size() >= 10, "sti/fjern/vælg + 7 bygninger")
+	assert_true(menu.bar.get_combined_minimum_size().x <= vp.x, "bjælken passer i bredden")
+	hud.set_tab("rides")
+	hud.layout(vp)
+	assert_true(bounds.encloses(Rect2(menu.position, menu.size)), "dok med åbne kort inden for")
+	for id: String in menu.cards:
+		var b: Button = menu.cards[id]
+		if b.has_meta(BuildDock.META_CARD):
+			assert_true(BuildDock.price_text(b) != "" or id == "path", "kort %s har pris" % id)
 	hud.free()
 
 

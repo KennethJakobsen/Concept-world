@@ -15,6 +15,8 @@ func _init() -> void:
 
 
 func _draw() -> void:
+	if UiIcons.sync_texture(self, "clock_night" if night else "clock_day"):
+		return
 	var c: Vector2 = size * 0.5
 	var r: float = minf(size.x, size.y) * 0.5
 	if night:

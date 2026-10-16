@@ -11,7 +11,9 @@ extends PanelContainer
 signal closed
 
 const OVERVIEW: StringName = &"overview"
-const WIDTH: float = 260.0
+const WIDTH: float = 280.0
+const TITLES: Dictionary = {&"attraction": "Bygning", &"guest": "Gæst", &"staff": "Personale"}
+const PORTRAITS: Dictionary = {&"attraction": "cat_rides", &"guest": "guest_portrait", &"staff": "staff_portrait"}
 
 var context: StringName = &""
 var target_id: int = -1
@@ -21,6 +23,8 @@ var _tabs: Dictionary = {}        ## context -> Array[Dictionary] {id, title, fa
 var _built: Dictionary = {}       ## "context/tab" -> Control
 var _tab_row: HBoxContainer
 var _body: VBoxContainer
+var _title: Label
+var _portrait: TextureRect
 
 
 func build() -> void:
@@ -30,22 +34,32 @@ func build() -> void:
 	var v := VBoxContainer.new()
 	v.name = "V"
 	add_child(v)
+	var sign := PanelContainer.new()
+	sign.name = "Sign"
+	sign.theme_type_variation = &"SignWood"
+	v.add_child(sign)
+	var sh := HBoxContainer.new()
+	sign.add_child(sh)
+	_portrait = UiTheme.icon_rect("guest_portrait", 32.0)
+	sh.add_child(_portrait)
+	_title = Label.new()
+	_title.name = "Title"
+	_title.theme_type_variation = &"TitleLabel"
+	_title.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sh.add_child(_title)
+	var close: Button = UiTheme.medallion("close", 28.0)
+	close.name = "Close"
+	TooltipService.attach(close, "Luk", "Esc")
+	close.pressed.connect(close_inspector)
+	sh.add_child(close)
 	var head := HBoxContainer.new()
 	head.name = "Head"
 	v.add_child(head)
 	_tab_row = HBoxContainer.new()
 	_tab_row.name = "Tabs"
+	_tab_row.add_theme_constant_override("separation", 2)
 	_tab_row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	head.add_child(_tab_row)
-	var close := Button.new()
-	close.name = "Close"
-	close.focus_mode = Control.FOCUS_NONE
-	close.add_child(UiIcons.new("cross", 14.0))
-	close.custom_minimum_size = Vector2(24, 24)
-	(close.get_child(0) as Control).position = Vector2(5, 5)
-	TooltipService.attach(close, "Luk", "Esc")
-	close.pressed.connect(close_inspector)
-	head.add_child(close)
 	_body = VBoxContainer.new()
 	_body.name = "Body"
 	v.add_child(_body)
@@ -90,6 +104,8 @@ func open(ctx: StringName, id: int) -> void:
 	context = ctx
 	target_id = id
 	visible = true
+	_title.text = TITLES.get(ctx, String(ctx).capitalize())
+	_portrait.texture = UiTheme.icon(PORTRAITS.get(ctx, "alert_info"))
 	_rebuild_tab_row()
 	_show_current()
 
@@ -156,6 +172,7 @@ func _rebuild_tab_row() -> void:
 	for t: Dictionary in defs:
 		var b := Button.new()
 		b.name = "Tab_" + String(t.id)
+		b.theme_type_variation = &"Tab"
 		b.text = str(t.title)
 		b.toggle_mode = true
 		b.focus_mode = Control.FOCUS_NONE

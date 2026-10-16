@@ -10,8 +10,8 @@ const STARS: int = 5
 		queue_redraw()
 @export var star_size: float = 16.0
 @export var spacing: float = 2.0
-@export var fill_color: Color = Color(1.0, 0.8, 0.2)
-@export var empty_color: Color = Color(1, 1, 1, 0.25)
+@export var fill_color: Color = Color("#D9A441")
+@export var empty_color: Color = Color("#6E5E50")
 
 
 func _init() -> void:

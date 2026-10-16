@@ -11,7 +11,6 @@ const TAB_NAMES: Dictionary = BuildDock.CATEGORY_NAMES
 const STAFF_STATE_NAMES: Dictionary = {0: "Ledig", 1: "Går", 2: "Arbejder"}
 const STAFF_TASK_NAMES: Dictionary = {"repair": "Reparerer", "inspect": "Inspicerer", "sweep": "Fejer",
 	"empty_bin": "Tømmer skraldespand", "patrol": "Underholder"}
-const THEME_RES: Theme = preload("res://ui/theme.tres")
 const SPEEDS: Array[float] = [1.0, 2.0, 4.0]
 const MARGIN: float = 8.0
 const NEED_NAMES: Dictionary = {"hunger": "Sult", "thirst": "Tørst", "toilet": "Toilet", "energy": "Træthed"}
@@ -120,11 +119,15 @@ func layout(vp: Vector2) -> void:
 	var top: PanelContainer = root.get_node("TopBar")
 	var bottom: PanelContainer = root.get_node("BuildMenu")
 	var top_h: float = _panel_height(top, w)
-	var bottom_h: float = _panel_height(bottom, w)
 	top.position = Vector2(MARGIN, MARGIN)
 	top.size = Vector2(w, top_h)
-	bottom.position = Vector2(MARGIN, maxf(MARGIN, vp.y - MARGIN - bottom_h))
-	bottom.size = Vector2(w, bottom_h)
+	# Byggedok: centreret, svæver 12 px over bunden; kortgitteret tilpasses bredden.
+	var cols: int = int((w - 40.0) / (BuildDock.CARD_SIZE.x + BuildDock.CARD_GAP))
+	build_dock.set_grid(cols, 2 if vp.y >= 900.0 else 1)
+	var bs: Vector2 = bottom.get_combined_minimum_size()
+	bs.x = minf(bs.x, w)
+	bottom.size = bs
+	bottom.position = Vector2(maxf(MARGIN, (vp.x - bs.x) * 0.5), maxf(MARGIN, vp.y - 12.0 - bs.y))
 	for p: Control in [top, bottom]:
 		_sort_tree(p)
 	if _staff_list_panel == null:
@@ -248,7 +251,7 @@ func _process(_delta: float) -> void:
 func _build_ui() -> void:
 	var root := Control.new()
 	root.name = "Root"
-	root.theme = THEME_RES
+	root.theme = UiTheme.get_theme()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
@@ -300,6 +303,7 @@ func _build_ui() -> void:
 		_add_build_button(null, "staff:" + d.id, d.name, 0, "staff", "$%d/dag" % d.wage_per_day,
 			"Løn: $%d/dag. Klik på en sti for at ansætte." % d.wage_per_day)
 	set_tab(current_tab)
+	build_dock.close_cards()
 
 	# Inspektør (højre side): oversigter for bygning, gæst og personale
 	inspector = Inspector.new()
@@ -413,8 +417,7 @@ func _bar(parent: Control, text: String, col: Color) -> ProgressBar:
 	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	b.show_percentage = false
-	var fill := StyleBoxFlat.new()
-	fill.bg_color = col
+	var fill: StyleBoxFlat = UiTheme.box(col, Color.TRANSPARENT, 0, 4, 0, 0.0)
 	b.add_theme_stylebox_override("fill", fill)
 	row.add_child(b)
 	return b
@@ -495,9 +498,7 @@ func set_tab(tab: String) -> void:
 
 func visible_build_ids() -> Array[String]:
 	var out: Array[String] = []
-	for id: String in _build_buttons:
-		if (_build_buttons[id] as Button).visible:
-			out.append(id)
+	out.assign(build_dock.visible_ids())
 	return out
 
 
@@ -561,8 +562,10 @@ func refresh() -> void:
 	for id: String in _build_buttons:
 		var b: Button = _build_buttons[id]
 		var locked: bool = is_build_locked(id)
-		b.disabled = locked or not sim.economy.can_afford(_build_costs[id])
+		var afford: bool = sim.economy.can_afford(_build_costs[id])
+		b.disabled = locked or not afford
 		LockOverlay.apply(b, locked)
+		build_dock.set_affordable(id, afford)
 	_refresh_m5()
 	_refresh_attraction()
 	_refresh_guest()
@@ -934,6 +937,9 @@ func handle_escape() -> bool:
 		return false
 	if inspector != null and inspector.is_open():
 		inspector.close_inspector()
+		return true
+	if build_dock != null and build_dock.cards_open():
+		build_dock.close_cards()
 		return true
 	if park_rail != null and park_rail.open_id != &"":
 		park_rail.close_panel()

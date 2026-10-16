@@ -45,9 +45,30 @@ func _draw() -> void:
 		"piece":
 			_draw_piece(s)
 		"smiley":
-			draw_smiley(self, Rect2(Vector2.ZERO, s), value)
+			if not sync_texture(self, "mood_%d" % (smiley_step(value) + 1)):
+				draw_smiley(self, Rect2(Vector2.ZERO, s), value)
 		_:
 			draw_symbol(self, kind, Rect2(Vector2.ZERO, s), color)
+
+
+## Viser et malet ikon (T-137) som TextureRect-barn "Tex" i stedet for tegning. false = mangler.
+static func sync_texture(c: Control, icon_id: String) -> bool:
+	var tex: Texture2D = UiTheme.icon(icon_id)
+	if tex == null:
+		return false
+	var r: TextureRect = c.get_meta(&"tex_rect") as TextureRect if c.has_meta(&"tex_rect") else null
+	if r == null:
+		r = TextureRect.new()
+		r.name = "Tex"
+		r.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		r.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		r.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		r.set_anchors_preset(Control.PRESET_FULL_RECT)
+		c.set_meta(&"tex_rect", r)
+		c.add_child.call_deferred(r)
+	if r.texture != tex:
+		r.texture = tex
+	return true
 
 
 ## Glæde-smiley i 5 trin (T-101). Farve og mund følger trinnet (form + farve).
