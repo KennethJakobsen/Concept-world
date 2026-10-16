@@ -3,7 +3,7 @@ extends Node
 ## Byggeværktøjer: sender kommandoer til ParkSim via ParkView og viser preview.
 ## Værktøj vælges via Selection.build_tool_requested (UI) eller taster:
 ## 1=sti 2=karrusel 3=pariserhjul 4=radiobiler 5=burger 6=drikke 7=is 8=toilet
-## X=fjern bygning/dekoration, 0=vælg, Esc=vælg (eller pause-menu hvis allerede vælg).
+## X=fjern bygning/dekoration/sti (træk for flere stier), 0=vælg, Esc=vælg (eller pause-menu hvis allerede vælg).
 ## "decor:<id>" placerer dekoration, "staff:<type>" ansætter på sti,
 ## "staff_move:<id>" flytter personale (klik på sti). I vælg-værktøjet kan valgt personale trækkes. Venstre=byg/træk, højre=fjern sti.
 ## Space = pause, +/- = hastighed.
@@ -28,6 +28,10 @@ const GUEST_PICK_RADIUS: float = 0.5
 signal coaster_errors(codes: Array[String])
 ## Banen blev færdig og åbnede.
 signal coaster_finished(coaster_id: int)
+## En fjernelse blev afvist (T-132) – UI viser teksten som toast.
+signal remove_blocked(message: String)
+
+const MSG_ENTRANCE: String = "Stien er indgang til en attraktion - fjern attraktionen først."
 
 @export var park_view_path: NodePath
 @export var camera_path: NodePath
@@ -41,6 +45,7 @@ var _selection: Selection
 var _picker: GridPicker
 var _highlights: Array[CellHighlight] = []
 var _dragging: int = 0  ## 0 = ingen, 1 = placér, 2 = fjern
+var _last_drag_cell: Vector2i = GridPicker.INVALID
 var _speed_idx: int = 1
 var _drag_staff: int = -1  ## personale der trækkes i vælg-værktøjet
 var grid_lines: GridLineFader  ## grid-linjer kun i byggetilstand (T-063)
@@ -379,6 +384,9 @@ func _update_preview() -> void:
 	if (tool == TOOL_REMOVE or tool == TOOL_SELECT) and _drag_staff < 0:
 		var a: Attraction = w.get_attraction_at(origin)
 		if a == null:
+			if tool == TOOL_REMOVE and w.get_tile(origin) == ParkWorld.Tile.PATH:
+				_ensure_highlights(1)
+				_highlights[0].show_at(origin, false)  # rød = fjernes
 			return
 		_ensure_highlights(a.def.footprint.x * a.def.footprint.y)
 		var j: int = 0
@@ -401,7 +409,8 @@ func _update_preview() -> void:
 				_highlights[i].show_at(origin + Vector2i(x, y), valid)
 				i += 1
 	elif w.in_bounds(origin):
-		_highlights[0].show_at(origin, w.can_place_path(origin) or _dragging == 2)
+		var removing: bool = _dragging == 2 or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT)
+		_highlights[0].show_at(origin, w.can_place_path(origin) and not removing)  # rød ved fjern
 
 
 ## Kommandoer – offentlige så tests kan drive dem uden input.
@@ -431,7 +440,21 @@ func move_staff(staff_id: int, cell: Vector2i) -> bool:
 	return _view.sim.cmd_move_staff(staff_id, cell)
 
 
-## Fjerner dekoration på cellen, ellers bygning.
+## Fjerner stien på cellen (T-132). Indgangsceller giver en forklarende besked.
+func remove_path_at(cell: Vector2i) -> bool:
+	var w: ParkWorld = _view.sim.world
+	if w.get_tile(cell) != ParkWorld.Tile.PATH:
+		return false
+	if w.get_attraction_by_entrance(cell) != null:
+		remove_blocked.emit(MSG_ENTRANCE)
+		return false
+	if not _view.sim.cmd_remove_path(cell):
+		return false
+	_view.spawn_floating_text(ParkView.cell_center(cell), "+%d" % _view.sim.balance.path_refund, Color(0.4, 1, 0.4))
+	return true
+
+
+## Fjerner dekoration på cellen, ellers bygning, ellers sti.
 func remove_building_at(cell: Vector2i) -> bool:
 	var did: int = _view.decor_at(cell)
 	if did >= 0:
@@ -442,7 +465,7 @@ func remove_building_at(cell: Vector2i) -> bool:
 		return false
 	var a: Attraction = _view.sim.world.get_attraction_at(cell)
 	if a == null:
-		return false
+		return remove_path_at(cell)
 	var c: Vector3 = _center(a)
 	var refund: int = a.def.build_cost / 2
 	if not _view.sim.cmd_remove_attraction(a.id):
@@ -480,12 +503,13 @@ static func _center(a: Attraction) -> Vector3:
 
 func _apply_drag() -> void:
 	var cell: Vector2i = _picker.cell_under_mouse(_camera)
-	if cell == GridPicker.INVALID:
+	if cell == GridPicker.INVALID or cell == _last_drag_cell:
 		return
+	_last_drag_cell = cell
 	if _dragging == 1:
 		_view.sim.cmd_place_path(cell)
 	elif _dragging == 2:
-		_view.sim.cmd_remove_path(cell)
+		remove_path_at(cell)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -498,6 +522,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		if not mb.pressed:
 			_dragging = 0
+			_last_drag_cell = GridPicker.INVALID
 			if _drag_staff >= 0 and mb.button_index == MOUSE_BUTTON_LEFT:
 				var drop: Vector2i = _picker.cell_under_mouse(_camera)
 				if drop != GridPicker.INVALID:
@@ -508,6 +533,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			var cell: Vector2i = _picker.cell_under_mouse(_camera)
 			if tool == TOOL_PATH:
 				_dragging = 1
+				_last_drag_cell = GridPicker.INVALID
 				_apply_drag()
 			elif cell == GridPicker.INVALID:
 				return
@@ -527,11 +553,15 @@ func _unhandled_input(event: InputEvent) -> void:
 				if move_staff(tool.substr(PREFIX_MOVE.length()).to_int(), cell):
 					_request_tool(TOOL_SELECT)
 			elif tool == TOOL_REMOVE:
+				if _view.decor_at(cell) < 0 and _view.sim.world.get_attraction_at(cell) == null:
+					_dragging = 2  # træk for at fjerne flere stier
+					_last_drag_cell = cell
 				remove_building_at(cell)
 			else:
 				place_building(tool, _origin_under_mouse())
 		else:
 			_dragging = 2
+			_last_drag_cell = GridPicker.INVALID
 			_apply_drag()
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseMotion and _dragging != 0:

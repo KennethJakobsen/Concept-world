@@ -262,6 +262,8 @@ func _build_ui() -> void:
 	_add_build_button(bh, "select", "Vælg", 0)
 	_add_build_button(bh, "path", "Sti", 0)
 	_add_build_button(bh, "remove", "Fjern", 0)
+	(_build_buttons["remove"] as Button).tooltip_text = "Fjern sti, bygning eller dekoration (X). Træk for at fjerne flere stier. Højreklik i sti-værktøjet fjerner også sti."
+	(_build_buttons["path"] as Button).tooltip_text = "Byg sti (1). Træk for at bygge, højreklik-træk for at fjerne."
 	for t: String in TABS:
 		var tb: Button = _button(bh, "[%s]" % TAB_NAMES[t], set_tab.bind(t))
 		tb.toggle_mode = true
@@ -995,6 +997,8 @@ func _find_build_tool() -> void:
 	_build_tool = found[0]
 	if _build_tool.has_signal("coaster_errors"):
 		_build_tool.connect("coaster_errors", show_coaster_errors)
+	if _build_tool.has_signal("remove_blocked") and _toast != null:
+		_build_tool.connect("remove_blocked", _toast.show_message)
 
 
 func _connect_scenario() -> void:

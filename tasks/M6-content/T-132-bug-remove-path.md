@@ -1,6 +1,6 @@
 # T-132: Bug: stier kan ikke fjernes
 
-- **Status:** in-progress
+- **Status:** review
 - **Milepæl:** M6
 - **Agent:** gameplay
 - **Afhænger af:** –
@@ -13,9 +13,10 @@ Brugerrapport: man kan ikke fjerne stier, når de først er sat. Sim har `cmd_re
 3. Giv feedback, når en celle ikke kan fjernes (f.eks. attraktionens indgang).
 
 ## Acceptkriterier
-- [ ] Stier kan fjernes både via synligt værktøj og højreklik i sti-værktøjet
-- [ ] Indgangsceller giver forklarende besked i stedet for ingenting
-- [ ] Test gennem build_tool
+- [x] Stier kan fjernes både via synligt værktøj og højreklik i sti-værktøjet
+- [x] Indgangsceller giver forklarende besked i stedet for ingenting
+- [x] Test gennem build_tool
 
 ## Log
 - 2026-10-16 – orkestrator: oprettet ud fra brugerens rapport
+- 2026-10-16 – gameplay: Årsag: "Fjern"-værktøjet (X) fjernede kun bygning/dekoration – klik på sti gjorde intet; højreklik-træk i sti-værktøjet virkede, men var uopdageligt, og indgangsceller blev stille afvist. Kameraet sluger ikke højreklik (park_camera håndterer kun scroll). Rettet: `BuildTool.remove_path_at()` (floating "+refund", signal `remove_blocked` → HUD-toast ved indgang), fjern-værktøjet falder tilbage til sti og understøtter træk, rød ghost over sti i fjern-værktøj og ved højreklik i sti-værktøj, tooltips på Sti/Fjern. Test: tests/test_remove_path.gd. test.sh: 315/317 (de 2 fejl skyldes T-131's igangværende research.json/test_scenario_track_unlocks), integration.sh OK. Visuelt: kræver brugerens bekræftelse.
