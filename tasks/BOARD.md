@@ -128,18 +128,16 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 
 Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/T-088/T-089 · 4) T-090→T-091, T-092 · 5) T-093/T-094, derefter T-095 · 6) T-096.
 
+## M7 – Dybde og UX  (kontrakt følger i T-098)
+| Task | Titel | Agent | Status |
+|---|---|---|---|
+| T-097 | Design: GDD-afsnit for M7 | designer | in-progress |
+| T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | todo |
+
+Starter først implementering, når T-096 er done.
+
 ## Kommende milepæle
-- **M7 – Dybde og UX** (ønsker fra brugeren 2026-10-16, ikke nedbrudt i tasks endnu):
-  1. Konfiguration pr. forlystelse (kapacitet, turlængde m.m.)
-  2. Konfiguration pr. butik: opskrift (salt i pommes → tørst) og pris med adfærdseffekt (for billig is → overspisning)
-  3. Hvert salg tæller penge (synlig indtægt pr. salg)
-  4. Synligt skrald, når parken er beskidt
-  5. Gennemtænkt UX-redesign; tekstmenuer erstattes
-  6. Baggrund på verden og mur rundt om parken
-  7. Køstier, som spilleren selv bygger til forlystelserne
-  8. Gæster har masse/kollision, så køer giver mening
-  9. Toiletter: fordeling af gæster, ledige toiletter vælges frem for optagede
-  10. Oplåsning via milepæle, så ikke alt er tilgængeligt fra start
+- **M8** (udskudt fra M7): personale (løn, træthed, områder), lån/regnskab/reklame, terræn (bakker, vand), gæstegrupper.
 
 ## Åbne punkter / backlog
 - Ingen. (Startpark-nedbrud → T-047, pærer → T-062, grid → T-063, tools i web-build → T-064.)
