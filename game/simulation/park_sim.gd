@@ -637,6 +637,9 @@ func _choose_goal(g: Guest) -> void:
 			return
 		if g.thought != TOO_EXPENSIVE_THOUGHT:
 			g.thought = NEED_THOUGHTS.get(need, "")
+	# 1b) Impulskøb (T-119): nær butik med en ting, gæsten ikke har.
+	if _try_impulse(g):
+		return
 	# 2) Forlystelser
 	if g.rides_left > 0:
 		var options: Array[Attraction] = []
@@ -666,6 +669,41 @@ func _choose_goal(g: Guest) -> void:
 			_wander_step(g)
 			return
 	_start_leaving(g)
+
+
+## T-119: impulskøb. Nærmeste brugbare shop med carry_item (som gæsten ikke har) inden for
+## impulse_radius sti-celler; sandsynlighed = base × glæde/100 × (1 - pris/penge × sensitivity).
+func _impulse_chance(g: Guest, a: Attraction) -> float:
+	if g.happiness < balance.impulse_min_happiness or g.money <= 0:
+		return 0.0
+	var afford: float = 1.0 - float(a.price) / float(g.money) * balance.impulse_price_sensitivity
+	return balance.impulse_base_chance * clampf(g.happiness / 100.0, 0.0, 1.0) * clampf(afford, 0.0, 1.0)
+
+
+func _try_impulse(g: Guest) -> bool:
+	if balance.impulse_base_chance <= 0.0 or g.happiness < balance.impulse_min_happiness:
+		return false
+	var best: Attraction = null
+	var best_route: Array[Vector2i] = []
+	for a in attractions:
+		if a.def.kind != "shop" or a.def.carry_item == "" \
+				or g.items.has(StringName(a.def.carry_item)):
+			continue
+		if not a.is_open or a.broken or g.rejected_ids.has(a.id) or a.price > g.money:
+			continue
+		var d: Vector2i = (a.entrance_cell - g.cell).abs()
+		if d.x + d.y > balance.impulse_radius:
+			continue
+		var route: Array[Vector2i] = _route(g, a.entrance_cell)
+		if route.is_empty() or route.size() - 1 > balance.impulse_radius:
+			continue
+		if best == null or route.size() < best_route.size():
+			best = a
+			best_route = route
+	if best == null or rng.randf() >= _impulse_chance(g, best) or not _usable(g, best):
+		return false
+	_go_to(g, best, best_route)
+	return true
 
 
 ## GDD: glæde < leave_happiness, penge < billigste åbne pris, eller energy >= leave_energy.

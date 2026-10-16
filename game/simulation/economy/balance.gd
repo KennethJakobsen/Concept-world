@@ -64,6 +64,12 @@ var vomit_happiness: float = 15.0
 var vomit_litter: int = 2
 ## T-090: våd efter vandbane – varighed (ticks) og glæde pr. tick, når det er varmt (dag-fase).
 var wet_ticks: int = 600
+## T-119: impulskøb (guests.json "impulse"). Chance pr. målvalg for en nær butik med carry_item,
+## som gæsten ikke har: base × glæde/100 × (1 - pris/penge × price_sensitivity), radius i sti-celler.
+var impulse_base_chance: float = 0.35
+var impulse_radius: int = 12
+var impulse_min_happiness: float = 40.0
+var impulse_price_sensitivity: float = 1.0
 var wet_happiness_per_tick: float = 0.005
 
 
@@ -212,6 +218,12 @@ static func from_dicts(economy: Dictionary, guests: Dictionary, park: Dictionary
 	b.vomit_happiness = float(guests.get("vomit_happiness", b.vomit_happiness))
 	b.vomit_litter = maxi(0, int(guests.get("vomit_litter", b.vomit_litter)))
 	b.wet_ticks = maxi(0, int(guests.get("wet_ticks", b.wet_ticks)))
+	var imp: Variant = guests.get("impulse", {})
+	if imp is Dictionary:
+		b.impulse_base_chance = clampf(float(imp.get("base_chance", b.impulse_base_chance)), 0.0, 1.0)
+		b.impulse_radius = maxi(0, int(imp.get("radius", b.impulse_radius)))
+		b.impulse_min_happiness = float(imp.get("min_happiness", b.impulse_min_happiness))
+		b.impulse_price_sensitivity = maxf(0.0, float(imp.get("price_sensitivity", b.impulse_price_sensitivity)))
 	b.wet_happiness_per_tick = float(guests.get("wet_happiness_per_tick", b.wet_happiness_per_tick))
 	return b
 
