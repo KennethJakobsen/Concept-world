@@ -7,7 +7,7 @@ const ATTRACTION_DIR: String = "res://content/attractions/"
 const DECOR_DIR: String = "res://content/decor/"
 const STAFF_DIR: String = "res://content/staff/"
 const TABS: Array[String] = ["rides", "coaster", "shops", "decor", "staff"]
-const TAB_NAMES: Dictionary = {"rides": "Forlystelser", "coaster": "Rutsjebaner", "shops": "Butikker", "decor": "Dekoration", "staff": "Personale"}
+const TAB_NAMES: Dictionary = {"rides": "Forlystelser", "coaster": "Baner og spor", "shops": "Butikker", "decor": "Dekoration", "staff": "Personale"}
 const STAFF_STATE_NAMES: Dictionary = {0: "Ledig", 1: "Går", 2: "Arbejder"}
 const STAFF_TASK_NAMES: Dictionary = {"repair": "Reparerer", "inspect": "Inspicerer", "sweep": "Fejer",
 	"empty_bin": "Tømmer skraldespand", "patrol": "Underholder"}
@@ -268,7 +268,7 @@ func _build_ui() -> void:
 		tb.name = "Tab_" + t
 		_tab_buttons[t] = tb
 	for d: AttractionDef in load_defs():
-		if d.kind == "coaster":
+		if CoasterContent.is_tracked_kind(d.kind):
 			_add_build_button(bh, "coaster:" + d.id, "%s ($%d+)" % [d.name, d.build_cost], d.build_cost, "coaster")
 			continue
 		var tab: String = "rides" if d.kind == "ride" else "shops"
@@ -666,8 +666,10 @@ static func attraction_text(a: Attraction, p_sim: ParkSim) -> String:
 			lines.append("Mekaniker: #%d" % mid)
 		elif "broken" in a and bool(a.get("broken")):
 			lines.append("Ingen mekaniker ledig!" if _has_mechanic(p_sim) else "Ansæt en mekaniker!")
-	if a.def.kind == "coaster":
+	if CoasterContent.is_tracked_kind(a.def.kind):
 		lines.append_array(coaster_lines(a))
+		if p_sim != null:
+			lines.append_array(M6Texts.track_lines(a, p_sim.attraction_stats(a.id)))
 	if a.is_sideshow() and p_sim != null:
 		lines.append_array(M6Texts.sideshow_lines(p_sim.attraction_stats(a.id)))
 	lines.append("Besøgende: %d" % a.total_visitors)
@@ -878,6 +880,8 @@ func _on_pause_menu_closed() -> void:
 # --- Kommandoer ---
 
 func request_build_tool(def_id: String) -> void:
+	if def_id.begins_with("coaster:") and coaster_palette != null:
+		coaster_palette.set_system(system_for_build(def_id))
 	if selection != null and selection.has_signal("build_tool_requested"):
 		selection.emit_signal("build_tool_requested", def_id)
 
@@ -929,6 +933,19 @@ func _build_m5(root: Control) -> void:
 	result_dialog.build()
 	result_dialog.continue_pressed.connect(continue_free_play)
 	result_dialog.menu_pressed.connect(func() -> void: UiSession.go_to_main_menu())
+
+
+## Sporsystem for en "coaster:<def_id>"-byggeknap (default &"coaster").
+static func system_for_build(build_id: String) -> StringName:
+	var id: String = build_id.substr(8)
+	var path: String = "res://content/attractions/%s.json" % id
+	if FileAccess.file_exists(path):
+		var d: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
+		if d is Dictionary:
+			var sys: StringName = CoasterContent.system_for_kind(str((d as Dictionary).get("kind", "")))
+			if sys != &"":
+				return sys
+	return &"coaster"
 
 
 ## Forsknings-id for en byggeknap ("" = aldrig låst).
@@ -1036,6 +1053,9 @@ func show_coaster_errors(codes: Array) -> void:
 func _on_resume_coaster() -> void:
 	set_tab("coaster")
 	coaster_palette.resume_id = _sel_attraction
+	var ra: Attraction = sim.get_attraction(_sel_attraction) if sim != null else null
+	if ra != null and ra.track != null:
+		coaster_palette.set_system(ra.track.system)
 	coaster_palette.tool = _build_tool
 	coaster_palette.resume()
 

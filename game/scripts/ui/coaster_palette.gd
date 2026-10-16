@@ -9,6 +9,8 @@ var tool: Node  ## BuildTool (kan mangle)
 var _piece_btns: Dictionary = {}  ## piece_id -> Button
 var _flow: HFlowContainer
 var resume_id: int = -1  ## ufærdig bane valgt i info-panelet
+var system: StringName = &"coaster"  ## aktivt sporsystem (ADR-004)
+var _end_btn: Button
 
 
 func build() -> void:
@@ -16,7 +18,24 @@ func build() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_flow = HFlowContainer.new()
 	add_child(_flow)
-	var pieces: Dictionary = CoasterContent.pieces()
+	_rebuild()
+	visible = false
+
+
+## Skifter sporsystem og bygger stykke-knapperne om (filtreret efter system).
+func set_system(sys: StringName) -> void:
+	if sys == system and not _piece_btns.is_empty():
+		return
+	system = sys
+	_rebuild()
+
+
+func _rebuild() -> void:
+	for c: Node in _flow.get_children():
+		_flow.remove_child(c)
+		c.queue_free()
+	_piece_btns.clear()
+	var pieces: Dictionary = CoasterContent.pieces(system)
 	for id: String in _ordered_ids(pieces):
 		var d: TrackPieceDef = pieces[id]
 		if d.kind == "station":
@@ -35,10 +54,23 @@ func build() -> void:
 		_piece_btns[id] = b
 		# plads til ikonet til venstre for teksten
 		b.text = "      " + b.text
+	_end_btn = null
+	var end_id: String = end_station_id(system)
+	if end_id != "":
+		_end_btn = _btn("Endestation", choose_piece.bind(end_id))
+		_end_btn.toggle_mode = true
+		_end_btn.tooltip_text = "Placér endestationen (banen skal være mindst 2 stykker)"
+		_piece_btns[end_id] = _end_btn
 	_btn("Fjern sidste", remove_last)
 	_btn("Færdig", finish)
 	_btn("Fortsæt byg", resume)
-	visible = false
+
+
+## Endestationens stykke-id, hvis systemet har to stationer (svævebanen), ellers "".
+static func end_station_id(sys: StringName) -> String:
+	if int(CoasterContent.system_def(sys).get("max_stations", 1)) < 2:
+		return ""
+	return CoasterContent.station_id(sys, "end")
 
 
 static func _ordered_ids(pieces: Dictionary) -> Array[String]:
@@ -89,7 +121,7 @@ func finish() -> void:
 	if _tool_ok("finish_coaster"):
 		var errs: Array = tool.call("finish_coaster")
 		if errs.is_empty():
-			message.emit("Rutsjebanen er åben!")
+			message.emit("Rutsjebanen er åben!" if system == &"coaster" else "Banen er åben!")
 
 
 func resume() -> void:
@@ -114,5 +146,5 @@ func refresh(sim: ParkSim) -> void:
 static func errors_text(codes: Array) -> String:
 	var out: Array[String] = []
 	for c: Variant in codes:
-		out.append(M5Texts.coaster_error(str(c)))
+		out.append(M6Texts.track_error(str(c)))
 	return " ".join(out)
