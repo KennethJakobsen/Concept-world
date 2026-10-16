@@ -16,6 +16,9 @@ const FX_SCENES: Dictionary = {
 	&"coins": preload("res://scenes/effects/coins.tscn"),
 	&"sweep_dust": preload("res://scenes/effects/sweep_dust.tscn"),
 	&"repair_sparks": preload("res://scenes/effects/repair_sparks.tscn"),
+	&"balloon_float": preload("res://scenes/effects/balloon_float.tscn"),
+	&"vomit": preload("res://scenes/effects/vomit.tscn"),
+	&"splash": preload("res://scenes/effects/splash.tscn"),
 }
 const COIN_INTERVAL: float = 2.5    ## T-055: højst én coins-effekt pr. 2,5 s
 const RIDE_SOUND_DIST: float = 25.0 ## ride_start kun hvis kameraet er tæt på
@@ -118,6 +121,10 @@ func setup(p_sim: ParkSim) -> void:
 	sim.litter_swept.connect(_on_litter_swept)
 	sim.ride_cycle_started.connect(_on_ride_cycle_started)
 	sim.coaster_changed.connect(_on_coaster_changed)
+	sim.guest_vomited.connect(_on_guest_vomited)
+	sim.prize_won.connect(_on_prize_won)
+	sim.item_gained.connect(_on_item_changed)
+	sim.item_lost.connect(_on_item_lost)
 	_tod_vis = sim.time_of_day()
 	_on_phase_changed(sim.phase())
 	rebuild()
@@ -132,7 +139,8 @@ func _disconnect() -> void:
 			[sim.attraction_broken, _on_attraction_broken], [sim.attraction_repaired, _on_attraction_repaired],
 			[sim.phase_changed, _on_phase_changed], [sim.purchase_made, _on_purchase_made],
 			[sim.litter_swept, _on_litter_swept], [sim.ride_cycle_started, _on_ride_cycle_started],
-			[sim.coaster_changed, _on_coaster_changed]]:
+			[sim.coaster_changed, _on_coaster_changed], [sim.guest_vomited, _on_guest_vomited],
+			[sim.prize_won, _on_prize_won], [sim.item_gained, _on_item_changed], [sim.item_lost, _on_item_lost]]:
 		var sig: Signal = pair[0]
 		if sig.is_connected(pair[1]):
 			sig.disconnect(pair[1])
@@ -339,6 +347,49 @@ func _on_ride_cycle_started(attraction_id: int) -> void:
 		_audio(&"sfx", &"ride_start", _attraction_pos(a))
 
 
+# --- T-088: opkast, præmier og ting ---
+
+func _on_guest_vomited(guest_id: int, cell: Vector2i) -> void:
+	var pos: Vector3 = cell_center(cell)
+	var gn: Node3D = _guests.get(guest_id, null)
+	if gn != null and gn.has_method("play_emote"):
+		gn.call("play_emote", &"sick")
+	_fx(&"vomit", pos)
+	if _camera_near(pos):
+		_audio(&"sfx", &"vomit", pos)
+
+
+func _on_prize_won(guest_id: int, attraction_id: int, _item_id: String) -> void:
+	var a: Attraction = sim.get_attraction(attraction_id)
+	var pos: Vector3 = _attraction_pos(a, 1.0) if a != null else Vector3.ZERO
+	var n: Node3D = _guests.get(guest_id, null)
+	if n != null:
+		pos = n.position
+		if n.has_method("play_emote"):
+			n.call("play_emote", &"happy")  # cheer
+	fx_event.emit(&"prize", pos)
+	if _camera_near(pos):
+		_audio(&"sfx", &"cheer", pos)
+		_audio(&"sfx", &"cash", pos)
+
+
+func _on_item_changed(guest_id: int, _item_id: StringName) -> void:
+	_sync_items(guest_id)
+
+
+func _on_item_lost(guest_id: int, item_id: StringName, cell: Vector2i) -> void:
+	_sync_items(guest_id)
+	if String(item_id).contains("balloon"):
+		_fx(&"balloon_float", cell_center(cell))
+
+
+func _sync_items(guest_id: int) -> void:
+	var n: Node3D = _guests.get(guest_id, null)
+	var g: Guest = sim.guests.get(guest_id, null)
+	if n != null and g != null and n.has_method("set_items"):
+		n.call("set_items", g.items.duplicate())
+
+
 static func cell_center(cell: Vector2i) -> Vector3:
 	return Vector3(cell.x + 0.5, 0.0, cell.y + 0.5)
 
@@ -507,6 +558,7 @@ func _on_guest_spawned(g: Guest) -> void:
 	if n.has_method("set_color"):
 		n.call("set_color", Color.from_hsv(fposmod(g.id * 0.618034, 1.0), 0.55, 0.9))
 	_guests[g.id] = n
+	_sync_items(g.id)
 	_update_guest(n, g)
 
 

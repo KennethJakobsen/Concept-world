@@ -213,3 +213,51 @@ func test_thought_emotes() -> void:
 	assert_eq(ParkView.thought_emote("Jeg er sulten!"), &"")
 	assert_eq(ParkView.thought_emote("Jeg har kvalme"), &"sick")
 	assert_eq(ParkView.thought_emote("For dyrt!"), &"angry")
+
+
+## T-088: alle ikke-sporbaserede bygninger (inkl. M6) kan bygges og får en node.
+func test_build_all_m6_buildings() -> void:
+	var view := ParkView.new()
+	var s := ParkSim.new(96, 96, 1)
+	s.economy.earn(10000000, "test")
+	view.setup(s)
+	var x: int = 1
+	var y: int = 2
+	var n: int = 0
+	for f in DirAccess.get_files_at("res://content/attractions"):
+		if not f.ends_with(".json"):
+			continue
+		var id: String = f.get_basename()
+		var a: Attraction = s.cmd_place_attraction(id, Vector2i(x, y))
+		if a == null:
+			continue  # sporbaserede (coaster/flume/train/transport) bygges med spor-værktøjet
+		n += 1
+		assert_true(view.has_attraction_node(a.id), "node for %s" % id)
+		x += a.def.footprint.x + 1
+		if x > 80:
+			x = 1
+			y += 8
+	assert_true(n >= 21, "mindst 21 bygninger bygget (fik %d)" % n)
+	view.free()
+
+
+## T-088: items, præmier og opkast spejles uden fejl, og items gendannes ved spawn.
+func test_items_prize_vomit_bridge() -> void:
+	var view := ParkView.new()
+	var s := ParkSim.new(20, 20, 3)
+	view.setup(s)
+	var events: Array[StringName] = []
+	view.fx_event.connect(func(k: StringName, _p: Vector3) -> void: events.append(k))
+	var g := Guest.new(9001, Vector2i(3, 3))
+	g.items = [&"balloon"] as Array[StringName]
+	s.guests[g.id] = g
+	s.guest_spawned.emit(g)
+	assert_eq(view.guest_node_count(), 1)
+	g.items.clear()
+	s.item_lost.emit(g.id, &"balloon", Vector2i(3, 3))
+	assert_true(events.has(&"balloon_float"), "balloon_float ved tabt ballon")
+	s.guest_vomited.emit(g.id, Vector2i(3, 3))
+	assert_true(events.has(&"vomit"), "vomit-effekt")
+	s.prize_won.emit(g.id, -1, "teddy")
+	assert_true(events.has(&"prize"), "prize-event")
+	view.free()
