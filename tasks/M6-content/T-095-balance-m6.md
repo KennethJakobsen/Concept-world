@@ -21,3 +21,4 @@ Justering af intensity/nausea, præmier, ting og sporpriser (kontrakt §8). Se `
 - 2026-10-16 – orkestrator: T-092 opfølgning – log_flume/mini_train/monorail.json skal pege på flume_station/train_station/monorail_station.tscn i `model`.
 - 2026-10-16 – orkestrator: balance.sh (11m48s, hænger ikke) efter T-084..T-086: Bjergtoppen kun vundet 1/5 (var vindbar efter T-078), Grøn eng 3/5, Floddalen 5/5. Ret op.
 - 2026-10-16 – orkestrator: T-091 – tilføj `wet_ticks`/`wet_happiness_per_tick` i guests.json; T-090 nye fejlkoder `exit_blocked`/`stations_too_close` (tekster tages i T-094).
+- 2026-10-16 – orkestrator: lyd-id `splash` mangler også i content/audio.json (T-093).
