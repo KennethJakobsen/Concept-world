@@ -18,3 +18,4 @@ Justering af intensity/nausea, præmier, ting og sporpriser (kontrakt §8). Se `
 - 2026-10-15 – architect: oprettet
 
 - 2026-10-16 – orkestrator: T-088 opfølgning – lyd-id `vomit` mangler i content/audio.json; tilføj her.
+- 2026-10-16 – orkestrator: T-092 opfølgning – log_flume/mini_train/monorail.json skal pege på flume_station/train_station/monorail_station.tscn i `model`.
