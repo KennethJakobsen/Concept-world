@@ -62,7 +62,8 @@ const RIDES := ["carousel", "ferris_wheel", "bumper_cars", "swing_ride", "haunte
 	"bouncy_castle", "teacups", "trampoline", "sky_rings", "pirate_ship", "space_rocket",
 	"drop_tower", "fries_stand", "coffee_stand", "balloon_stand", "souvenir_shop", "coconut_shy",
 	"shooting_gallery", "hook_a_duck", "strength_tester"]
-const FX := ["breakdown_smoke", "repair_sparks", "coins", "confetti", "build_dust", "sweep_dust"]
+const FX := ["breakdown_smoke", "repair_sparks", "coins", "confetti", "build_dust", "sweep_dust",
+	"balloon_float", "vomit", "splash"]
 
 
 func test_day_night_rig_api() -> void:
@@ -339,3 +340,24 @@ func test_ride_bulbs_sit_on_model() -> void:
 				best = minf(best, p.distance_to(q))
 			assert_true(best <= 0.06, "%s: pære %s svæver %.2f m fra modellen" % [id, p, best])
 		n.free()
+
+
+## T-087: Baerbare ting paa gaesten.
+func test_guest_items() -> void:
+	var g: GuestVisual = (load("res://scenes/props/guest.tscn") as PackedScene).instantiate()
+	g.set_items([] as Array[StringName])
+	assert_true(g.get_node_or_null("Items") == null, "ingen items-node uden ting")
+	g.set_items([&"balloon", &"souvenir", &"prize_bear"] as Array[StringName])
+	var iv: Node = g.get_node("Items")
+	assert_true(iv.get_node_or_null("Balloon") != null, "ballon")
+	assert_true(iv.get_node_or_null("Bag") != null, "pose")
+	assert_true(iv.get_node_or_null("Bear") != null, "bamse")
+	iv._process(0.5)
+	_check_meshes(iv, "items")
+	g.set_items([&"prize_duck"] as Array[StringName])
+	assert_true(iv.get_node_or_null("Balloon") == null, "ballon fjernet")
+	assert_true(iv.get_node_or_null("Duck") != null, "and")
+	assert_eq(g.get_items().size(), 1)
+	g.set_items([] as Array[StringName])
+	assert_eq(iv.get_child_count(), 0)
+	g.free()

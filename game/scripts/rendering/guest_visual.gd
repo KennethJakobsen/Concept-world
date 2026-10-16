@@ -25,6 +25,23 @@ func set_color(c: Color) -> void:
 	_body.material_override = mat
 
 
+## T-087: Viser baerbare ting (balloon, souvenir, prize_*). Tom liste fjerner alt.
+func set_items(items: Array[StringName]) -> void:
+	var iv := get_node_or_null("Items") as CarriedItemsVisual
+	if iv == null:
+		if items.is_empty():
+			return
+		iv = CarriedItemsVisual.new()
+		iv.name = "Items"
+		add_child(iv)
+	iv.set_items(items)
+
+
+func get_items() -> Array[StringName]:
+	var iv := get_node_or_null("Items") as CarriedItemsVisual
+	return iv.items() if iv != null else ([] as Array[StringName])
+
+
 func set_walking(on: bool) -> void:
 	if _anim == null or _anim.walking == on:
 		return
