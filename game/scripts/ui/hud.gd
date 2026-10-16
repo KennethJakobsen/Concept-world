@@ -33,6 +33,10 @@ var _attr_label: Label
 var _attr_open_btn: Button
 var _guest_panel: PanelContainer
 var _guest_label: Label
+var _attr_bars: Dictionary = {}  ## "intensity"/"nausea" -> ProgressBar (T-089)
+var _attr_bar_box: VBoxContainer
+var _guest_bars: Dictionary = {}  ## "nausea"/"tolerance" -> ProgressBar
+var _guest_items: HBoxContainer
 var _park_panel: PanelContainer
 var _park_label: Label
 var _staff_panel: PanelContainer
@@ -282,6 +286,10 @@ func _build_ui() -> void:
 	_attr_panel.add_child(av)
 	_attr_label = Label.new()
 	av.add_child(_attr_label)
+	_attr_bar_box = VBoxContainer.new()
+	av.add_child(_attr_bar_box)
+	_attr_bars["intensity"] = _bar(_attr_bar_box, "Intensitet", Color(0.95, 0.6, 0.2))
+	_attr_bars["nausea"] = _bar(_attr_bar_box, "Kvalme", Color(0.45, 0.8, 0.3))
 	var ph := HBoxContainer.new()
 	av.add_child(ph)
 	_button(ph, "Pris -", _on_price.bind(-1))
@@ -299,6 +307,11 @@ func _build_ui() -> void:
 	_guest_panel.add_child(gv)
 	_guest_label = Label.new()
 	gv.add_child(_guest_label)
+	_guest_bars["nausea"] = _bar(gv, "Kvalme", Color(0.45, 0.8, 0.3))
+	_guest_bars["tolerance"] = _bar(gv, "Tolerance", Color(0.4, 0.6, 0.95))
+	_guest_items = HBoxContainer.new()
+	_guest_items.name = "GuestItems"
+	gv.add_child(_guest_items)
 	_button(gv, "Luk panel", clear_selection)
 	_guest_panel.visible = false
 
@@ -356,6 +369,29 @@ func _build_ui() -> void:
 	root.add_child(_toast)
 	if is_inside_tree():
 		layout.call_deferred(get_viewport().get_visible_rect().size)
+
+
+## Mærkat + bjælke 0..10 (T-089).
+func _bar(parent: Control, text: String, col: Color) -> ProgressBar:
+	var row := HBoxContainer.new()
+	parent.add_child(row)
+	var l := Label.new()
+	l.text = text
+	l.custom_minimum_size.x = 80.0
+	row.add_child(l)
+	var b := ProgressBar.new()
+	b.min_value = 0.0
+	b.max_value = 10.0
+	b.step = 0.1
+	b.custom_minimum_size = Vector2(110.0, 14.0)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	b.show_percentage = false
+	var fill := StyleBoxFlat.new()
+	fill.bg_color = col
+	b.add_theme_stylebox_override("fill", fill)
+	row.add_child(b)
+	return b
 
 
 func _panel(parent: Control, n: String) -> PanelContainer:
@@ -567,6 +603,7 @@ func _refresh_park(st: Dictionary) -> void:
 		lines.append("Forventede gæster/dag: %d" % roundi(float(sim.call("expected_guests_per_day"))))
 	lines.append("I dag: +$%d / -$%d" % [income, expense])
 	lines.append("  Entré: $%d  Billetter: $%d" % [sim.economy.get_today_total("entry"), sim.economy.get_today_total("tickets")])
+	lines.append("  %s: $%d" % [M6Texts.category_name("prizes"), -sim.economy.get_today_total("prizes")])
 	_park_label.text = "\n".join(lines)
 
 
@@ -594,6 +631,14 @@ func _refresh_attraction() -> void:
 		return
 	_attr_panel.visible = true
 	_attr_label.text = attraction_text(a, sim)
+	var st: Dictionary = sim.attraction_stats(a.id) if sim.has_method("attraction_stats") else {}
+	var ride: bool = a.is_ride() or a.def.kind == "coaster"
+	_attr_bar_box.visible = ride and not st.is_empty()
+	if not st.is_empty():
+		(_attr_bars["intensity"] as ProgressBar).value = float(st.get("intensity", 0.0)) / 10.0
+		(_attr_bars["nausea"] as ProgressBar).value = float(st.get("nausea", 0.0)) / 10.0
+		(_attr_bars["intensity"] as ProgressBar).tooltip_text = M6Texts.rating10(float(st.get("intensity", 0.0)))
+		(_attr_bars["nausea"] as ProgressBar).tooltip_text = M6Texts.rating10(float(st.get("nausea", 0.0)))
 	_attr_open_btn.text = "Luk" if a.is_open else "Åbn"
 	var unfinished: bool = a.track != null and a.building
 	_attr_resume_btn.visible = unfinished
@@ -623,6 +668,8 @@ static func attraction_text(a: Attraction, p_sim: ParkSim) -> String:
 			lines.append("Ingen mekaniker ledig!" if _has_mechanic(p_sim) else "Ansæt en mekaniker!")
 	if a.def.kind == "coaster":
 		lines.append_array(coaster_lines(a))
+	if a.is_sideshow() and p_sim != null:
+		lines.append_array(M6Texts.sideshow_lines(p_sim.attraction_stats(a.id)))
 	lines.append("Besøgende: %d" % a.total_visitors)
 	lines.append("Omsætning: $%d" % a.total_revenue)
 	lines.append("Pris: $%d" % a.price)
@@ -729,9 +776,33 @@ func _refresh_guest() -> void:
 	keys.sort()
 	for k: String in keys:
 		lines.append("%s: %d" % [NEED_NAMES.get(k, k), roundi(g.needs[k])])
+	var info: Dictionary = sim.guest_info(g.id)
+	if not info.is_empty():
+		lines.append("Kvalme: %d  Tolerance: %d" % [roundi(float(info.get("nausea", 0.0))),
+			roundi(float(info.get("intensity_tolerance", 0.0)))])
+		(_guest_bars["nausea"] as ProgressBar).value = float(info.get("nausea", 0.0)) / 10.0
+		(_guest_bars["tolerance"] as ProgressBar).value = float(info.get("intensity_tolerance", 0.0)) / 10.0
+		_refresh_guest_items(info.get("items", []) as Array)
 	if g.thought != "":
-		lines.append("\"%s\"" % g.thought)
+		lines.append("\"%s\"" % M6Texts.thought_text(g.thought))
 	_guest_label.text = "\n".join(lines)
+
+
+func _refresh_guest_items(items: Array) -> void:
+	var ids: Array[String] = []
+	for it: Variant in items:
+		ids.append(str(it))
+	var cur: Array[String] = []
+	for c in _guest_items.get_children():
+		cur.append((c as ItemIcon).item_id)
+	if cur == ids:
+		return
+	for c in _guest_items.get_children():
+		_guest_items.remove_child(c)
+		c.queue_free()
+	for id in ids:
+		_guest_items.add_child(ItemIcon.new(id, 20.0))
+	_guest_items.visible = not ids.is_empty()
 
 
 # --- Selection ---

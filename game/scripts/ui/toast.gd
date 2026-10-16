@@ -4,6 +4,7 @@ extends PanelContainer
 
 const WARNING_TEXTS: Dictionary = {
 	&"broken_no_mechanic": "Forlystelse i stykker - ansæt en mekaniker!",
+	&"guest_vomit": M6Texts.WARN_VOMIT,
 }
 
 @export var duration: float = 4.0
