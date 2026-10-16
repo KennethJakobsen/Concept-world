@@ -5,4 +5,5 @@
    "unlocked": ["ferris_wheel"], "research_enabled": true, "entry_fee": 10},
  "objectives": [{"type": "coaster_excitement_min", "value": 4.5}, {"type": "rides_count_min", "value": 5}, {"type": "money_min", "value": 40000}],
  "deadline_days": 60,
- "lose": [{"type": "money_below", "value": -5000, "days": 3}, {"type": "reputation_below", "value": 20, "days": 5}]}
+ "lose": [{"type": "money_below", "value": -5000, "days": 3}, {"type": "reputation_below", "value": 20, "days": 5}],
+ "surroundings": {"theme": "river"}}

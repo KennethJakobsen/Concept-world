@@ -140,17 +140,17 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 |---|---|---|---|
 | T-097 | Design: GDD-afsnit for M7 | designer | ✅ done |
 | T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | ✅ done |
-| T-121 | balance_sim måler opkast, sideshow-margin og impulskøb | simulation | todo |
-| T-131 | Ændringsønske: rutsjebane kan startes uden stykker til at lukke den | designer | todo |
-| T-100 | Data: config, opskrifter, kø/gæste-parametre, ATM, milepæle, omgivelser | designer | todo |
-| T-101 | UI: UX-fundament (skærmzoner, tooltips, indstillinger) | ui | todo |
+| T-121 | balance_sim måler opkast, sideshow-margin og impulskøb | simulation | review |
+| T-131 | Ændringsønske: rutsjebane kan startes uden stykker til at lukke den | designer | review |
+| T-100 | Data: config, opskrifter, kø/gæste-parametre, ATM, milepæle, omgivelser | designer | review |
+| T-101 | UI: UX-fundament (skærmzoner, tooltips, indstillinger) | ui | review |
 | T-102 | Sim: config, opskrifter, prisvirkninger, salg + save v4 | simulation | todo |
 | T-103 | Sim: køstier, tålmodighed, ledig frem for optaget, gæstemasse | simulation | todo |
 | T-104 | Sim: gå hjem, hæveautomat, spande, bænke og lys | simulation | todo |
 | T-105 | Sim: milepæle, der låser forskningsgrene op | simulation | todo |
 | T-106 | Sim: flyt (også sporbaner), sælg-refusion og fortryd | simulation | todo |
 | T-107 | Grafik: skrald, spande, bænke, ATM, køsti, svævetal og gæstemængde | graphics | todo |
-| T-108 | Grafik: mur, port og omgivelser | graphics | todo |
+| T-108 | Grafik: mur, port og omgivelser | graphics | review |
 | T-109 | Grafik: kort-overlays og farveblind-palet | graphics | todo |
 | T-110 | Gameplay: køsti-, flyt-, rotér- og fortryd-værktøjer | gameplay | todo |
 | T-111 | Gameplay: bridge for salg, skrald, bænke, kø og overlays | gameplay | todo |
@@ -160,9 +160,12 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-115 | Gameplay: TutorialDirector og pile i verden | gameplay | todo |
 | T-116 | UI: tutorial-trinpanel | ui | todo |
 | T-117 | Balance: M7-mekanik | designer | todo |
+| T-133 | Sim: required_pieces for sporbaner | simulation | todo |
+| T-134 | UI: låst sporbane-kort | ui | todo |
+| T-135 | Gameplay: omgivelser i ParkView | gameplay | todo |
 | T-118 | M7 verifikation | qa | todo |
 
-M6 er done – M7 kan starte.
+M7 startet 2026-10-16. Runde 1 (T-100, T-101, T-108, T-121, T-131) på review. Kendt: 2 tests fejler på `atm` indtil T-104/T-107.
 
 Runder: 1) T-100, T-101 (UX-fundament), T-108 · 2) T-102 (save v4), T-107 · 3) T-103→T-104→T-105, T-112, T-109 · 4) T-106, T-111 · 5) T-110, T-113, derefter T-114 · 6) T-115/T-116, derefter T-117 · 7) T-118.
 

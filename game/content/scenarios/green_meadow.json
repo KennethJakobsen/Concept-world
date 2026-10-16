@@ -5,4 +5,5 @@
    "unlocked": ["ferris_wheel", "swing_ride", "ice_cream_stand"], "research_enabled": true, "entry_fee": 8},
  "objectives": [{"type": "guests_in_park", "value": 115}, {"type": "reputation_min", "value": 60}],
  "deadline_days": 40,
- "lose": [{"type": "money_below", "value": -5000, "days": 5}]}
+ "lose": [{"type": "money_below", "value": -5000, "days": 5}],
+ "surroundings": {"theme": "countryside"}}

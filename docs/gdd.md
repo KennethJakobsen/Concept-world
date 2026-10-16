@@ -405,6 +405,13 @@ Oven på den eksisterende forskning: en milepæl låser en *gren* (topic) op for
 - Sandbox: alt åbent, milepæle vises men giver intet. Scenarier kan slå milepæle fra (`"milestones": false`).
 - UI: venstre kant → "Mål/milepæle" med fremskridtslinje pr. milepæl. Opnået milepæl giver toast + fanfare.
 
+### Data-noter (T-100, T-131)
+- `config` findes på alle `kind: "ride"` (flat rides): kapacitet 0,5–1,5× default, turlængde 0,6–1,6× default (afrundet til 10 ticks), hastighed 0,8–1,3. Sporbaner har ingen `config`.
+- Opskrifter: Fritterbix/Burger "Ekstra salt" (+ Burger "Stor portion"), Drikkebod "Is i", Kaffekoppen "Ekstra sukker" (energy −10, +1 glæde), Isbod "Krymmel" (+2 glæde). `price_effects` (< 0,6×) på Isbod, Fritterbix og Burgerbod.
+- Hæveautomat: `attractions/atm.json`, forskes i `shops` (90 point). Spand `capacity: 20` affaldsenheder (fyldniveau = fill/capacity).
+- Omgivelsestema pr. scenarie: Grøn eng/Sandkasse `countryside`, Floddalen `river`, Bjergtoppen `mountain`.
+- **Sporbaner kan kun startes, når de kan lukkes (T-131, brugerens valg A):** hver sporbane har `required_pieces` (station, lige og begge sving). Byggekortet er gråtonet, indtil alle stykker er låst op (`is_unlocked`), med teksten "Kræver forskning: <emne> – <stykker>". For træ-rutsjebanen betyder det i praksis, at sving skal forskes i "Rutsjebaner". Tømmerrende/tog/svævebane er altid komplette, fordi deres stykker følger banens oplåsning (T-119). Stigning/lift kræves ikke, hvis en flad lukket bane (station + lige + 4 sving) består `validate()` inkl. `too_slow`. Det skal en sim-test bekræfte; fejler den, tilføjes `track_lift_up`/`track_down` til `required_pieces`.
+
 ### Åbne spørgsmål til architect
 1. **Fortryd og determinisme:** skal fortryd være en kommando-stak i sim (inverse kommandoer) eller et snapshot? Hvad med fortryd efter tid er gået (gæster i kø)? Forslag: kun indtil næste sim-tick-batch på 5 s, ellers kommando-baseret uden at rulle gæster tilbage.
 2. **Gæste-separation** (pkt. 7) i sim med fast tick og mange gæster: rumlig hash pr. celle? Ydelse på web ved 500+ gæster?

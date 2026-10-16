@@ -38,10 +38,14 @@ func show_message(t: String) -> void:
 
 
 func show_warning(code: StringName, data: Dictionary = {}) -> void:
+	show_message(warning_message(code, data))
+
+
+## Tekst for et sim-varsel (bruges også af AlertTray).
+static func warning_message(code: StringName, data: Dictionary = {}) -> String:
 	if code == &"research_done":
-		show_message("Ny forskning: %s er klar til at bygge!" % M5Texts.item_name(str(data.get("item_id", ""))))
-		return
-	show_message(warning_text(code))
+		return "Ny forskning: %s er klar til at bygge!" % M5Texts.item_name(str(data.get("item_id", "")))
+	return warning_text(code)
 
 
 ## Kaldes hver frame (eller manuelt i tests).

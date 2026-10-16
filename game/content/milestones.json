@@ -1,0 +1,65 @@
+{
+ "milestones": [
+  {
+   "id": "guests_100",
+   "name": "100 gæster",
+   "condition": {
+    "total_guests": 100
+   },
+   "reward": {
+    "research_points": 50
+   }
+  },
+  {
+   "id": "first_thrill",
+   "name": "Første vilde tur",
+   "condition": {
+    "rides_open": 3
+   },
+   "reward": {
+    "unlock_topic": "thrill_rides"
+   }
+  },
+  {
+   "id": "stars_3",
+   "name": "3 stjerner",
+   "condition": {
+    "reputation": 60
+   },
+   "reward": {
+    "unlock_topic": "roller_coasters"
+   }
+  },
+  {
+   "id": "first_coaster",
+   "name": "Første rutsjebane",
+   "condition": {
+    "coaster_built": true
+   },
+   "reward": {
+    "unlock_topic": "water_rides",
+    "money": 1000
+   }
+  },
+  {
+   "id": "clean_park",
+   "name": "Ren park",
+   "condition": {
+    "days_clean": 3
+   },
+   "reward": {
+    "unlock_topic": "scenery"
+   }
+  },
+  {
+   "id": "sideshow_ready",
+   "name": "Pengemaskine",
+   "condition": {
+    "total_revenue": 20000
+   },
+   "reward": {
+    "unlock_topic": "sideshows"
+   }
+  }
+ ]
+}

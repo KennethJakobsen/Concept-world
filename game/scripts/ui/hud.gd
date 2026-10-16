@@ -6,8 +6,8 @@ extends CanvasLayer
 const ATTRACTION_DIR: String = "res://content/attractions/"
 const DECOR_DIR: String = "res://content/decor/"
 const STAFF_DIR: String = "res://content/staff/"
-const TABS: Array[String] = ["rides", "coaster", "shops", "decor", "staff"]
-const TAB_NAMES: Dictionary = {"rides": "Forlystelser", "coaster": "Baner og spor", "shops": "Butikker", "decor": "Dekoration", "staff": "Personale"}
+const TABS: Array[String] = BuildDock.CATEGORIES
+const TAB_NAMES: Dictionary = BuildDock.CATEGORY_NAMES
 const STAFF_STATE_NAMES: Dictionary = {0: "Ledig", 1: "Går", 2: "Arbejder"}
 const STAFF_TASK_NAMES: Dictionary = {"repair": "Reparerer", "inspect": "Inspicerer", "sweep": "Fejer",
 	"empty_bin": "Tømmer skraldespand", "patrol": "Underholder"}
@@ -28,10 +28,10 @@ var _stars: StarRating
 var _pause_btn: Button
 var _build_buttons: Dictionary = {}  ## def_id -> Button
 var _build_costs: Dictionary = {}    ## def_id -> int
-var _attr_panel: PanelContainer
+var _attr_panel: Control
 var _attr_label: Label
 var _attr_open_btn: Button
-var _guest_panel: PanelContainer
+var _guest_panel: Control
 var _guest_label: Label
 var _attr_bars: Dictionary = {}  ## "intensity"/"nausea" -> ProgressBar (T-089)
 var _attr_bar_box: VBoxContainer
@@ -39,7 +39,7 @@ var _guest_bars: Dictionary = {}  ## "nausea"/"tolerance" -> ProgressBar
 var _guest_items: HBoxContainer
 var _park_panel: PanelContainer
 var _park_label: Label
-var _staff_panel: PanelContainer
+var _staff_panel: Control
 var _staff_label: Label
 var _staff_list_panel: PanelContainer
 var _staff_list: VBoxContainer
@@ -60,10 +60,20 @@ var _research_btn: Button
 var _attr_resume_btn: Button
 var _build_tool: Node
 var _scn_sim: ParkSim  ## sim, hvis scenario_finished er forbundet
+# M7 (T-101): skærmzoner
+var top_bar: TopBar
+var build_dock: BuildDock
+var inspector: Inspector
+var park_rail: ParkRail
+var alert_tray: AlertTray
+var user_settings: UserSettings
+var settings_path: String = UserSettings.PATH
+var _alert_count: int = 0  ## tests kan pege et andet sted hen
 
 
 func _ready() -> void:
 	UiSound.install(get_tree())
+	TooltipService.install()
 	fit_window_to_screen()
 	_build_ui()
 	_connect_scene()
@@ -123,17 +133,36 @@ func layout(vp: Vector2) -> void:
 	for p: Control in right_panels():
 		p.position = Vector2(maxf(MARGIN, vp.x - MARGIN - p.custom_minimum_size.x), top_h + 2.0 * MARGIN)
 		p.size = Vector2(p.custom_minimum_size.x, minf(p.get_combined_minimum_size().y, max_h))
+	var rail_w: float = 0.0
+	if park_rail != null:
+		park_rail.position = Vector2(MARGIN, top_h + 2.0 * MARGIN)
+		park_rail.size = park_rail.get_combined_minimum_size()
+		rail_w = park_rail.size.x + MARGIN
+		var rp: Control = park_rail.panel(park_rail.open_id)
+		if rp != null:
+			var ps: Vector2 = rp.get_combined_minimum_size()
+			ps.y = minf(ps.y, max_h)
+			rp.size = ps
+			rp.position = Vector2(maxf(MARGIN + rail_w, (vp.x - ps.x) * 0.5), top_h + 2.0 * MARGIN)
 	# Personale-listen scroller inden for den plads der er mellem top- og byggebjælke.
 	var scroll: ScrollContainer = _staff_list_panel.get_node("V/Scroll")
 	scroll.custom_minimum_size.y = clampf(max_h - 90.0, 40.0, 260.0)
 	if objective_panel != null:
-		objective_panel.position = Vector2(MARGIN, top_h + 2.0 * MARGIN)
+		objective_panel.position = Vector2(MARGIN + rail_w, top_h + 2.0 * MARGIN)
 		objective_panel.size = objective_panel.get_combined_minimum_size()
 	if coaster_palette != null:
 		var ph: float = _panel_height(coaster_palette, w)
 		coaster_palette.position = Vector2(MARGIN, maxf(MARGIN, bottom.position.y - MARGIN - ph))
 		coaster_palette.size = Vector2(w, ph)
 		_sort_tree(coaster_palette)
+	if alert_tray != null:
+		var floor_y: float = bottom.position.y
+		if coaster_palette != null and coaster_palette.visible:
+			floor_y = coaster_palette.position.y
+		var ah: float = alert_tray.get_combined_minimum_size().y
+		alert_tray.size = Vector2(alert_tray.custom_minimum_size.x, ah)
+		alert_tray.position = Vector2(maxf(MARGIN, vp.x - MARGIN - alert_tray.size.x),
+			maxf(top_h + 2.0 * MARGIN, floor_y - MARGIN - ah))
 	if result_dialog != null:
 		result_dialog.layout(vp)
 	if _toast != null:
@@ -145,7 +174,7 @@ func layout(vp: Vector2) -> void:
 
 
 func right_panels() -> Array[Control]:
-	return [_attr_panel, _guest_panel, _park_panel, _staff_panel, _staff_list_panel, research_panel]
+	return [inspector, _park_panel, _staff_list_panel, research_panel]
 
 
 static func _sort_tree(c: Control) -> void:
@@ -209,6 +238,9 @@ func _process(_delta: float) -> void:
 		sim = pv.get("sim")
 		clear_selection()
 	refresh()
+	if alert_tray != null and alert_tray.items().size() != _alert_count:
+		_alert_count = alert_tray.items().size()
+		layout(get_viewport().get_visible_rect().size)
 
 
 # --- Opbygning ---
@@ -221,71 +253,65 @@ func _build_ui() -> void:
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(root)
 
-	# Top-bar
-	var top := _panel(root, "TopBar")
-	top.set_anchors_preset(Control.PRESET_TOP_LEFT)  # placeres af layout()
-	var th := HFlowContainer.new()
-	th.add_theme_constant_override("h_separation", 12)
-	top.add_child(th)
-	var clock := HBoxContainer.new()
-	clock.name = "Clock"
-	clock.visible = false
-	th.add_child(clock)
-	_clock_icon = ClockIcon.new()
-	_clock_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	clock.add_child(_clock_icon)
-	_clock_label = Label.new()
-	_clock_label.name = "ClockLabel"
-	clock.add_child(_clock_label)
-	_top_label = Label.new()
-	th.add_child(_top_label)
-	_stars = StarRating.new()
-	_stars.name = "ReputationStars"
-	_stars.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	_stars.visible = false
-	th.add_child(_stars)
-	_button(th, "Park", toggle_park_panel)
-	_button(th, "Personale", toggle_staff_list)
-	_research_btn = _button(th, "Forskning", toggle_research_panel)
-	_research_btn.visible = false
-	_button(th, "Menu", open_pause_menu)
-	_pause_btn = _button(th, "Pause", _on_pause)
-	for s: float in SPEEDS:
-		_button(th, "%dx" % int(s), _on_speed.bind(s))
+	user_settings = UserSettings.load_from(settings_path)
+	if is_inside_tree():
+		user_settings.apply(get_tree())
 
-	# Byggemenu
-	var bottom := _panel(root, "BuildMenu")
-	# Forankret i bunden; vokser opad når knapperne ombrydes (smalle vinduer).
-	bottom.set_anchors_preset(Control.PRESET_TOP_LEFT)  # placeres af layout()
-	var bh := HFlowContainer.new()
-	bottom.add_child(bh)
-	_add_build_button(bh, "select", "Vælg", 0)
-	_add_build_button(bh, "path", "Sti", 0)
-	_add_build_button(bh, "remove", "Fjern", 0)
-	(_build_buttons["remove"] as Button).tooltip_text = "Fjern sti, bygning eller dekoration (X). Træk for at fjerne flere stier. Højreklik i sti-værktøjet fjerner også sti."
-	(_build_buttons["path"] as Button).tooltip_text = "Byg sti (1). Træk for at bygge, højreklik-træk for at fjerne."
+	# Top-bar
+	top_bar = TopBar.new()
+	root.add_child(top_bar)
+	top_bar.build()
+	top_bar.set_anchors_preset(Control.PRESET_TOP_LEFT)  # placeres af layout()
+	_clock_icon = top_bar.clock_icon
+	_clock_label = top_bar.clock_label
+	_top_label = top_bar.label
+	_stars = top_bar.stars
+	_pause_btn = top_bar.pause_btn
+	top_bar.pause_pressed.connect(_on_pause)
+	top_bar.speed_pressed.connect(_on_speed)
+	top_bar.bell_pressed.connect(_on_bell)
+
+	# Bund-dok: værktøjer, 6 kategorier og kort
+	build_dock = BuildDock.new()
+	root.add_child(build_dock)
+	build_dock.build()
+	build_dock.set_anchors_preset(Control.PRESET_TOP_LEFT)  # placeres af layout()
+	build_dock.category_selected.connect(set_tab)
+	build_dock.card_pressed.connect(request_build_tool)
+	_add_build_button(null, "select", "Vælg", 0)
+	_add_build_button(null, "remove", "Fjern", 0)
+	TooltipService.attach(_build_buttons["select"], "Vælg (Esc)", "Klik på en bygning, gæst eller medarbejder for at se detaljer.")
+	TooltipService.attach(_build_buttons["remove"], "Fjern (X)", "Fjern sti, bygning eller dekoration. Træk for at fjerne flere stier. Højreklik i sti-værktøjet fjerner også sti.")
 	for t: String in TABS:
-		var tb: Button = _button(bh, "[%s]" % TAB_NAMES[t], set_tab.bind(t))
-		tb.toggle_mode = true
-		tb.name = "Tab_" + t
-		_tab_buttons[t] = tb
+		_tab_buttons[t] = build_dock.add_category(t)
+	_add_build_button(null, "path", "Sti", 0, "paths")
+	TooltipService.attach(_build_buttons["path"], "Sti (1)", "Træk for at bygge, højreklik-træk for at fjerne.")
 	for d: AttractionDef in load_defs():
+		var body: String = card_body(d)
 		if CoasterContent.is_tracked_kind(d.kind):
-			_add_build_button(bh, "coaster:" + d.id, "%s ($%d+)" % [d.name, d.build_cost], d.build_cost, "coaster")
+			_add_build_button(null, "coaster:" + d.id, d.name, d.build_cost, "coaster", "fra $%d" % d.build_cost, body)
 			continue
 		var tab: String = "rides" if d.kind == "ride" else "shops"
-		_add_build_button(bh, d.id, "%s ($%d)" % [d.name, d.build_cost], d.build_cost, tab)
+		_add_build_button(null, d.id, d.name, d.build_cost, tab, "$%d" % d.build_cost, body)
 	for d: DecorDef in load_decor_defs():
-		_add_build_button(bh, "decor:" + d.id, "%s ($%d)" % [d.name, d.build_cost], d.build_cost, "decor")
+		_add_build_button(null, "decor:" + d.id, d.name, d.build_cost, "decor", "$%d" % d.build_cost,
+			"Pris: $%d" % d.build_cost + ("\nGlæde i nærheden +%s" % str(d.happiness_aura) if d.happiness_aura > 0.0 else ""))
 	for d: StaffDef in load_staff_defs():
-		_add_build_button(bh, "staff:" + d.id, "%s ($%d/dag)" % [d.name, d.wage_per_day], 0, "staff")
+		_add_build_button(null, "staff:" + d.id, d.name, 0, "staff", "$%d/dag" % d.wage_per_day,
+			"Løn: $%d/dag. Klik på en sti for at ansætte." % d.wage_per_day)
 	set_tab(current_tab)
 
-	# Info-paneler (højre side)
-	_attr_panel = _panel(root, "AttractionPanel")
-	_place_right(_attr_panel)
-	var av := VBoxContainer.new()
-	_attr_panel.add_child(av)
+	# Inspektør (højre side): oversigter for bygning, gæst og personale
+	inspector = Inspector.new()
+	root.add_child(inspector)
+	inspector.build()
+	_place_right(inspector)
+	inspector.custom_minimum_size = Vector2(Inspector.WIDTH, 0)
+	inspector.closed.connect(_on_inspector_closed)
+	_attr_panel = VBoxContainer.new()
+	_attr_panel.name = "AttractionPanel"
+	inspector.set_overview(&"attraction", _attr_panel)
+	var av: VBoxContainer = _attr_panel
 	_attr_label = Label.new()
 	av.add_child(_attr_label)
 	_attr_bar_box = VBoxContainer.new()
@@ -300,13 +326,11 @@ func _build_ui() -> void:
 	_attr_resume_btn = _button(av, "Fortsæt byg", _on_resume_coaster)
 	_attr_resume_btn.visible = false
 	_button(av, "Riv ned", _on_demolish)
-	_button(av, "Luk panel", clear_selection)
-	_attr_panel.visible = false
 
-	_guest_panel = _panel(root, "GuestPanel")
-	_place_right(_guest_panel)
-	var gv := VBoxContainer.new()
-	_guest_panel.add_child(gv)
+	_guest_panel = VBoxContainer.new()
+	_guest_panel.name = "GuestPanel"
+	inspector.set_overview(&"guest", _guest_panel)
+	var gv: VBoxContainer = _guest_panel
 	_guest_label = Label.new()
 	gv.add_child(_guest_label)
 	_guest_bars["nausea"] = _bar(gv, "Kvalme", Color(0.45, 0.8, 0.3))
@@ -314,8 +338,14 @@ func _build_ui() -> void:
 	_guest_items = HBoxContainer.new()
 	_guest_items.name = "GuestItems"
 	gv.add_child(_guest_items)
-	_button(gv, "Luk panel", clear_selection)
-	_guest_panel.visible = false
+
+	_staff_panel = VBoxContainer.new()
+	_staff_panel.name = "StaffPanel"
+	inspector.set_overview(&"staff", _staff_panel)
+	var sv: VBoxContainer = _staff_panel
+	_staff_label = Label.new()
+	sv.add_child(_staff_label)
+	_button(sv, "Fyr", _on_fire_selected)
 
 	_park_panel = _panel(root, "ParkPanel")
 	_place_right(_park_panel)
@@ -329,16 +359,6 @@ func _build_ui() -> void:
 	_button(eh, "Entré +", change_entry_fee.bind(1))
 	_button(pv, "Luk panel", toggle_park_panel)
 	_park_panel.visible = false
-
-	_staff_panel = _panel(root, "StaffPanel")
-	_place_right(_staff_panel)
-	var sv := VBoxContainer.new()
-	_staff_panel.add_child(sv)
-	_staff_label = Label.new()
-	sv.add_child(_staff_label)
-	_button(sv, "Fyr", _on_fire_selected)
-	_button(sv, "Luk panel", clear_selection)
-	_staff_panel.visible = false
 
 	_staff_list_panel = _panel(root, "StaffListPanel")
 	_place_right(_staff_list_panel)
@@ -367,6 +387,10 @@ func _build_ui() -> void:
 	_pause_menu.sim_provider = func() -> ParkSim: return sim
 
 	_build_m5(root)
+	_build_rail(root)
+	alert_tray = AlertTray.new()
+	root.add_child(alert_tray)
+	alert_tray.unread_changed.connect(top_bar.set_unread)
 	_toast = Toast.new()
 	root.add_child(_toast)
 	if is_inside_tree():
@@ -439,20 +463,32 @@ func _button(parent: Control, text: String, cb: Callable) -> Button:
 	return b
 
 
-func _add_build_button(parent: Control, def_id: String, text: String, cost: int, tab: String = "") -> void:
-	_build_buttons[def_id] = _button(parent, text, request_build_tool.bind(def_id))
+func _add_build_button(_parent: Control, def_id: String, text: String, cost: int, tab: String = "",
+		cost_text: String = "", body: String = "") -> void:
+	_build_buttons[def_id] = build_dock.add_card(def_id, text, cost_text, tab, body)
 	_build_costs[def_id] = cost
 	_build_tab[def_id] = tab
+
+
+## Tooltip-tekst for et byggekort: pris, drift og nøgletal.
+static func card_body(d: AttractionDef) -> String:
+	var lines: Array[String] = ["Pris: $%d" % d.build_cost]
+	if d.running_cost_per_day > 0:
+		lines.append("Drift: $%d/dag" % d.running_cost_per_day)
+	if d.ticket_price > 0:
+		lines.append("Billet: $%d" % d.ticket_price)
+	if d.excitement > 0:
+		lines.append("Spænding: %d" % d.excitement)
+	if d.capacity > 1:
+		lines.append("Kapacitet: %d" % d.capacity)
+	lines.append("Størrelse: %dx%d" % [d.footprint.x, d.footprint.y])
+	return "\n".join(lines)
 
 
 ## Viser kun byggeknapper for fanen (Vælg/Sti/Fjern altid synlige).
 func set_tab(tab: String) -> void:
 	current_tab = tab
-	for id: String in _build_buttons:
-		var t: String = _build_tab.get(id, "")
-		(_build_buttons[id] as Button).visible = t == "" or t == tab
-	for t: String in _tab_buttons:
-		(_tab_buttons[t] as Button).set_pressed_no_signal(t == tab)
+	build_dock.set_category(tab)
 	if is_inside_tree():
 		layout(get_viewport().get_visible_rect().size)
 
@@ -520,7 +556,8 @@ func refresh() -> void:
 	if _top_label.text.length() != old_len and is_inside_tree():
 		layout(get_viewport().get_visible_rect().size)  # topbar kan ombrydes anderledes
 	_refresh_park(st)
-	_pause_btn.text = "Fortsæt" if sim.clock.paused else "Pause"
+	top_bar.set_clock_state(sim.clock.paused, sim.clock.speed)
+	top_bar.smiley.value = float(st.get("avg_happiness", 0.0)) if int(st.get("guests", 0)) > 0 else 50.0
 	for id: String in _build_buttons:
 		var b: Button = _build_buttons[id]
 		var locked: bool = is_build_locked(id)
@@ -531,6 +568,8 @@ func refresh() -> void:
 	_refresh_guest()
 	_refresh_staff()
 	_refresh_staff_list()
+	inspector.refresh(sim)
+	park_rail.refresh(sim)
 
 
 func _connect_warnings() -> void:
@@ -544,9 +583,29 @@ func _connect_warnings() -> void:
 		sim.connect("warning", show_warning)
 
 
+## Sim-varsler lander i AlertTray (nederst til højre); klik flytter kameraet til stedet.
 func show_warning(code: StringName, data: Dictionary = {}) -> void:
-	if _toast != null:
-		_toast.show_warning(code, data)
+	if alert_tray == null:
+		return
+	var icon: String = "info" if code == &"research_done" else "alert"
+	alert_tray.push(Toast.warning_message(code, data), icon, warning_cell(data))
+
+
+func warning_cell(data: Dictionary) -> Vector2i:
+	var c: Variant = data.get("cell", null)
+	if c is Vector2i:
+		return c
+	if data.has("attraction_id") and sim != null:
+		var a: Attraction = sim.get_attraction(int(data.attraction_id))
+		if a != null:
+			return a.origin
+	return AlertTray.NO_CELL
+
+
+func _on_bell() -> void:
+	alert_tray.show_history()
+	if is_inside_tree():
+		layout(get_viewport().get_visible_rect().size)
 
 
 func toast() -> Toast:
@@ -625,13 +684,11 @@ func change_entry_fee(delta: int) -> void:
 
 func _refresh_attraction() -> void:
 	if _sel_attraction < 0:
-		_attr_panel.visible = false
 		return
 	var a: Attraction = sim.get_attraction(_sel_attraction)
 	if a == null:
 		clear_selection()
 		return
-	_attr_panel.visible = true
 	_attr_label.text = attraction_text(a, sim)
 	var st: Dictionary = sim.attraction_stats(a.id) if sim.has_method("attraction_stats") else {}
 	var ride: bool = a.is_ride() or a.def.kind == "coaster"
@@ -704,13 +761,11 @@ func _get_staff_dict() -> Dictionary:
 
 func _refresh_staff() -> void:
 	if _sel_staff < 0:
-		_staff_panel.visible = false
 		return
 	var s: Staff = _get_staff_dict().get(_sel_staff, null)
 	if s == null:
 		clear_selection()
 		return
-	_staff_panel.visible = true
 	_staff_label.text = "%s #%d\nLøn: $%d/dag\nStatus: %s" % [s.def.name, s.id, s.def.wage_per_day, staff_status(s)]
 
 
@@ -768,13 +823,11 @@ func _on_fire_selected() -> void:
 
 func _refresh_guest() -> void:
 	if _sel_guest < 0:
-		_guest_panel.visible = false
 		return
 	var g: Guest = sim.guests.get(_sel_guest, null)
 	if g == null:
 		clear_selection()
 		return
-	_guest_panel.visible = true
 	var lines: Array[String] = ["Gæst #%d" % g.id, "Glæde: %d%%" % roundi(g.happiness), "Penge: $%d" % g.money]
 	var keys: Array = g.needs.keys()
 	keys.sort()
@@ -818,6 +871,7 @@ func show_attraction(id: int) -> void:
 	_sel_attraction = id
 	if coaster_palette != null:
 		coaster_palette.resume_id = id
+	inspector.open(&"attraction", id)
 	refresh()
 
 
@@ -826,6 +880,7 @@ func show_guest(id: int) -> void:
 	_sel_staff = -1
 	_sel_attraction = -1
 	_sel_guest = id
+	inspector.open(&"guest", id)
 	refresh()
 
 
@@ -834,6 +889,7 @@ func show_staff(id: int) -> void:
 	_sel_attraction = -1
 	_sel_guest = -1
 	_sel_staff = id
+	inspector.open(&"staff", id)
 	refresh()
 
 
@@ -844,16 +900,45 @@ func _hide_overviews() -> void:
 	if _park_panel != null:
 		_park_panel.visible = false
 		_staff_list_panel.visible = false
+	if park_rail != null:
+		park_rail.close_panel()
 
 
 func clear_selection() -> void:
 	_sel_attraction = -1
 	_sel_guest = -1
 	_sel_staff = -1
-	if _attr_panel != null:
-		_attr_panel.visible = false
-		_guest_panel.visible = false
-		_staff_panel.visible = false
+	if inspector != null:
+		inspector.close_inspector()
+
+
+## Inspektøren lukket med X/Esc: ryd også markeringen i verden.
+func _on_inspector_closed() -> void:
+	var had: bool = _sel_attraction >= 0 or _sel_guest >= 0 or _sel_staff >= 0
+	clear_selection()
+	if had and selection != null and selection.has_signal("cleared"):
+		selection.emit_signal("cleared")
+
+
+## Esc lukker inspektøren (før BuildTool får tasten og evt. åbner pause-menuen).
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and (event as InputEventKey).pressed and not (event as InputEventKey).echo \
+			and (event as InputEventKey).keycode == KEY_ESCAPE:
+		if handle_escape():
+			get_viewport().set_input_as_handled()
+
+
+## Returnerer true, hvis Esc blev brugt af HUD'en (inspektør eller rail-panel lukket).
+func handle_escape() -> bool:
+	if is_pause_menu_open():
+		return false
+	if inspector != null and inspector.is_open():
+		inspector.close_inspector()
+		return true
+	if park_rail != null and park_rail.open_id != &"":
+		park_rail.close_panel()
+		return true
+	return false
 
 
 # --- Pause-menu ---
@@ -917,6 +1002,37 @@ func _on_demolish() -> void:
 
 
 # --- M5 (T-071): scenarie, forskning, rutsjebane ---
+
+func _build_rail(root: Control) -> void:
+	park_rail = ParkRail.new()
+	root.add_child(park_rail)
+	park_rail.build()
+	park_rail.host = root
+	park_rail.register_action(&"park", "park", "Park og økonomi", toggle_park_panel)
+	park_rail.register_action(&"staff", "staff", "Personale", toggle_staff_list)
+	_research_btn = park_rail.register_action(&"research", "research", "Forskning", toggle_research_panel)
+	_research_btn.visible = false
+	park_rail.register(&"settings", "settings", _make_settings_panel, "Indstillinger")
+	park_rail.register_action(&"menu", "menu", "Menu (Esc)", open_pause_menu)
+	park_rail.panel_toggled.connect(_on_rail_panel)
+
+
+func _make_settings_panel() -> Control:
+	var p := UiSettingsPanel.new()
+	p.build(user_settings)
+	return p
+
+
+func _on_rail_panel(_id: StringName, open: bool) -> void:
+	if open:
+		clear_selection()
+		_park_panel.visible = false
+		_staff_list_panel.visible = false
+		research_panel.wanted = false
+		research_panel.visible = false
+	if is_inside_tree():
+		layout(get_viewport().get_visible_rect().size)
+
 
 func _build_m5(root: Control) -> void:
 	objective_panel = ObjectivePanel.new()

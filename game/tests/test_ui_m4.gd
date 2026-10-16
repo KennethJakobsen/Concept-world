@@ -85,7 +85,7 @@ func test_hud_has_clock_and_toast() -> void:
 	hud.refresh()
 	assert_true(hud.toast() != null)
 	hud.show_warning(&"broken_no_mechanic")
-	assert_true(hud.toast().visible)
+	assert_eq(hud.alert_tray.items().size(), 1, "varsler lander i AlertTray (T-101)")
 	if hud.sim.has_method("clock_text"):
 		var txt: String = hud._clock_label.text
 		assert_eq(txt.length(), 5)

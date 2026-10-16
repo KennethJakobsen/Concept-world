@@ -1,1 +1,1 @@
-{"id": "lamp", "name": "Lygtepæl", "kind": "lamp", "footprint": [1, 1], "build_cost": 50, "on_path": true, "happiness_aura": 0.5, "aura_radius": 2, "model": "res://scenes/props/lamp.tscn"}
+{"id": "lamp", "name": "Lygtepæl", "kind": "lamp", "footprint": [1, 1], "build_cost": 50, "on_path": true, "happiness_aura": 0.5, "aura_radius": 2, "model": "res://scenes/props/lamp.tscn", "night_aura": 1.5}

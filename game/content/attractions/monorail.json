@@ -22,5 +22,11 @@
  "intensity": 0,
  "nausea": 0,
  "transport_cost": 4.0,
- "max_height": 4
+ "max_height": 4,
+ "required_pieces": [
+  "monorail_station_start",
+  "monorail_straight",
+  "monorail_turn_left",
+  "monorail_turn_right"
+ ]
 }

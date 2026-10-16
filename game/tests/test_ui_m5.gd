@@ -158,8 +158,8 @@ func test_hud_locks_and_coaster_tab() -> void:
 	hud.continue_free_play()
 	assert_true(not hud.result_dialog.visible)
 	hud.show_warning(&"research_done", {"item_id": "ferris_wheel"})
-	assert_true(hud.toast().text().begins_with("Ny forskning"))
-	var texts: Array[String] = [hud.toast().text(), CoasterPalette.errors_text(M5Texts.COASTER_ERRORS.keys())]
+	assert_true(hud.alert_tray.texts()[-1].begins_with("Ny forskning"))
+	var texts: Array[String] = [hud.alert_tray.texts()[-1], CoasterPalette.errors_text(M5Texts.COASTER_ERRORS.keys())]
 	_texts(hud, texts)
 	_check(texts)
 	hud.free()

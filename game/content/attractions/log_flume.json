@@ -22,5 +22,11 @@
  "intensity": 40,
  "nausea": 10,
  "wet_thirst": -10,
- "max_height": 4
+ "max_height": 4,
+ "required_pieces": [
+  "flume_station",
+  "flume_straight",
+  "flume_turn_left",
+  "flume_turn_right"
+ ]
 }

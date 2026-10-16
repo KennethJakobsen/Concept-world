@@ -1,0 +1,1 @@
+{"id": "atm", "name": "Hæveautomat", "kind": "atm", "footprint": [1, 1], "build_cost": 400, "running_cost_per_day": 20, "capacity": 1, "ride_ticks": 40, "ticket_price": 0, "excitement": 0, "satisfies": {}, "model": "res://scenes/props/atm.tscn", "withdraw": {"min": 20, "max": 50}, "fee": 1, "max_per_visit": 2, "range_cells": 30, "min_happiness": 40}

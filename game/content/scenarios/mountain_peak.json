@@ -5,4 +5,5 @@
    "unlocked": ["ferris_wheel", "swing_ride", "ice_cream_stand"], "research_enabled": true, "entry_fee": 12},
  "objectives": [{"type": "guests_in_park", "value": 75}, {"type": "park_value_min", "value": 92000}, {"type": "coaster_excitement_min", "value": 4.6}, {"type": "reputation_min", "value": 52}],
  "deadline_days": 90,
- "lose": [{"type": "money_below", "value": -4000, "days": 4}, {"type": "reputation_below", "value": 15, "days": 4}]}
+ "lose": [{"type": "money_below", "value": -4000, "days": 4}, {"type": "reputation_below", "value": 15, "days": 4}],
+ "surroundings": {"theme": "mountain"}}

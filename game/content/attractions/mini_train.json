@@ -21,5 +21,11 @@
  "train": "mini_loco",
  "intensity": 5,
  "nausea": 0,
- "max_height": 0
+ "max_height": 0,
+ "required_pieces": [
+  "train_station",
+  "train_straight",
+  "train_turn_left",
+  "train_turn_right"
+ ]
 }

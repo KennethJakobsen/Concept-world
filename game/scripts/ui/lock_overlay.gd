@@ -15,7 +15,7 @@ static func apply(b: Button, locked: bool) -> void:
 	if lock != null:
 		lock.visible = locked
 		lock.position = Vector2(maxf(0.0, b.size.x - 16.0), 2.0)
-	b.tooltip_text = M5Texts.LOCKED_TOOLTIP if locked else ""
+	b.tooltip_text = M5Texts.LOCKED_TOOLTIP if locked else TooltipService.text_for(b)
 	b.self_modulate = Color(0.55, 0.55, 0.55) if locked else Color(1, 1, 1)
 	if locked:
 		b.disabled = true

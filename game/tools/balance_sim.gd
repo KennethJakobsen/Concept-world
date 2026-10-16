@@ -14,6 +14,8 @@ func _init() -> void:
 	_run("Startpark uden personale (nedbrud + affald)", false, -1, true, false)
 	_run("Startpark + mekaniker + rengøring + 2 skraldespande (T-037)", false, -1, true, true)
 	_m3_compare()
+	for sd in [12345, 1, 2]:
+		_m6_park(sd)
 	for d in ScenarioDef.list_all():
 		if not d.is_sandbox():
 			_scenario_runs(d)
@@ -123,6 +125,8 @@ func _run(title: String, full: bool, fee: int, connect_rides: bool = true, with_
 	print("Dag | Penge | Netto | Omdømme | Rate/dag | Nye | Gæster nu/max | Glæde | Løn | Nedbrud | I stykker | Affald")
 	var breaks: Array = [0]
 	sim.attraction_broken.connect(func(_a: Attraction) -> void: breaks[0] += 1)
+	var vomits: Array = [0]
+	sim.guest_vomited.connect(func(_g: int, _c: Vector2i) -> void: vomits[0] += 1)
 	var day_seconds: float = sim.balance.day_ticks * SimClock.TICK_DELTA
 	for d in DAYS:
 		var hap_sum: float = 0.0
@@ -145,6 +149,7 @@ func _run(title: String, full: bool, fee: int, connect_rides: bool = true, with_
 		breaks[0] = 0
 		if full:
 			_diag(sim)
+	_m6_report(sim, vomits[0], {}, DAYS)
 
 
 
@@ -185,6 +190,8 @@ const BOT_OVAL: Array[String] = [
 	"track_down", "track_down", "track_down", "track_straight", "track_straight", "track_straight",
 	"track_turn_right", "track_turn_right",
 ]
+const IMPULSE_SHOPS: Array[String] = ["balloon_stand", "souvenir_shop"]
+const VOMIT_SHARE_MAX: float = 0.15
 const BOT_SEEDS: Array[int] = [12345, 1, 2, 3, 4]
 
 
@@ -260,6 +267,10 @@ func _scenario_run(def: ScenarioDef, p_seed: int) -> bool:
 			if ad != null and ad.kind != "coaster":
 				ids.append(ad.id)
 	var built: Dictionary = {}
+	var placed_day: Dictionary = {}  ## attraction id -> dag (T-121: sideshow-margin)
+	var vomits: Array = [0]
+	sim.guest_vomited.connect(func(_g: int, _c: Vector2i) -> void: vomits[0] += 1)
+	var days_run: int = 0
 	var day_seconds: float = sim.balance.day_ticks * SimClock.TICK_DELTA
 	var limit: int = def.deadline_days if def.deadline_days > 0 else 120
 	for d in limit:
@@ -267,6 +278,12 @@ func _scenario_run(def: ScenarioDef, p_seed: int) -> bool:
 			var r: String = _bot_coaster(sim, station)
 			if r != "":
 				coaster = r + " (dag %d)" % d
+		# T-121: når banen står, forskes butikker (impulskøb) og derefter sideshows
+		if coaster.begins_with("ok"):
+			if not sim.is_unlocked("souvenir_shop"):
+				sim.cmd_set_research_priority("shops")
+			else:
+				sim.cmd_set_research_priority("sideshows")
 		# byg: den billigste ikke-byggede ulåste; ellers den billigste ulåste igen
 		var best: AttractionDef = null
 		for id in ids:
@@ -278,13 +295,28 @@ func _scenario_run(def: ScenarioDef, p_seed: int) -> bool:
 				best = ad
 		if best != null and slot_x[0] + best.footprint.x < def.map_size.x:
 			var o := Vector2i(slot_x[0], c.y - best.footprint.y)
-			if sim.cmd_place_attraction(best.id, o) != null:
+			var pa: Attraction = sim.cmd_place_attraction(best.id, o)
+			if pa != null:
 				built[best.id] = int(built.get(best.id, 0)) + 1
+				placed_day[pa.id] = d
 			slot_x[0] += best.footprint.x + 1
+		# T-121: impulsbutikker (ballon + souvenir), når de er låst op og ikke bygget endnu
+		for sid: String in IMPULSE_SHOPS:
+			var sd: AttractionDef = sim.get_def(sid)
+			if sd == null or built.has(sid) or not sim.is_unlocked(sid) or sim.economy.money - sd.build_cost < 2000:
+				continue
+			if slot_x[0] + sd.footprint.x >= def.map_size.x:
+				continue
+			var sa: Attraction = sim.cmd_place_attraction(sid, Vector2i(slot_x[0], c.y - sd.footprint.y))
+			if sa != null:
+				built[sid] = 1
+				placed_day[sa.id] = d
+			slot_x[0] += sd.footprint.x + 1
 		var t: float = 0.0
 		while t < day_seconds - 1e-3:
 			sim.update(STEP)
 			t += STEP
+		days_run = d + 1
 		if not sim.scenario.is_running():
 			break
 	var st: Dictionary = sim.scenario_status()
@@ -295,4 +327,75 @@ func _scenario_run(def: ScenarioDef, p_seed: int) -> bool:
 		result[0], sim.economy.money, sim.reputation, sim.guests.size(), sim.rides_count(), sim.park_value(),
 		coaster if coaster != "" else "ikke bygget"])
 	print("   Mål: %s" % ", ".join(parts))
+	_m6_report(sim, vomits[0], placed_day, days_run)
 	return st.state == &"won"
+
+
+## T-121: M6-målinger – opkast (antal + andel af stående affald, mål < 15 %), netto-margin pr. sideshow
+## (indtægt - drift - præmier) og besøg på impulsbutikker. placed_day: attraction id -> byggedag (mangler = dag 0).
+func _m6_report(sim: ParkSim, vomit_events: int, placed_day: Dictionary, days_run: int) -> void:
+	var litter: int = sim.world.total_litter()
+	var standing: int = sim.world.total_vomit()
+	var share: float = float(standing) / litter if litter > 0 else 0.0
+	print("   M6 opkast: %d i alt, stående %d/%d affald = %.1f %% (mål < %d %%)%s" % [vomit_events, standing, litter,
+		share * 100.0, int(VOMIT_SHARE_MAX * 100), "" if share < VOMIT_SHARE_MAX else " OVER MÅL"])
+	var side: Array[String] = []
+	var shops: Array[String] = []
+	for a: Attraction in sim.attractions:
+		if a.def.kind == "sideshow":
+			var days: int = maxi(0, days_run - int(placed_day.get(a.id, 0)))
+			var running: int = a.def.running_cost_per_day * days
+			side.append("%s: %d besøg, %d - drift %d - præmier %d = %d" % [a.def.id, a.total_visitors,
+				a.total_revenue, running, a.prize_cost_total, a.total_revenue - running - a.prize_cost_total])
+		elif IMPULSE_SHOPS.has(a.def.id):
+			shops.append("%s: %d besøg, indtægt %d" % [a.def.id, a.total_visitors, a.total_revenue])
+	print("   M6 sideshows: %s" % ("; ".join(side) if not side.is_empty() else "ingen bygget"))
+	print("   M6 impulsbutikker: %s" % ("; ".join(shops) if not shops.is_empty() else "ingen bygget"))
+
+
+## T-121: fuld park (som _run "Fuld park") + 4 sideshows, ballonbod og souvenirbutik, 5 dage.
+## Scenarie-botten når sjældent at forske butikker/sideshows før sejr, så M6 måles her i sandbox.
+const M6_EXTRA: Array[String] = ["coconut_shy", "shooting_gallery", "hook_a_duck", "strength_tester",
+	"balloon_stand", "souvenir_shop"]
+
+
+func _m6_park(p_seed: int) -> void:
+	var sim := ParkSim.new(64, 64, p_seed)
+	var e: Vector2i = sim.world.entrance
+	var ok: bool = true
+	for y in range(e.y - 1, 49, -1):
+		ok = sim.cmd_place_path(Vector2i(e.x, y)) and ok
+	for x in range(e.x - 12, e.x + 13):
+		if x != e.x:
+			ok = sim.cmd_place_path(Vector2i(x, 50)) and ok
+	sim.economy.money += 10000
+	ok = sim.cmd_place_attraction("carousel", Vector2i(e.x - 2, 46)) != null and ok
+	ok = sim.cmd_place_attraction("burger_stand", Vector2i(e.x + 2, 49)) != null and ok
+	ok = sim.cmd_place_attraction("drinks_stand", Vector2i(e.x + 4, 49)) != null and ok
+	ok = sim.cmd_place_attraction("toilet", Vector2i(e.x - 4, 49)) != null and ok
+	ok = sim.cmd_place_attraction("ice_cream_stand", Vector2i(e.x + 6, 49)) != null and ok
+	ok = sim.cmd_hire_staff("mechanic", Vector2i(e.x, 52)) > 0 and ok
+	ok = sim.cmd_hire_staff("cleaner", Vector2i(e.x, 51)) > 0 and ok
+	ok = sim.cmd_place_decor("bin", Vector2i(e.x + 3, 50)) > 0 and ok
+	ok = sim.cmd_place_decor("bin", Vector2i(e.x - 3, 50)) > 0 and ok
+	var placed: Array[String] = []
+	for id: String in M6_EXTRA:
+		var a: Attraction = null
+		for x in range(e.x - 12, e.x + 13):
+			a = sim.cmd_place_attraction(id, Vector2i(x, 49))
+			if a != null:
+				break
+		if a == null:
+			ok = false
+		else:
+			placed.append(id)
+	var vomits: Array = [0]
+	sim.guest_vomited.connect(func(_g: int, _c: Vector2i) -> void: vomits[0] += 1)
+	var day_seconds: float = sim.balance.day_ticks * SimClock.TICK_DELTA
+	var t: float = 0.0
+	while t < day_seconds * DAYS - 1e-3:
+		sim.update(STEP)
+		t += STEP
+	print("\n=== T-121 M6-park seed %d (%d dage): byggeri ok %s, gæster i alt %d, penge %d ===" % [p_seed, DAYS, ok,
+		sim._next_guest_id - 1, sim.economy.money])
+	_m6_report(sim, vomits[0], {}, DAYS)

@@ -26,3 +26,6 @@ Egne `StandardMaterial3D` (.tres) med triplanar UV, deles mellem props.
   (karrusel, pariserhjul, gokart, radiobiler, svingkarrusel) en af de egne teksturer
   (metal/plaster/planks/grass/asphalt) tintet med den oprindelige farve – se `tools/apply_textures.py`.
 - `steel.tres`, `tread_plate.tres` (T-061): kraftigere stål på forlystelser og riflet radiobil-gulv.
+
+## T-108 omgivelser
+- Mur, port, busstoppested, træer, marker, vej, biler/busser og gæster i `scripts/rendering/surroundings_renderer.gd` er procedurelle primitiver (egne, ingen eksterne assets).
