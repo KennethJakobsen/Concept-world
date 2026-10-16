@@ -111,7 +111,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-080 | M6 kontrakt, ADR-004 og tasks | architect | ✅ done |
 | T-081 | Data: 14 bygninger, intensity/nausea, præmier, bærbare ting | designer | review |
 | T-082 | Data: spor til tømmerrende, minitog og svævebane | designer | review |
-| T-083 | Grafik: props med tema-elementer til 14 bygninger | graphics | review |
+| T-083 | Grafik: props med tema-elementer til 14 bygninger | graphics | ✅ done |
 | T-084 | Sim: intensity, kvalme, opkast + save v3 | simulation | review |
 | T-085 | Sim: sideshows og præmier | simulation | review |
 | T-086 | Sim: bærbare ting (ballon, souvenir, præmier) | simulation | review |
@@ -121,7 +121,7 @@ M4 afsluttet 2026-10-15 (genåbnet og lukket igen for T-060/T-061).
 | T-090 | Sim: generaliseret spor, tømmerrende og minitog | simulation | review |
 | T-091 | Sim: svævebane – transport mellem to stationer | simulation | review |
 | T-092 | Grafik: trug, togskinner, monorail-bjælke og køretøjer | graphics | review |
-| T-099 | Bug: M6-props mangler teksturer/detaljer, showcase viser kun 3 | graphics | review |
+| T-099 | Bug: M6-props mangler teksturer/detaljer, showcase viser kun 3 | graphics | ✅ done |
 | T-093 | Gameplay: byggeværktøj for alle sporsystemer | gameplay | review |
 | T-094 | UI: spor-faner, fejltekster og info | ui | review |
 | T-095 | Balance: M6-indhold | designer | todo |

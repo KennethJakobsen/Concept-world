@@ -1,6 +1,6 @@
 # T-083: Grafik: props med tema-elementer til 14 bygninger
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M6
 - **Agent:** graphics
 - **Afhænger af:** T-080 (footprints fra T-079, T-081 for endelige tal)
@@ -41,3 +41,4 @@ Bemærk: kontrakten lister 15 bygninger (inkl. Ballonbåsen). Alle 15 er lavet.
 - 2026-10-15 – architect: oprettet
 - 2026-10-15 – graphics: startet. Props genereres af `scripts/rendering/props/m6_prop_builder.gd` (Godot pakker transforms, så række-major-fejl undgås).
 - 2026-10-15 – graphics: 15 props genereret (`scripts/rendering/props/m6_prop_builder.gd`). Ny `Oscillator` (arver `Spinner`, så RideVisual styrer blød start/stop) til gyngning, hop og fald. Footprint ligger som metadata (`footprint`) og matcher T-081's data. Lyskæde-ankre er tilføjet i `ride_visual.gd`. Tests: M6 i `RIDES`/`PROPS` (textured, API, transforms) samt `test_m6_transforms_and_footprint` og `test_m6_rides_animate`. Screenshots i opengl3 (spilkamera + nær) er gennemgået, og rakettens vogne og souvenir-taget er rettet. Showcase: `res://scenes/rendering/m6_showcase.tscn`. `./tools/test.sh`: 236 bestået, 2 fejlet (`test_economy`/`test_research`, begge fra T-081's ucommittede data, ikke T-083). Sat til review, så brugeren kan se det.
+- 2026-10-16 – bruger: visuelt godkendt.
