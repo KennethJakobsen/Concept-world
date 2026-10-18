@@ -90,6 +90,9 @@ class CoasterVis:
 	var leg_reverse: bool = false  ## svævebanen: denne tur kører end → start
 
 
+const MAX_FRAME_DELTA: float = 0.25  ## T-153
+
+
 func _ready() -> void:
 	if rig == null:
 		rig = get_node_or_null("DayNightRig") as DayNightRig
@@ -101,10 +104,13 @@ func _ready() -> void:
 		return
 	var session: Node = get_node_or_null("/root/GameSession")
 	var pending: Dictionary = session.get("pending_save") if session != null else {}
-	if not pending.is_empty():
-		var loaded: ParkSim = ParkSim.from_save(pending)
+	var pre: ParkSim = session.get("pending_sim") as ParkSim if session != null else null
+	if pre != null or not pending.is_empty():
+		var loaded: ParkSim = pre if pre != null else ParkSim.from_save(pending)
 		session.set("pending_save", {})
+		session.set("pending_sim", null)
 		if loaded != null:
+			_resume_loaded(loaded)
 			setup(loaded)
 			return
 		push_warning("ParkView: ugyldig save – starter ny park")
@@ -118,6 +124,15 @@ func _ready() -> void:
 			return
 		push_warning("ParkView: ukendt scenarie '%s' – starter fri leg" % scen_id)
 	setup(ParkSim.new(park_width, park_height, s))
+
+
+## T-153: en indlæst park starter altid kørende. Saves fra pause-menuen og autosaven efter
+## et afsluttet scenarie (GameSession pauser ved scenario_finished) er gemt med paused=true –
+## uden dialog lignede det, at spillet hang efter "Fortsæt".
+static func _resume_loaded(s: ParkSim) -> void:
+	s.clock.paused = false
+	if s.clock.speed <= 0.0:
+		s.clock.speed = 1.0
 
 
 ## Tilknyt en (ny eller indlæst) sim og byg hele scenen ud fra dens state.
@@ -274,7 +289,9 @@ func scenario_theme() -> String:
 func _process(delta: float) -> void:
 	if sim == null:
 		return
-	sim.update(delta)
+	# T-153: loft over frame-delta. Første frame efter et tungt scene-load (web: flere sekunder)
+	# gav ellers hundredvis af ticks i én frame → endnu længere frame → "dødsspiral".
+	sim.update(minf(delta, MAX_FRAME_DELTA))
 	_coin_cd = maxf(0.0, _coin_cd - delta)
 	sync_guests()
 	update_crowd()

@@ -6,6 +6,7 @@ const MAIN_SCENE: String = "res://scenes/main.tscn"
 const MENU_SCENE: String = "res://scenes/main_menu.tscn"
 
 var pending_save: Dictionary = {}
+var pending_sim: ParkSim  ## T-153: allerede valideret indlæst sim (load_from); ParkView overtager
 var pending_scenario: String = ""  ## T-070: ParkView opretter sim fra dette scenarie ("" = fri leg)
 var seed: int = 1
 var store: SaveStore = SaveStore.new()
@@ -50,6 +51,7 @@ func start_new(p_seed: int = randi()) -> void:
 func start_sandbox(p_seed: int = randi()) -> void:
 	seed = p_seed
 	pending_save = {}
+	pending_sim = null
 	pending_scenario = ""
 	_tutorial_scenario = ""
 	_change(MAIN_SCENE)
@@ -58,6 +60,7 @@ func start_sandbox(p_seed: int = randi()) -> void:
 func start_scenario(scenario_id: String, p_seed: int = randi()) -> void:
 	seed = p_seed
 	pending_save = {}
+	pending_sim = null
 	pending_scenario = scenario_id
 	_tutorial_scenario = scenario_id
 	_change(MAIN_SCENE)
@@ -65,6 +68,7 @@ func start_scenario(scenario_id: String, p_seed: int = randi()) -> void:
 
 func start_from_save(d: Dictionary) -> void:
 	pending_save = d
+	pending_sim = null
 	pending_scenario = ""
 	_tutorial_scenario = ""
 	_change(MAIN_SCENE)
@@ -88,12 +92,19 @@ func load_from(slot: String) -> bool:
 	var d: Dictionary = store.load(slot)
 	if d.is_empty():
 		return false
-	start_from_save(d)
+	# T-153: valider før scene-skift, så en ulæselig save giver fejlbesked i menuen
+	# i stedet for stille at starte en ny park.
+	var s: ParkSim = ParkSim.from_save(d)
+	if s == null:
+		return false
+	start_from_save({})
+	pending_sim = s
 	return true
 
 
 func go_to_main_menu() -> void:
 	pending_save = {}
+	pending_sim = null
 	_change(MENU_SCENE)
 
 

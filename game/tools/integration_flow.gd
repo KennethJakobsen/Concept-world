@@ -125,6 +125,50 @@ func _build_tracks(v: ParkView) -> void:
 	bt.set_tool("select")
 
 
+## T-153: hovedmenu → Fortsæt med pauset autosave, v1-save, korrupt og ulæselig autosave.
+func _check_continue(gs: Node) -> void:
+	var store: SaveStore = UiSession.store()
+	var backup: Dictionary = store.load(SaveStore.AUTOSAVE_SLOT)
+	var cases: Array = []
+	gs.call("start_scenario", "tutorial", 9)
+	await _frames(5)
+	var ps: ParkSim = _view().sim
+	ps.clock.paused = true  # som efter scenario_finished / gem fra pause-menu
+	cases.append(["pauset v4", ps.to_save(), true])
+	cases.append(["v1", JSON.parse_string(FileAccess.get_file_as_string("res://tests/fixtures/save_v1.json")), true])
+	cases.append(["korrupt JSON", "{\"save_version\": 4, \"park\": {", false])
+	cases.append(["ulæselig park", {"save_version": 4, "park": {"world": 7}}, false])
+	for c: Array in cases:
+		gs.call("go_to_main_menu")
+		await _frames(3)
+		if c[1] is Dictionary:
+			store.save(SaveStore.AUTOSAVE_SLOT, c[1])
+		else:
+			var fa := FileAccess.open(store.path_for(SaveStore.AUTOSAVE_SLOT), FileAccess.WRITE)
+			fa.store_string(c[1])
+			fa.close()
+		var menu: Node = current_scene
+		var t0: int = Time.get_ticks_msec()
+		menu.call("continue_park")
+		await _frames(5)
+		var v: ParkView = _view()
+		if c[2]:
+			_check(v != null and v.sim != null and not v.sim.clock.paused, "Fortsæt (%s): park indlæst og kører" % c[0])
+			if v != null and v.sim != null:
+				var tick0: int = v.sim.clock.tick
+				v._process(30.0)  # lang frame (web-load) → højst MAX_FRAME_DELTA sim-tid
+				var max_ticks: int = ceili(ParkView.MAX_FRAME_DELTA * SimClock.TICKS_PER_SECOND * v.sim.clock.speed) + 1
+				_check(v.sim.clock.tick - tick0 <= max_ticks, "lang frame giver højst %d ticks (%d)" % [max_ticks, v.sim.clock.tick - tick0])
+		else:
+			var st: Label = menu.get("_status") as Label if is_instance_valid(menu) else null
+			_check(v == null and st != null and st.text.begins_with("Kunne ikke"), "Fortsæt (%s): fejlbesked i menuen" % c[0])
+		_check(Time.get_ticks_msec() - t0 < 10000, "Fortsæt (%s) hænger ikke" % c[0])
+	if backup.is_empty():
+		store.delete(SaveStore.AUTOSAVE_SLOT)
+	else:
+		store.save(SaveStore.AUTOSAVE_SLOT, backup)
+
+
 func _run() -> void:
 	var gs: Node = root.get_node_or_null("GameSession")
 	_check(gs != null, "autoload GameSession findes")
@@ -251,6 +295,7 @@ func _run() -> void:
 		if v4 != null and v4.sim != null:
 			v4.sim.clock.paused = true
 			_check(v4.node_counts() == sc_counts, "scenarie node_counts ens")
+	await _check_continue(gs)
 	gs.call("go_to_main_menu")
 	await _frames(3)
 	UiSession.store().delete(SLOT)

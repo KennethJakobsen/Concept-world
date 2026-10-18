@@ -37,8 +37,10 @@ func save(slot: String, d: Dictionary) -> bool:
 func load(slot: String) -> Dictionary:
 	if not is_valid_slot(slot) or not FileAccess.file_exists(path_for(slot)):
 		return {}
-	var v: Variant = JSON.parse_string(FileAccess.get_file_as_string(path_for(slot)))
-	return v if v is Dictionary else {}
+	var j := JSON.new()  # T-153: parse() logger ikke ERROR ved korrupt fil (kalderen viser fejlbesked)
+	if j.parse(FileAccess.get_file_as_string(path_for(slot))) != OK:
+		return {}
+	return j.data if j.data is Dictionary else {}
 
 
 ## Slot-navne sorteret alfabetisk.
