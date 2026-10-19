@@ -48,8 +48,24 @@ func test_all_ids_synthesize() -> void:
 	ids.append_array(AudioSynth.UI_IDS)
 	ids.append_array(AudioSynth.AMBIENCE_IDS)
 	ids.append_array(AudioSynth.MUSIC_IDS)
-	assert_eq(ids.size(), 17)
+	assert_eq(ids.size(), 19)
 	for id in ids:
 		var s := AudioSynth.generate(id)
 		assert_true(s != null and s.data.size() > 0, str(id))
 	assert_true(AudioSynth.generate(&"nope") == null)
+
+
+## T-156: alle katalog-id'er uden "file" skal kunne genereres af AudioSynth.
+func test_catalog_ids_without_file_synthesize() -> void:
+	var f := FileAccess.open("res://content/audio.json", FileAccess.READ)
+	assert_true(f != null)
+	var data: Dictionary = JSON.parse_string(f.get_as_text())
+	var sounds: Dictionary = data["sounds"]
+	assert_true(sounds.size() > 0)
+	for id: String in sounds:
+		var entry: Dictionary = sounds[id]
+		if entry.has("file"):
+			continue
+		assert_true(AudioSynth.has(StringName(id)), "has " + id)
+		var s := AudioSynth.generate(StringName(id))
+		assert_true(s != null and s.data.size() > 0, "generate " + id)

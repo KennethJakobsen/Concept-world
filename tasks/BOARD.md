@@ -181,6 +181,7 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-153 | Bug: spillet hænger ved "Fortsæt" | gameplay | ✅ done |
 | T-154 | Bug: web-crash ved Fortsæt (HUD-layout) | ui | ✅ done |
 | T-155 | Ikon til Flyt-værktøjet (pan) | graphics | review |
+| T-156 | Bug: lydene splash og vomit mangler | gameplay | review |
 | T-118 | M7 verifikation | qa | review |
 | T-152 | balance.sh tager over 15 minutter | simulation | todo |
 

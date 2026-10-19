@@ -7,7 +7,7 @@ const RATE: int = 22050
 
 ## Kendte id'er → generator. Bruges når der ikke findes et katalog/en fil.
 const SFX_IDS: Array[StringName] = [&"build", &"demolish", &"cash", &"breakdown", &"repair",
-	&"sweep", &"ride_start", &"cheer", &"error"]
+	&"sweep", &"ride_start", &"cheer", &"error", &"splash", &"vomit"]
 const UI_IDS: Array[StringName] = [&"click", &"hover", &"open", &"close"]
 const AMBIENCE_IDS: Array[StringName] = [&"day", &"night"]
 const MUSIC_IDS: Array[StringName] = [&"menu", &"park"]
@@ -28,6 +28,8 @@ static func generate(id: StringName) -> AudioStreamWAV:
 		&"ride_start": return _make(_seq([[523.0, 0.12], [659.0, 0.12], [784.0, 0.25]], 0.25, false), false)
 		&"cheer": return _make(_cheer(0.9), false)
 		&"error": return _make(_seq([[180.0, 0.12], [140.0, 0.2]], 0.3, false, true), false)
+		&"splash": return _make(_splash(0.6, 0.14), false)
+		&"vomit": return _make(_vomit(0.3, 0.16), false)
 		&"click": return _make(_tone(1200.0, 0.03, 0.25), false)
 		&"hover": return _make(_tone(1800.0, 0.02, 0.08), false)
 		&"open": return _make(_sweep(400.0, 800.0, 0.1, 0.2), false)
@@ -167,6 +169,44 @@ static func _soft_pling(freq: float, dur: float, amp: float) -> PackedFloat32Arr
 		var t := float(i) / RATE
 		var e := minf(1.0, t / 0.012) * exp(-t * 14.0)
 		out[i] = (sin(TAU * freq * t) + 0.15 * sin(TAU * freq * 2.0 * t)) * amp * e
+	return out
+
+
+## T-156: vandplask – hvid stoej, hurtig attack, 0.6 s eksponentiel decay, baandpas ca. 800-4000 Hz.
+static func _splash(dur: float, amp: float) -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 156
+	var n := int(dur * RATE)
+	var out := PackedFloat32Array()
+	out.resize(n)
+	var a_lo := 1.0 - exp(-TAU * 800.0 / RATE)
+	var a_hi := 1.0 - exp(-TAU * 4000.0 / RATE)
+	var lp_hi := 0.0
+	var lp_lo := 0.0
+	for i in n:
+		var t := float(i) / RATE
+		var x := rng.randf_range(-1.0, 1.0)
+		lp_hi += a_hi * (x - lp_hi)
+		lp_lo += a_lo * (lp_hi - lp_lo)
+		var e := minf(1.0, t / 0.004) * exp(-t * 8.0) * minf(1.0, (dur - t) / 0.02)
+		out[i] = (lp_hi - lp_lo) * 1.6 * amp * e
+	return out
+
+
+## T-156: kort, daempet klask – lavpasfiltreret stoej, cutoff falder 400 -> 120 Hz over 0.3 s.
+static func _vomit(dur: float, amp: float) -> PackedFloat32Array:
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 157
+	var n := int(dur * RATE)
+	var out := PackedFloat32Array()
+	out.resize(n)
+	var lp := 0.0
+	for i in n:
+		var t := float(i) / RATE
+		var fc := lerpf(400.0, 120.0, t / dur)
+		lp += (1.0 - exp(-TAU * fc / RATE)) * (rng.randf_range(-1.0, 1.0) - lp)
+		var e := minf(1.0, t / 0.01) * exp(-t * 9.0) * minf(1.0, (dur - t) / 0.02)
+		out[i] = lp * 4.0 * amp * e
 	return out
 
 
