@@ -1,6 +1,6 @@
 # T-140: Gameplay: køsti-værktøj og kø/gæstemasse i scenen (prioriteret)
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** gameplay
 - **Afhænger af:** T-103, T-107
@@ -24,3 +24,4 @@ Brugeren savner kø-konceptet. Køsti-delen af T-110 og kø/gæstemasse-delen af
   - Tests: `tests/test_queue_view.gd` (værktøj, penge, visual-masker, gæster på separate køpladser, kølinje). 370 grønne; eneste røde er `test_ui_m7_foundation::test_dock_returns_to_bottom_after_close` (ui-agentens igangværende dock-arbejde, ikke berørt). Integration OK, smoke uden fejl.
   - Screenshots: `docs/screenshots/t140_queue.png`, `t140_queue_close.png` (Compatibility, simpel testscene: karrusel med 6-celle køsti med knæk, 12/12 i kø, to pr. celle, ingen overlap). Afventer brugerens øjne.
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

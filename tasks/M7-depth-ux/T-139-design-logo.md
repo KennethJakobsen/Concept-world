@@ -1,6 +1,6 @@
 # T-139: Design: logo i Tivoli-skilt-stilen
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** designer
 - **Afhænger af:** T-136, T-138
@@ -24,3 +24,4 @@ Brugerønske: et logo for Concept-world, der passer til `docs/ui-style.md`. Brug
 - export_presets.cfg har intet favicon-felt; Godots web-export bruger `config/icon` som favicon.
 - Test: `test_menu_uses_logo_texture`. test.sh: 334 bestået, 2 kendte atm-fejl. integration.sh OK. docs/screenshots/t138_menu.png opdateret.
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

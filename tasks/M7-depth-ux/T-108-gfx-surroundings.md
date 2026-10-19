@@ -1,6 +1,6 @@
 # T-108: Grafik: mur, port og omgivelser
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** graphics
 - **Afhænger af:** T-096, T-098
@@ -21,3 +21,4 @@ GDD §5, kontraktens §2 T-108. Se `tasks/M7-depth-ux/_CONTRACT.md`.
   - Test: `tests/test_surroundings.gd` (fallback, alle temaer, indgang på andre kanter). `test.sh`: 317 bestået. De 2 fejl skyldes `atm` fra T-100, der kører parallelt (ikke T-108). Smoke af main er OK.
   - **Integration (gameplay):** parken bruger den ikke endnu, fordi `park_view.gd`/`main.tscn` ikke er mine. Det kræver ca. 3 linjer i `ParkView` efter setup: `var s := SurroundingsRenderer.new(); add_child(s); s.build(w.width, w.height, w.entrance, SurroundingsRenderer.load_config(scenario_theme))`. Den eksisterende `entrance.tscn` står inde i parken, og porten står lige udenfor.
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

@@ -1,6 +1,6 @@
 # T-144: Bug: svævebanen kører ikke
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** gameplay
 - **Afhænger af:** T-091, T-092, T-093
@@ -19,3 +19,4 @@ Brugerrapport (screenshot): en bygget svævebane med to stationer og bjælke/mas
   Rettelse (bridge, ingen sim-ændring): `ParkView._transport_leg` pendler kabinen i tomgang mellem stationerne, når banen er åben, ikke i stykker og uden passagerer (samme hastighed som en tur, ophold = load_ticks ved hver station; stopper ved pause/lukket/nedbrud). Når en rigtig tur starter, overtager sim-progress (en tomgangstur over halvvejs regnes som ankommet). Gæster transporteres fortsat af sim'en, når ruten er billigere (test_transport.test_guests_ride_transport).
   Regressionstest: `test_track_view.test_transport_cabin_idles_without_riders`. Kræver brugerens øjne → review.
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

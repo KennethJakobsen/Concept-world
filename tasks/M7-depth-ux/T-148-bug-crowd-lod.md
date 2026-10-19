@@ -1,6 +1,6 @@
 # T-148: Bug: gæster ser forskellige ud (LOD), liggende/strakte kapsler
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** graphics
 - **Afhænger af:** T-107, T-111
@@ -19,3 +19,4 @@ Brugerrapport (screenshot): på samme sti har nogle gæster hoved/hår/detaljer,
 - 2026-10-16 – graphics: `GuestCrowdRenderer` omskrevet. LOD0 = én MultiMesh pr. del med præcis guest.tscn's meshes/offsets/farver (krop farvet pr. gæst via instance color, denim-bukser, hud-hoved, hår-halvkugle); LOD1 (>60 m) krop+hoved med færre segmenter; skjult >120 m. Den gamle kasse/cylinder-LOD er væk. Transform: altid `Basis.IDENTITY` (`part_transform`), og buffere har fast kapacitet (po2) + `visible_instance_count` i stedet for at ændre `instance_count` hver frame (sandsynlig kilde til strakte/liggende "garbage"-instanser i Compatibility). NEAR_DIST 18 → 30 m (stadig maks 120 noder); da LOD0 er visuelt identisk, ses skiftet ikke. park_view.gd uændret (bridge-fødningen var korrekt).
   Test: `test_crowd_instances_upright_and_match_guest_visual` (test_render_m7). Screenshots `docs/screenshots/t148_{close,normal,far}.png` via `scripts/rendering/m7/t148_crowd_screenshots.gd`. FPS (macOS, Compat, 1280x720, 500 gæster): 63,5 (vsync-loft). Tests: mine grønne; resterende fejl er i test_ui_m7_panels (ui's igangværende arbejde). Integration OK. Afventer brugerens øjne.
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

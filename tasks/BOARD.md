@@ -141,51 +141,51 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-097 | Design: GDD-afsnit for M7 | designer | ✅ done |
 | T-098 | M7 kontrakt, ADR-005 (gæstemasse/køstier) og tasks | architect | ✅ done |
 | T-121 | balance_sim måler opkast, sideshow-margin og impulskøb | simulation | done |
-| T-131 | Ændringsønske: rutsjebane kan startes uden stykker til at lukke den | designer | review |
+| T-131 | Ændringsønske: rutsjebane kan startes uden stykker til at lukke den | designer | ✅ done |
 | T-100 | Data: config, opskrifter, kø/gæste-parametre, ATM, milepæle, omgivelser | designer | done |
-| T-101 | UI: UX-fundament (skærmzoner, tooltips, indstillinger) | ui | review |
+| T-101 | UI: UX-fundament (skærmzoner, tooltips, indstillinger) | ui | ✅ done |
 | T-102 | Sim: config, opskrifter, prisvirkninger, salg + save v4 | simulation | done |
 | T-103 | Sim: køstier, tålmodighed, ledig frem for optaget, gæstemasse | simulation | done |
 | T-104 | Sim: gå hjem, hæveautomat, spande, bænke og lys | simulation | done |
 | T-105 | Sim: milepæle, der låser forskningsgrene op | simulation | done |
 | T-106 | Sim: flyt (også sporbaner), sælg-refusion og fortryd | simulation | done |
-| T-107 | Grafik: skrald, spande, bænke, ATM, køsti, svævetal og gæstemængde | graphics | review |
-| T-108 | Grafik: mur, port og omgivelser | graphics | review |
-| T-109 | Grafik: kort-overlays og farveblind-palet | graphics | review |
-| T-110 | Gameplay: køsti-, flyt-, rotér- og fortryd-værktøjer | gameplay | review |
-| T-111 | Gameplay: bridge for salg, skrald, bænke, kø og overlays | gameplay | review |
-| T-112 | UI: inspektør-faner (indstillinger, økonomi, kø) | ui | review |
-| T-113 | UI: milepæle, overlay-vælger, indstillinger og tanker | ui | review |
-| T-114 | Data: tutorial-scenariet 'Første park' | designer | review |
-| T-115 | Gameplay: TutorialDirector og pile i verden | gameplay | review |
-| T-116 | UI: tutorial-trinpanel | ui | review |
+| T-107 | Grafik: skrald, spande, bænke, ATM, køsti, svævetal og gæstemængde | graphics | ✅ done |
+| T-108 | Grafik: mur, port og omgivelser | graphics | ✅ done |
+| T-109 | Grafik: kort-overlays og farveblind-palet | graphics | ✅ done |
+| T-110 | Gameplay: køsti-, flyt-, rotér- og fortryd-værktøjer | gameplay | ✅ done |
+| T-111 | Gameplay: bridge for salg, skrald, bænke, kø og overlays | gameplay | ✅ done |
+| T-112 | UI: inspektør-faner (indstillinger, økonomi, kø) | ui | ✅ done |
+| T-113 | UI: milepæle, overlay-vælger, indstillinger og tanker | ui | ✅ done |
+| T-114 | Data: tutorial-scenariet 'Første park' | designer | ✅ done |
+| T-115 | Gameplay: TutorialDirector og pile i verden | gameplay | ✅ done |
+| T-116 | UI: tutorial-trinpanel | ui | ✅ done |
 | T-117 | Balance: M7-mekanik | designer | done |
 | T-149 | Sim: hæveautomat ved lav saldo (fra T-117) | simulation | done |
 | T-150 | balance_sim måler M7-mekanik (fra T-117) | qa | done |
 | T-151 | balance_sim: salt-måling med en Fritterbix, der sælger | simulation | done |
 | T-133 | Sim: required_pieces for sporbaner | simulation | done |
-| T-134 | UI: låst sporbane-kort | ui | review |
-| T-135 | Gameplay: omgivelser i ParkView | gameplay | review |
+| T-134 | UI: låst sporbane-kort | ui | ✅ done |
+| T-135 | Gameplay: omgivelser i ParkView | gameplay | ✅ done |
 | T-136 | Design: samlet UI-stil (art direction) | designer | done |
-| T-137 | Grafik: UI-ikoner og prop-miniaturer | graphics | review |
-| T-138 | UI: fælles tema og billedbaseret byggemenu | ui | review |
-| T-139 | Design: logo i Tivoli-skilt-stilen | designer | review |
-| T-140 | Gameplay: køsti-værktøj og gæstemasse i scenen (prioriteret) | gameplay | review |
-| T-141 | Bug: byggedock svæver efter undermenu lukkes | ui | review |
-| T-142 | Bug: menuen hopper ved dagskift | ui | review |
-| T-143 | Design: logo v2 – mere sammenhængende | designer | review |
-| T-144 | Bug: svævebanen kører ikke | gameplay | review |
-| T-145 | Svævebane som attraktion – kører kun ved brug | simulation | review |
-| T-146 | Bug: personale-panelet uden for skærmen | ui | review |
-| T-148 | Bug: gæster ser forskellige ud, strakte kapsler | graphics | review |
+| T-137 | Grafik: UI-ikoner og prop-miniaturer | graphics | ✅ done |
+| T-138 | UI: fælles tema og billedbaseret byggemenu | ui | ✅ done |
+| T-139 | Design: logo i Tivoli-skilt-stilen | designer | ✅ done |
+| T-140 | Gameplay: køsti-værktøj og gæstemasse i scenen (prioriteret) | gameplay | ✅ done |
+| T-141 | Bug: byggedock svæver efter undermenu lukkes | ui | ✅ done |
+| T-142 | Bug: menuen hopper ved dagskift | ui | ✅ done |
+| T-143 | Design: logo v2 – mere sammenhængende | designer | ✅ done |
+| T-144 | Bug: svævebanen kører ikke | gameplay | ✅ done |
+| T-145 | Svævebane som attraktion – kører kun ved brug | simulation | ✅ done |
+| T-146 | Bug: personale-panelet uden for skærmen | ui | ✅ done |
+| T-148 | Bug: gæster ser forskellige ud, strakte kapsler | graphics | ✅ done |
 | T-153 | Bug: spillet hænger ved "Fortsæt" | gameplay | ✅ done |
 | T-154 | Bug: web-crash ved Fortsæt (HUD-layout) | ui | ✅ done |
-| T-155 | Ikon til Flyt-værktøjet (pan) | graphics | review |
-| T-156 | Bug: lydene splash og vomit mangler | gameplay | review |
-| T-118 | M7 verifikation | qa | review |
-| T-152 | balance.sh tager over 15 minutter | simulation | todo |
+| T-155 | Ikon til Flyt-værktøjet (pan) | graphics | ✅ done |
+| T-156 | Bug: lydene splash og vomit mangler | gameplay | ✅ done |
+| T-118 | M7 verifikation | qa | ✅ done |
+| T-152 | balance.sh tager over 15 minutter | simulation | todo (→ M8) |
 
-M7 startet 2026-10-16. T-118 QA: 13 headless-tasks er done. Resten (visuelt) er teknisk OK og afventer brugerens godkendelse (tjekliste i T-118). Ny: T-152.
+M7 afsluttet 2026-10-19 (brugeren har godkendt alle visuelle tasks). T-152 flyttet til M8.
 
 Runder: 1) T-100, T-101 (UX-fundament), T-108 · 2) T-102 (save v4), T-107 · 3) T-103→T-104→T-105, T-112, T-109 · 4) T-106, T-111 · 5) T-110, T-113, derefter T-114 · 6) T-115/T-116, derefter T-117 · 7) T-118.
 

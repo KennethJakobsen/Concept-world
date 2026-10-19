@@ -1,6 +1,6 @@
 # T-115: Gameplay: TutorialDirector og pile i verden
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** gameplay
 - **Afhænger af:** T-114
@@ -26,3 +26,4 @@ Kontraktens §5 T-115. Se `tasks/M7-depth-ux/_CONTRACT.md`.
 - 2026-10-16 – architect: oprettet (T-098)
 - 2026-10-16 – gameplay: `scripts/bridge/tutorial_director.gd` (TutorialDirector, RefCounted: læser rå JSON `steps/tutorial/skippable`, poller sim-state – sti ved indgang, attraktion af kind, prisændring ift. snapshot ved trinstart, personale af type – og UI-events via notify). `scripts/bridge/tutorial_arrow.gd` (hoppende gul kegle, unlit, ingen skygge). GameSession-wiring + API ovenfor; pil sættes under ParkView og følger `entrance`/`attraction:<kind>`. Tutorial startes kun via `start_scenario("tutorial")` (scenariet er sandbox-agtigt, så `sim.scenario` er null) – en indlæst save genoptager ikke tutorialen. Test: `tests/test_tutorial_director.gd` gennemfører alle 6 trin headless ved handlinger + spring over. test.sh 442/0, integration OK, smoke rent. Pilen kræver brugerens øjne.
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

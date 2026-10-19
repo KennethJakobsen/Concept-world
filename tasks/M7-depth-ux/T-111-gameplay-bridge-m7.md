@@ -1,6 +1,6 @@
 # T-111: Gameplay: bridge for salg, skrald, bænke, kø og overlays
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** gameplay
 - **Afhænger af:** T-104, T-107, T-109
@@ -29,3 +29,4 @@ Kontraktens §3 T-111. Se `tasks/M7-depth-ux/_CONTRACT.md`.
   - Screenshots: `docs/screenshots/t111_{crowd,close,overlay_happiness,overlay_queue,overlay_coverage}.png` (script `scripts/bridge/m7_bridge_screenshots.gd`). FPS (macOS, Compatibility, 1280x720, 500 gæster, kamera 55 m): **63,6** (vsync-loft). Ved overblikket er alle 500 instanser, og ingen er noder.
   - Venter på brugerens øjne (svævetal, bænk, spand, skrald og crowd-LOD ved overgangen til 18 m).
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

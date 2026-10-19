@@ -1,6 +1,6 @@
 # T-101: UI: UX-fundament (skærmzoner, tooltips, indstillinger)
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** ui
 - **Afhænger af:** T-096, T-098
@@ -23,3 +23,4 @@ Nyt HUD efter GDD §4 og kontraktens §4. Det kommer først, så alle senere UI-
   - Tests: ny `test_ui_m7_foundation.gd` (12 tests), opdateret `test_hud_m3`/`test_ui_m4`/`test_ui_m5` (sti ligger i "Stier", varsler i AlertTray). `./tools/test.sh`: 329 ok, 2 fejl der ikke er UI (`atm.json` fra T-100 mangler sim/prop-understøttelse: `test_economy::test_real_content_parses`, `test_park_view::test_build_all_m6_buildings`). `./tools/integration.sh`: OK.
   - Skærmbilleder (1280x720, Compatibility): `$TMPDIR/opencode/t101_a.png` (inspektør + varsler) og `t101_b.png` (Butikker-kort + indstillingspanel). Venter på brugerens godkendelse.
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

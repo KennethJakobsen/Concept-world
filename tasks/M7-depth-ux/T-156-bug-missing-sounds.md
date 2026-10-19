@@ -1,6 +1,6 @@
 # T-156: Bug: lydene 'splash' og 'vomit' findes ikke
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** gameplay
 - **Afhænger af:** T-050, T-087
@@ -16,3 +16,4 @@ Brugerens browserkonsol: `WARNING: AudioManager: ukendt lyd-id 'splash'`. `audio
 ## Log
 - 2026-10-19 – orkestrator: oprettet fra brugerens konsol-output
 - 2026-10-19 – gameplay: AudioSynth genererer nu `splash` (båndpas-støj 800-4000 Hz, 0.6 s decay, amp 0.14) og `vomit` (lavpas-støj med cutoff 400->120 Hz, 0.3 s, amp 0.16) – holdt diskrete jf. T-055. Ny test `test_catalog_ids_without_file_synthesize` i test_audio.gd. test.sh 447/0, integration OK, web-build OK. Lydniveau kræver brugerens ører.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

@@ -1,6 +1,6 @@
 # T-112: UI: inspektør-faner (indstillinger, økonomi, kø)
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** ui
 - **Afhænger af:** T-101, T-102, T-103
@@ -25,3 +25,4 @@ Kontraktens §4 T-112. Se `tasks/M7-depth-ux/_CONTRACT.md`.
   - Skærmbilleder: `docs/screenshots/t112_{settings_ride,settings_shop,economy,queue}.png` (script `scripts/ui/ui_screenshots_t112.gd`); set og ser fine ud.
   - Kendte røde ting, der ikke er mine: coaster/render-tests (parallelt graphics-arbejde: `ColorPalette.ghost`, `ParkColors`), `test_m7_amenities` (sim T-104), og integration.sh melder leak-advarsler ved exit, også med T-112 slået fra. Integration-flowet selv: OK (0 fejl).
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

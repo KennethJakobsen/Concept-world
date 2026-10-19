@@ -1,6 +1,6 @@
 # T-131: Ændringsønske: rutsjebane kan ikke færdiggøres i scenarier (kun lige spor låst op)
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** designer
 - **Afhænger af:** T-065, T-095
@@ -22,3 +22,4 @@ Regel: En bane må kun kunne startes, når der er låst stykker nok op til at lu
 - 2026-10-16 – designer: in-progress
 - 2026-10-16 – designer: data-delen af løsning A: `required_pieces` på wooden_coaster/log_flume/mini_train/monorail (station, lige, begge sving). Regel + tekst ("Kræver forskning: <emne> – <stykker>") beskrevet i GDD §M7 Data-noter. Tømmerrende/tog/svævebane er altid komplette pga. T-119. Mangler (ikke designer): sim-API/def-felt `AttractionDef.required_pieces` + `can_complete(def_id)`, gråtonet byggekort (ui), og testen "oplåste baner kan lukkes pr. scenarie" inkl. at en flad lukket træbane består `validate()` (too_slow). Foreslår opfølgnings-tasks til simulation og ui. Balance uændret (5/5 i alle scenarier).
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

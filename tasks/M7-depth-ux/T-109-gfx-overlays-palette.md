@@ -1,6 +1,6 @@
 # T-109: Grafik: kort-overlays og farveblind-palet
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** graphics
 - **Afhænger af:** T-107
@@ -24,3 +24,4 @@ Kontraktens §2 T-109. Se `tasks/M7-depth-ux/_CONTRACT.md`.
   - **UI (T-113):** overlay-vælgeren bruger `ParkColors.OVERLAY_KINDS` og `ParkColors.legend(kind)` og kalder bridge, som kalder `show_overlay/hide_overlay`. Farveblind-checkboksen kalder `ParkColors.set_colorblind()`.
   - Demo: `scenes/rendering/overlay_demo.tscn` (1–5, 0, C). Screenshots: `docs/screenshots/t109_{happiness,litter,queue,coverage,light,ghost,ghost_cb}.png`. Test: `tests/test_render_overlay.gd`. `test.sh`: 381/382, hvor den ene fejl er T-112's `test_ui_m7_inspector` (ui arbejder parallelt). Smoke OK.
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)

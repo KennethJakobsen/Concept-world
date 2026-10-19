@@ -1,6 +1,6 @@
 # T-138: UI: fælles tema og billedbaseret byggemenu
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** ui
 - **Afhænger af:** T-136, T-137
@@ -24,3 +24,4 @@ Implementér stilguiden som et fælles Godot `Theme` for alle UI-zoner og hovedm
   - Skærmbilleder (1280x720, Compatibility, `scripts/ui/ui_screenshots.gd`): `docs/screenshots/t138_menu.png`, `t138_build.png` og `t138_inspector.png`. Venter på brugerens øjne.
   - Ikke med (forslag til opfølgning): Tween ved åbning/lukning af paneler, tasterne 1-6 (input ejes af bridge), "kr"-format i stedet for "$" (teksten kommer fra Hud.top_text/content).
 - 2026-10-16 – qa: teknisk OK (test.sh, integration, smoke, web-build grønne) – afventer brugerens visuelle godkendelse.
+- 2026-10-19 – orkestrator: brugeren har godkendt → done (M7 lukket)
