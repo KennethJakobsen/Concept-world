@@ -1,6 +1,6 @@
 # T-153: Bug: spillet hænger ved "Fortsæt"
 
-- **Status:** review
+- **Status:** done
 - **Milepæl:** M7
 - **Agent:** gameplay
 - **Afhænger af:** T-106, T-111, T-115, T-135
@@ -25,3 +25,4 @@ Brugerrapport (web-build 2026-10-16): spillet hænger, når man trykker "Fortsæ
   Pause-menuens "Fortsæt" (`close` → `Hud._on_pause_menu_closed`): hænger ikke. Den genskaber pausetilstanden fra før menuen blev åbnet. Var spillet pauset, forbliver det pauset (det er tilsigtet, og der er en test for det).
   Resultat-dialogens "Fortsæt i fri leg": hænger ikke. Den fjerner pausen og sætter speed 0 til 1. Scenariet er ikke længere `is_running`, så `scenario_finished` udsendes ikke igen.
   Regression i `integration.sh` (`_check_continue`): pauset v4, v1, korrupt JSON og ulæselig park via hovedmenuen → continue_park. Den tjekker også, at en lang frame giver højst 6 ticks. import, test.sh (446/0), integration.sh, smoke og build_web.sh er OK. Ikke verificeret i browseren: brugeren bør prøve Fortsæt i web-buildet.
+- 2026-10-19 – orkestrator: brugeren bekræfter at Fortsæt virker i browseren → done
