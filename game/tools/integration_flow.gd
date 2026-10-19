@@ -163,6 +163,18 @@ func _check_continue(gs: Node) -> void:
 			var st: Label = menu.get("_status") as Label if is_instance_valid(menu) else null
 			_check(v == null and st != null and st.text.begins_with("Kunne ikke"), "Fortsæt (%s): fejlbesked i menuen" % c[0])
 		_check(Time.get_ticks_msec() - t0 < 10000, "Fortsæt (%s) hænger ikke" % c[0])
+	# T-154: Fortsæt flere gange i træk + resize efter nedrivning -> ingen layout-fejl/døde callables
+	if not backup.is_empty():
+		for i: int in 3:
+			gs.call("go_to_main_menu")
+			root.size_changed.emit()
+			await _frames(2)
+			store.save(SaveStore.AUTOSAVE_SLOT, backup)
+			current_scene.call("continue_park")
+			root.size_changed.emit()
+			await _frames(3)
+			root.size_changed.emit()
+			_check(_view() != null and _hud() != null, "Fortsæt gentaget (%d)" % i)
 	if backup.is_empty():
 		store.delete(SaveStore.AUTOSAVE_SLOT)
 	else:

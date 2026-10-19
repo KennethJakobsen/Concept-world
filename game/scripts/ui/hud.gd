@@ -107,6 +107,13 @@ func _enter_tree() -> void:
 		get_viewport().size_changed.connect(_on_viewport_resized)
 
 
+## T-154: frakobl viewport-signalet, så en nedrevet HUD aldrig kaldes (wasm-crash på web).
+func _exit_tree() -> void:
+	var vp: Viewport = get_viewport()
+	if vp != null and vp.size_changed.is_connected(_on_viewport_resized):
+		vp.size_changed.disconnect(_on_viewport_resized)
+
+
 var _in_layout: bool = false
 var _last_vp: Vector2 = Vector2.ZERO
 
@@ -122,6 +129,8 @@ func _relayout() -> void:
 
 
 func _on_viewport_resized() -> void:
+	if not is_inside_tree():
+		return
 	layout(get_viewport().get_visible_rect().size)
 
 
@@ -129,7 +138,10 @@ func _on_viewport_resized() -> void:
 ## ombrydning af knapperne ved den givne bredde, så byggemenuen altid ligger helt synlig i bunden.
 func layout(vp: Vector2) -> void:
 	var root: Control = get_node_or_null("Root")
-	if root == null or _in_layout:
+	if root == null or _in_layout or is_queued_for_deletion():
+		return
+	# T-154: kaldes under opbygning (før BuildMenu findes) -> no-op
+	if root.get_node_or_null("TopBar") == null or root.get_node_or_null("BuildMenu") == null or build_dock == null:
 		return
 	_in_layout = true
 	_last_vp = vp
@@ -448,7 +460,7 @@ func _build_ui() -> void:
 	_toast = Toast.new()
 	root.add_child(_toast)
 	if is_inside_tree():
-		layout.call_deferred(get_viewport().get_visible_rect().size)
+		_relayout.call_deferred()
 
 
 ## Mærkat + bjælke 0..10 (T-089).

@@ -22,7 +22,19 @@ func _ready() -> void:
 	UiSound.install(get_tree())
 	build()
 	layout(get_viewport().get_visible_rect().size)
-	get_viewport().size_changed.connect(func() -> void: layout(get_viewport().get_visible_rect().size))
+	get_viewport().size_changed.connect(_on_viewport_resized)
+
+
+## T-154: metode i stedet for lambda + frakobling, så en frigjort menu ikke kaldes (web-crash).
+func _on_viewport_resized() -> void:
+	if is_inside_tree():
+		layout(get_viewport().get_visible_rect().size)
+
+
+func _exit_tree() -> void:
+	var vp: Viewport = get_viewport()
+	if vp != null and vp.size_changed.is_connected(_on_viewport_resized):
+		vp.size_changed.disconnect(_on_viewport_resized)
 
 
 static func show_quit() -> bool:

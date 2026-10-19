@@ -179,6 +179,7 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-146 | Bug: personale-panelet uden for skærmen | ui | review |
 | T-148 | Bug: gæster ser forskellige ud, strakte kapsler | graphics | review |
 | T-153 | Bug: spillet hænger ved "Fortsæt" | gameplay | review |
+| T-154 | Bug: web-crash ved Fortsæt (HUD-layout) | ui | review |
 | T-118 | M7 verifikation | qa | review |
 | T-152 | balance.sh tager over 15 minutter | simulation | todo |
 
