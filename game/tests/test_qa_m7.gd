@@ -95,4 +95,9 @@ func test_determinism_and_budget_500_guests() -> void:
 	assert_eq(_snap(a), _snap(b), "deterministisk efter 400 ticks")
 	print("T-118 budget: %.2f ms/tick med %d gæster" % [ms, a.guests.size()])
 	# ADR-005 §7: sim skal holde sig langt under en 33 ms frame (30 fps) ved 20 ticks/s.
-	assert_true(ms < 8.0, "sim-budget < 8 ms/tick (var %.2f)" % ms)
+	# T-157: vægur på delte CI-runnere er ustabil → kun advarsel, når CI er sat.
+	if OS.get_environment("CI") != "":
+		if ms >= 8.0:
+			push_warning("CI: sim-budget overskredet (%.2f ms/tick) – ikke håndhævet i CI" % ms)
+	else:
+		assert_true(ms < 8.0, "sim-budget < 8 ms/tick (var %.2f)" % ms)

@@ -183,6 +183,7 @@ Runder: 1) T-081→T-082, T-083 · 2) T-084→T-085 · 3) T-086, derefter T-087/
 | T-155 | Ikon til Flyt-værktøjet (pan) | graphics | ✅ done |
 | T-156 | Bug: lydene splash og vomit mangler | gameplay | ✅ done |
 | T-118 | M7 verifikation | qa | ✅ done |
+| T-157 | Bug: CI fejler på sim-tidsbudget | qa | review |
 | T-152 | balance.sh tager over 15 minutter | simulation | todo (→ M8) |
 
 M7 afsluttet 2026-10-19 (brugeren har godkendt alle visuelle tasks). T-152 flyttet til M8.
