@@ -144,6 +144,11 @@ func _icons() -> Dictionary:
 		+ ln(32, 30, 32, 40, INK, 2) + ln(40, 31, 40, 40, INK, 2) + hl(27, 12, 2, 3)
 	d["tool_remove"] = r(30, 8, 6, 26, GREY, 2, 'transform="rotate(25 33 21)"') \
 		+ p("M8,30 H44 Q48,30 48,36 L52,54 H6 Q4,44 8,30 Z", RED) + ln(10, 54, 52, 54) + hl(14, 35, 4, 2)
+	# T-155: pan-ikon (fire pile ud fra midten)
+	d["tool_move"] = r(28, 14, 8, 36, "#FFFFFF", 2) + r(14, 28, 36, 8, "#FFFFFF", 2) \
+		+ poly([32, 4, 44, 16, 20, 16], BRASS) + poly([32, 60, 44, 48, 20, 48], BRASS) \
+		+ poly([4, 32, 16, 20, 16, 44], BRASS) + poly([60, 32, 48, 20, 48, 44], BRASS) \
+		+ c(32, 32, 7, BRASS_L) + hl(30, 30, 2, 1.5)
 	d["tool_rotate"] = r(22, 24, 20, 18, "#E8A33D", 2) + hl(26, 28, 3, 2) \
 		+ thick("M14,24 A20,20 0 1 1 18,48", BRASS, 4) + poly([6, 22, 20, 20, 14, 32], BRASS)
 	d["tool_undo"] = thick("M20,26 H40 Q54,26 54,40 Q54,54 40,54 H28", BRASS, 5) + poly([6, 26, 22, 14, 22, 38], BRASS)
